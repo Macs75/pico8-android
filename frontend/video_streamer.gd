@@ -1,8 +1,7 @@
 extends Node2D
 class_name PicoVideoStreamer
 
-@export var label: Label
-@export var loading: Node2D
+@export var loading: AnimatedSprite2D
 @export var display: Sprite2D
 @export var displayContainer: Sprite2D
 
@@ -30,24 +29,11 @@ func _ready() -> void:
     reconnect()
 
 var buffer := []
-const SYNC_SEQ = [80,73,67,79,56,83,89,78,67] # "PICO8SYNC"
+const SYNC_SEQ = [80, 73, 67, 79, 56, 83, 89, 78, 67] # "PICO8SYNC"
 const CUSTOM_BYTE_COUNT = 1
 var current_custom_data := range(CUSTOM_BYTE_COUNT)
 const DISPLAY_BYTES = 128 * 128 * 3
 const PACKLEN = len(SYNC_SEQ) + CUSTOM_BYTE_COUNT + DISPLAY_BYTES
-
-var frametimes = []
-
-const FPS_RANGE = 2500
-func get_pico_fps():
-    if len(frametimes) == 0:
-        return 0
-    var cut = max(Time.get_ticks_msec() - FPS_RANGE, frametimes[-1]) - FPS_RANGE
-    frametimes = frametimes.filter(
-        func (t):
-            return t > cut
-    )
-    return len(frametimes) / (float(FPS_RANGE)/1000)
 
 func set_im_from_data(rgb: Array):
     #var rgb = []
@@ -57,14 +43,12 @@ func set_im_from_data(rgb: Array):
     var image = Image.create_from_data(128, 128, false, Image.FORMAT_RGB8, rgb)
     var texture = ImageTexture.create_from_image(image)
     display.texture = texture
-    frametimes.append(Time.get_ticks_msec())
-
 
 func find_seq(host: Array, sub: Array):
-    for i in range(len(host)-len(sub)+1):
+    for i in range(len(host) - len(sub) + 1):
         var success = true
         for j in range(len(sub)):
-            if host[i+j] != sub[j]:
+            if host[i + j] != sub[j]:
                 success = false
                 break
         if success:
@@ -76,14 +60,6 @@ var last_mouse_state = [0, 0, 0]
 var synched = false
 
 func _process(delta: float) -> void:
-    var status = "????" if not tcp else ["NONE", "WAIT", "GOOD", "FAIL"][tcp.get_status()]       
-    label.text = "%s %02x %02x   fps=%d   tps=%.2f" % [
-        status,
-        Engine.get_frames_drawn()&0xFF,
-        current_custom_data[0],
-        round(get_pico_fps()),
-        Engine.get_frames_per_second()
-    ]
     if not (tcp and tcp.get_status() == StreamPeerTCP.STATUS_CONNECTED):
         loading.visible = true
     if not tcp:
@@ -118,11 +94,11 @@ func _process(delta: float) -> void:
             var err = errdata[0]
             var data = errdata[1]
             buffer.append_array(data)
-            if len(buffer) > PACKLEN*2:
+            if len(buffer) > PACKLEN * 2:
                 print("buffer overloaded, skipping")
                 var chopCount = floor((len(buffer) / PACKLEN)) - 1
                 #print(chopCount)
-                buffer = buffer.slice(chopCount*PACKLEN)
+                buffer = buffer.slice(chopCount * PACKLEN)
             if synched and len(buffer) > len(SYNC_SEQ) and buffer.slice(0, len(SYNC_SEQ)) != SYNC_SEQ:
                 print("synch fail", buffer.slice(0, len(SYNC_SEQ)), SYNC_SEQ)
                 synched = false
@@ -135,11 +111,11 @@ func _process(delta: float) -> void:
             if len(buffer) >= PACKLEN:
                 current_custom_data = buffer.slice(
                     len(SYNC_SEQ),
-                    len(SYNC_SEQ)+CUSTOM_BYTE_COUNT
+                    len(SYNC_SEQ) + CUSTOM_BYTE_COUNT
                 )
                 im = buffer.slice(
-                    len(SYNC_SEQ)+CUSTOM_BYTE_COUNT,
-                    len(SYNC_SEQ)+CUSTOM_BYTE_COUNT+DISPLAY_BYTES
+                    len(SYNC_SEQ) + CUSTOM_BYTE_COUNT,
+                    len(SYNC_SEQ) + CUSTOM_BYTE_COUNT + DISPLAY_BYTES
                 )
                 buffer = buffer.slice(PACKLEN)
             if im != null:
@@ -165,10 +141,9 @@ func send_key(id: int, down: bool, repeat: bool, mod: int):
         tcp.put_data([
             PIDOT_EVENT_KEYEV,
             id, int(down), int(repeat),
-            mod&0xff, (mod>>8)&0xff, 0, 0
+            mod & 0xff, (mod >> 8) & 0xff, 0, 0
         ])
 func send_input(char: int):
-    
     if tcp:
         tcp.put_data([
             PIDOT_EVENT_CHAREV, char,

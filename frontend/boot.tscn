@@ -79,7 +79,6 @@ offset_bottom = 256.0
 scale = Vector2(2.055, 2.055)
 script = ExtResource("6_xf3if")
 rect = NodePath("StackContainer")
-center_y = true
 
 [node name="StackContainer" type="VBoxContainer" parent="SelectPicoZip/Control2"]
 layout_mode = 0
@@ -130,7 +129,6 @@ unique_name_in_owner = true
 visible = false
 script = ExtResource("6_xf3if")
 rect = NodePath("UnpackProgress")
-center_y = true
 
 [node name="UnpackProgress" type="Label" parent="UnpackProgressContainer"]
 unique_name_in_owner = true
@@ -145,7 +143,6 @@ unique_name_in_owner = true
 visible = false
 script = ExtResource("6_xf3if")
 rect = NodePath("VBoxContainer")
-center_y = true
 
 [node name="VBoxContainer" type="VBoxContainer" parent="AllFileAccessContainer"]
 clip_contents = true

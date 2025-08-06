@@ -1,8 +1,6 @@
-[gd_scene load_steps=38 format=3 uid="uid://crejfo36g5bip"]
+[gd_scene load_steps=27 format=3 uid="uid://crejfo36g5bip"]
 
 [ext_resource type="Script" uid="uid://6wbbc364xejy" path="res://video_streamer.gd" id="1_ig7tw"]
-[ext_resource type="Texture2D" uid="uid://c5me3k81eowxt" path="res://assets/greyout.png" id="2_vivmo"]
-[ext_resource type="Script" uid="uid://b8djcrxr5xpuw" path="res://greyout_scroll.gd" id="3_2cqfq"]
 [ext_resource type="Texture2D" uid="uid://n7xqvr4frt03" path="res://assets/cartdl/cartdl_01.png" id="5_b1qrp"]
 [ext_resource type="Texture2D" uid="uid://3x8rwu1pugjh" path="res://assets/cartdl/cartdl_02.png" id="6_come4"]
 [ext_resource type="Texture2D" uid="uid://cax2gmsno1vpj" path="res://assets/cartdl/cartdl_03.png" id="7_h8e4i"]
@@ -17,18 +15,11 @@
 [ext_resource type="Texture2D" uid="uid://1j6frm4ok8uk" path="res://assets/cartdl/cartdl_12.png" id="16_0cbny"]
 [ext_resource type="Script" uid="uid://cvjxkw6ljrn0y" path="res://arranger.gd" id="16_2cqfq"]
 [ext_resource type="Texture2D" uid="uid://cbxh7dbmgwxap" path="res://assets/cartdl/cartdl_13.png" id="17_hrvbo"]
-[ext_resource type="Script" uid="uid://bqs2np6vgf7b7" path="res://pullupdakb.gd" id="18_cegan"]
-[ext_resource type="Texture2D" uid="uid://cxl2mrbeetfwy" path="res://assets/controls_frame.png" id="18_ryguw"]
 [ext_resource type="Texture2D" uid="uid://dl3hsv4x8tfqh" path="res://assets/cartdl/cartdl_14.png" id="18_uypp3"]
 [ext_resource type="Texture2D" uid="uid://nkssat6mefho" path="res://assets/cartdl/cartdl_15.png" id="19_blkrb"]
-[ext_resource type="FontFile" uid="uid://c2jlc3nt8y38q" path="res://assets/font/atlas-0.png" id="19_cegan"]
 [ext_resource type="PackedScene" uid="uid://c5k0xmbhdlmaw" path="res://key.tscn" id="20_82xsv"]
 [ext_resource type="Texture2D" uid="uid://6g8vp7jto4p1" path="res://assets/cartdl/cartdl_16.png" id="20_abqjc"]
-[ext_resource type="Texture2D" uid="uid://dugjisp03ljuy" path="res://assets/display_frame.png" id="20_getpj"]
-[ext_resource type="Script" uid="uid://bsloibr1m0vkt" path="res://hide_on_release.gd" id="36_d2t1y"]
 [ext_resource type="Script" uid="uid://3yarkysfetgu" path="res://kb_toggler.gd" id="37_come4"]
-[ext_resource type="Texture2D" uid="uid://b0wmat4qkmbbr" path="res://assets/kb up.png" id="39_h8e4i"]
-[ext_resource type="PackedScene" uid="uid://c7jewwbdbfd8u" path="res://indicator.tscn" id="40_h8e4i"]
 [ext_resource type="PackedScene" uid="uid://bgklhpsaac82q" path="res://omnipad.tscn" id="41_0cp0l"]
 [ext_resource type="Script" uid="uid://c7rts7fcblaav" path="res://run_pico_cmd.gd" id="41_4lmeg"]
 
@@ -154,19 +145,8 @@ animations = [{
 [sub_resource type="ViewportTexture" id="ViewportTexture_7dm0k"]
 viewport_path = NodePath("Display")
 
-[sub_resource type="LabelSettings" id="LabelSettings_ig7tw"]
-font = ExtResource("19_cegan")
-font_size = 5
-outline_size = 4
-outline_color = Color(0, 0, 0, 1)
-shadow_size = 0
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_074og"]
-size = Vector2(33, 9)
-
-[node name="Main" type="Node2D" node_paths=PackedStringArray("label", "loading", "display", "displayContainer")]
+[node name="Main" type="Node2D" node_paths=PackedStringArray("loading", "display", "displayContainer")]
 script = ExtResource("1_ig7tw")
-label = NodePath("Arranger/Label")
 loading = NodePath("Display/loading")
 display = NodePath("Display/Display")
 displayContainer = NodePath("Arranger/displayContainer")
@@ -182,110 +162,41 @@ size = Vector2i(128, 128)
 position = Vector2(64, 64)
 texture = SubResource("GradientTexture2D_0xm2m")
 
-[node name="loading" type="Node2D" parent="Display"]
-position = Vector2(64, 64)
-
-[node name="greyout" type="Sprite2D" parent="Display/loading"]
-modulate = Color(1, 1, 1, 0.482353)
-texture_filter = 2
-texture = ExtResource("2_vivmo")
-script = ExtResource("3_2cqfq")
-
-[node name="cartspin" type="AnimatedSprite2D" parent="Display/loading"]
+[node name="loading" type="AnimatedSprite2D" parent="Display"]
 texture_filter = 1
+position = Vector2(64, 64)
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_0odxb")
 animation = &"dl"
 autoplay = "dl_1"
 
-[node name="Arranger" type="Node2D" parent="." node_paths=PackedStringArray("rect", "kb_anchor")]
+[node name="Arranger" type="Node2D" parent="." node_paths=PackedStringArray("rect")]
 script = ExtResource("16_2cqfq")
 rect = NodePath("ActiveArea")
-kb_anchor = NodePath("kbanchor")
 
 [node name="ActiveArea" type="ReferenceRect" parent="Arranger"]
-offset_left = -2.0
-offset_top = -19.0
-offset_right = 130.0
-offset_bottom = 284.0
+offset_right = 128.0
+offset_bottom = 300.0
 mouse_filter = 2
 border_color = Color(0.195284, 0.551135, 0.869855, 1)
 
 [node name="displayContainer" type="Sprite2D" parent="Arranger"]
 texture_filter = 1
+position = Vector2(0, 12)
 texture = SubResource("ViewportTexture_7dm0k")
-centered = false
-
-[node name="DisplayFrame" type="Sprite2D" parent="Arranger/displayContainer"]
-show_behind_parent = true
-position = Vector2(-16, -24)
-texture = ExtResource("20_getpj")
 centered = false
 
 [node name="Camera2D" type="Camera2D" parent="Arranger"]
 offset = Vector2(256, 256)
 enabled = false
 
-[node name="Label" type="Label" parent="Arranger"]
-offset_left = 1.0
-offset_top = -7.0
-offset_right = 202.0
-offset_bottom = 12.0
-text = "WHAT what"
-label_settings = SubResource("LabelSettings_ig7tw")
-script = ExtResource("36_d2t1y")
-
-[node name="EDTR" parent="Arranger" instance=ExtResource("40_h8e4i")]
-position = Vector2(31, 135)
-flag = 1
-color = Color(0.247059, 0.623529, 0.901961, 1)
-text = "edtr"
-
-[node name="GAME" parent="Arranger" instance=ExtResource("40_h8e4i")]
-position = Vector2(57, 135)
-flag = 2
-color = Color(0, 0.709804, 0.262745, 1)
-text = "game"
-
-[node name="DVKT" parent="Arranger" instance=ExtResource("40_h8e4i")]
-position = Vector2(83, 135)
-flag = 4
-color = Color(0.913725, 0.541176, 0.14902, 1)
-text = "dvkt"
-
-[node name="DVKT2" parent="Arranger" instance=ExtResource("40_h8e4i")]
-position = Vector2(109, 135)
-special = 2
-color = Color(0.378684, 0.658645, 0.977098, 1)
-text = "fps"
-
-[node name="CONN" parent="Arranger" instance=ExtResource("40_h8e4i")]
-position = Vector2(5, 135)
-flag = 4
-special = 1
-color = Color(0.913725, 0.541176, 0.14902, 1)
-text = "conn"
-
 [node name="kbanchor" type="Node2D" parent="Arranger"]
-position = Vector2(0, 284)
+position = Vector2(0, 300)
 
 [node name="kb_pocketchip" type="Node2D" parent="Arranger/kbanchor"]
 visible = false
-position = Vector2(0, -137)
+position = Vector2(0, -125)
 script = ExtResource("37_come4")
-type = 1
-
-[node name="Frame" type="NinePatchRect" parent="Arranger/kbanchor/kb_pocketchip"]
-z_index = -5
-offset_left = -16.0
-offset_top = -13.0
-offset_right = 144.0
-offset_bottom = 138.0
-texture = ExtResource("18_ryguw")
-patch_margin_left = 24
-patch_margin_top = 24
-patch_margin_right = 24
-patch_margin_bottom = 24
 
 [node name="Key" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
 offset_top = 44.0
@@ -981,34 +892,10 @@ cap_text_shift = "~"
 shift_unicode_override = "~"
 metadata/_edit_use_anchors_ = true
 
-[node name="KB" type="Area2D" parent="Arranger/kbanchor/kb_pocketchip"]
-position = Vector2(41, 128)
-script = ExtResource("18_cegan")
-
-[node name="Button" type="Sprite2D" parent="Arranger/kbanchor/kb_pocketchip/KB"]
-texture = ExtResource("39_h8e4i")
-centered = false
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Arranger/kbanchor/kb_pocketchip/KB"]
-position = Vector2(16.5, 4.5)
-shape = SubResource("RectangleShape2D_074og")
-
 [node name="kb_gaming" type="Node2D" parent="Arranger/kbanchor"]
-visible = false
-position = Vector2(0, -80)
+position = Vector2(0, -70)
 script = ExtResource("37_come4")
-
-[node name="Frame" type="NinePatchRect" parent="Arranger/kbanchor/kb_gaming"]
-z_index = -5
-offset_left = -16.0
-offset_top = -9.0
-offset_right = 144.0
-offset_bottom = 81.0
-texture = ExtResource("18_ryguw")
-patch_margin_left = 24
-patch_margin_top = 24
-patch_margin_right = 24
-patch_margin_bottom = 24
+type = 0
 
 [node name="esc" parent="Arranger/kbanchor/kb_gaming" instance=ExtResource("20_82xsv")]
 offset_left = 77.0
@@ -1066,138 +953,3 @@ offset_left = 3.0
 offset_top = 4.0
 offset_right = 34.0
 offset_bottom = 35.0
-
-[node name="kb_onscreen_compliment" type="Node2D" parent="Arranger/kbanchor"]
-position = Vector2(0, -51)
-script = ExtResource("37_come4")
-type = 2
-
-[node name="Frame" type="NinePatchRect" parent="Arranger/kbanchor/kb_onscreen_compliment"]
-z_index = -5
-offset_left = -16.0
-offset_top = -9.0
-offset_right = 144.0
-offset_bottom = 52.0
-texture = ExtResource("18_ryguw")
-patch_margin_left = 24
-patch_margin_top = 24
-patch_margin_right = 24
-patch_margin_bottom = 24
-
-[node name="Key37" parent="Arranger/kbanchor/kb_onscreen_compliment" instance=ExtResource("20_82xsv")]
-offset_left = 51.0
-offset_top = 21.0
-offset_right = 56.5
-offset_bottom = 30.0
-mouse_filter = 0
-key_id = "Escape"
-cap_text = "ESC"
-font_type = 3
-unicode = false
-metadata/_edit_use_anchors_ = true
-
-[node name="Key50" parent="Arranger/kbanchor/kb_onscreen_compliment" instance=ExtResource("20_82xsv")]
-offset_left = 106.0
-offset_top = 27.0
-offset_right = 112.0
-offset_bottom = 34.0
-mouse_filter = 0
-key_id = "Down"
-cap_type = 1
-cap_text = "02"
-font_type = 4
-unicode = false
-metadata/_edit_use_anchors_ = true
-
-[node name="Key52" parent="Arranger/kbanchor/kb_onscreen_compliment" instance=ExtResource("20_82xsv")]
-offset_left = 96.0
-offset_top = 14.0
-offset_right = 102.0
-offset_bottom = 21.0
-mouse_filter = 0
-cap_type = 1
-cap_text = "03"
-font_type = 4
-unicode = false
-metadata/_edit_use_anchors_ = true
-
-[node name="Key53" parent="Arranger/kbanchor/kb_onscreen_compliment" instance=ExtResource("20_82xsv")]
-offset_left = 106.0
-offset_top = 1.0
-offset_right = 112.0
-offset_bottom = 8.0
-mouse_filter = 0
-key_id = "Up"
-cap_type = 1
-cap_text = "01"
-font_type = 4
-unicode = false
-metadata/_edit_use_anchors_ = true
-
-[node name="Key51" parent="Arranger/kbanchor/kb_onscreen_compliment" instance=ExtResource("20_82xsv")]
-offset_left = 116.0
-offset_top = 14.0
-offset_right = 122.0
-offset_bottom = 21.0
-mouse_filter = 0
-key_id = "Right"
-cap_type = 1
-cap_text = "04"
-font_type = 4
-unicode = false
-metadata/_edit_use_anchors_ = true
-
-[node name="Key11" parent="Arranger/kbanchor/kb_onscreen_compliment" instance=ExtResource("20_82xsv")]
-offset_left = 15.0
-offset_top = 21.0
-offset_right = 20.5
-offset_bottom = 30.0
-mouse_filter = 0
-key_id = "Shift"
-cap_text = "SH
-FT"
-font_type = 3
-can_lock = true
-unicode = false
-metadata/_edit_use_anchors_ = true
-
-[node name="Key32" parent="Arranger/kbanchor/kb_onscreen_compliment" instance=ExtResource("20_82xsv")]
-offset_left = 28.0
-offset_top = 21.0
-offset_right = 33.5
-offset_bottom = 30.0
-mouse_filter = 0
-key_id = "Alt"
-cap_text = "ALT"
-font_type = 3
-can_lock = true
-unicode = false
-metadata/_edit_use_anchors_ = true
-
-[node name="Key31" parent="Arranger/kbanchor/kb_onscreen_compliment" instance=ExtResource("20_82xsv")]
-offset_left = 2.0
-offset_top = 21.0
-offset_right = 7.5
-offset_bottom = 30.0
-mouse_filter = 0
-key_id = "Ctrl"
-cap_text = "CT
-RL"
-font_type = 3
-can_lock = true
-unicode = false
-metadata/_edit_use_anchors_ = true
-
-[node name="Key21" parent="Arranger/kbanchor/kb_onscreen_compliment" instance=ExtResource("20_82xsv")]
-offset_left = 74.0
-offset_top = 21.0
-offset_right = 79.5
-offset_bottom = 30.0
-mouse_filter = 0
-key_id = "Tab"
-cap_text = "TAB"
-font_type = 3
-unicode = false
-metadata/_edit_use_anchors_ = true
-
-[connection signal="input_event" from="Arranger/kbanchor/kb_pocketchip/KB" to="Arranger/kbanchor/kb_pocketchip/KB" method="_on_input_event"]
