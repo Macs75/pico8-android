@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://crejfo36g5bip"]
+[gd_scene load_steps=31 format=3 uid="uid://crejfo36g5bip"]
 
 [ext_resource type="Script" uid="uid://6wbbc364xejy" path="res://video_streamer.gd" id="1_ig7tw"]
 [ext_resource type="Texture2D" uid="uid://n7xqvr4frt03" path="res://assets/cartdl/cartdl_01.png" id="5_b1qrp"]
@@ -19,6 +19,7 @@
 [ext_resource type="Texture2D" uid="uid://nkssat6mefho" path="res://assets/cartdl/cartdl_15.png" id="19_blkrb"]
 [ext_resource type="PackedScene" uid="uid://c5k0xmbhdlmaw" path="res://key.tscn" id="20_82xsv"]
 [ext_resource type="Texture2D" uid="uid://6g8vp7jto4p1" path="res://assets/cartdl/cartdl_16.png" id="20_abqjc"]
+[ext_resource type="FontFile" uid="uid://c2jlc3nt8y38q" path="res://assets/font/atlas-0.png" id="20_d13ii"]
 [ext_resource type="Script" uid="uid://3yarkysfetgu" path="res://kb_toggler.gd" id="37_come4"]
 [ext_resource type="PackedScene" uid="uid://bgklhpsaac82q" path="res://omnipad.tscn" id="41_0cp0l"]
 [ext_resource type="Script" uid="uid://c7rts7fcblaav" path="res://run_pico_cmd.gd" id="41_4lmeg"]
@@ -145,6 +146,14 @@ animations = [{
 [sub_resource type="ViewportTexture" id="ViewportTexture_7dm0k"]
 viewport_path = NodePath("Display")
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_d13ii"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_1u8w0"]
+font = ExtResource("20_d13ii")
+font_size = 5
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_1u8w0"]
+
 [node name="Main" type="Node2D" node_paths=PackedStringArray("loading", "display", "displayContainer")]
 script = ExtResource("1_ig7tw")
 loading = NodePath("Display/loading")
@@ -194,9 +203,24 @@ enabled = false
 position = Vector2(0, 300)
 
 [node name="kb_pocketchip" type="Node2D" parent="Arranger/kbanchor"]
-visible = false
 position = Vector2(0, -125)
 script = ExtResource("37_come4")
+
+[node name="Gaming Btn" type="Button" parent="Arranger/kbanchor/kb_pocketchip"]
+offset_left = 2.0
+offset_top = -13.0
+offset_right = 65.0
+offset_bottom = -4.0
+theme_override_styles/focus = SubResource("StyleBoxEmpty_d13ii")
+
+[node name="Gaming KB" type="Label" parent="Arranger/kbanchor/kb_pocketchip/Gaming Btn"]
+layout_mode = 0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = 62.0
+offset_bottom = 7.0
+text = "gAMING kEYBOARD"
+label_settings = SubResource("LabelSettings_1u8w0")
 
 [node name="Key" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
 offset_top = 44.0
@@ -893,9 +917,26 @@ shift_unicode_override = "~"
 metadata/_edit_use_anchors_ = true
 
 [node name="kb_gaming" type="Node2D" parent="Arranger/kbanchor"]
+visible = false
 position = Vector2(0, -70)
 script = ExtResource("37_come4")
 type = 0
+
+[node name="Full Btn" type="Button" parent="Arranger/kbanchor/kb_gaming"]
+offset_left = 2.0
+offset_top = -12.0
+offset_right = 57.0
+offset_bottom = -3.0
+theme_override_styles/focus = SubResource("StyleBoxEmpty_1u8w0")
+
+[node name="Full KB" type="Label" parent="Arranger/kbanchor/kb_gaming/Full Btn"]
+layout_mode = 0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = 54.0
+offset_bottom = 7.0
+text = "fULL kEYBOARD"
+label_settings = SubResource("LabelSettings_1u8w0")
 
 [node name="esc" parent="Arranger/kbanchor/kb_gaming" instance=ExtResource("20_82xsv")]
 offset_left = 77.0

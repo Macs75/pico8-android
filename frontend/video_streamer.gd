@@ -27,6 +27,15 @@ static var instance: PicoVideoStreamer
 func _ready() -> void:
     instance = self
     reconnect()
+    
+    # Connect the dedicated keyboard buttons
+    var gaming_btn = get_node("Arranger/kbanchor/kb_pocketchip/Gaming Btn")
+    var full_btn = get_node("Arranger/kbanchor/kb_gaming/Full Btn")
+    
+    if gaming_btn:
+        gaming_btn.pressed.connect(_on_gaming_keyboard_pressed)
+    if full_btn:
+        full_btn.pressed.connect(_on_full_keyboard_pressed)
 
 var buffer := []
 const SYNC_SEQ = [80, 73, 67, 79, 56, 83, 89, 78, 67] # "PICO8SYNC"
@@ -203,3 +212,10 @@ func _input(event: InputEvent) -> void:
         #return;
     #if event is InputEventMouse:
         #queued_mouse_event = true
+
+# Callback functions for keyboard selection buttons
+func _on_gaming_keyboard_pressed():
+    KBMan.set_full_keyboard_enabled(false)
+
+func _on_full_keyboard_pressed():
+    KBMan.set_full_keyboard_enabled(true)
