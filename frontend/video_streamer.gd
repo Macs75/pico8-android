@@ -28,14 +28,19 @@ func _ready() -> void:
     instance = self
     reconnect()
     
-    # Connect the dedicated keyboard buttons
-    var gaming_btn = get_node("Arranger/kbanchor/kb_pocketchip/Gaming Btn")
-    var full_btn = get_node("Arranger/kbanchor/kb_gaming/Full Btn")
+    # Connect the single keyboard toggle button
+    var keyboard_btn = get_node("Arranger/HBoxContainer/Keyboard Btn")
+    if keyboard_btn:
+        keyboard_btn.pressed.connect(_on_keyboard_toggle_pressed)
+        # Set initial button label based on current state
+        _update_keyboard_button_label()
     
-    if gaming_btn:
-        gaming_btn.pressed.connect(_on_gaming_keyboard_pressed)
-    if full_btn:
-        full_btn.pressed.connect(_on_full_keyboard_pressed)
+    # Connect the haptic toggle button
+    var haptic_btn = get_node("Arranger/HBoxContainer/Haptic Btn")
+    if haptic_btn:
+        haptic_btn.pressed.connect(_on_haptic_toggle_pressed)
+        # Set initial button label based on current state
+        _update_haptic_button_label()
 
 var buffer := []
 const SYNC_SEQ = [80, 73, 67, 79, 56, 83, 89, 78, 67] # "PICO8SYNC"
@@ -161,12 +166,27 @@ func send_input(char: int):
 
 var held_keys = []
 
+
+# Static variable to track haptic feedback state (default is true = haptic enabled)
+static var haptic_enabled: bool = true
+
+static func set_haptic_enabled(enabled: bool):
+    haptic_enabled = enabled
+
+static func get_haptic_enabled() -> bool:
+    return haptic_enabled
+
+
 func vkb_setstate(id: String, down: bool, unicode: int = 0, echo: bool = false):
     if id not in SDL_KEYMAP:
         return
     if (id not in held_keys) and not down:
         return
     if down:
+        # Add haptic feedback for key presses (only on key down, not key up)
+        if not echo and haptic_enabled:
+            Input.vibrate_handheld(35, 1)
+
         if id not in held_keys:
             held_keys.append(id)
         send_key(SDL_KEYMAP[id], true, echo, keys2sdlmod(held_keys))
@@ -175,6 +195,7 @@ func vkb_setstate(id: String, down: bool, unicode: int = 0, echo: bool = false):
     else:
         held_keys.erase(id)
         send_key(SDL_KEYMAP[id], false, false, keys2sdlmod(held_keys))
+    
 
 func keymod2sdl(mod: int, key: int) -> int:
     var ret = 0
@@ -213,9 +234,29 @@ func _input(event: InputEvent) -> void:
     #if event is InputEventMouse:
         #queued_mouse_event = true
 
-# Callback functions for keyboard selection buttons
-func _on_gaming_keyboard_pressed():
-    KBMan.set_full_keyboard_enabled(false)
+# Callback function for keyboard toggle button
+func _on_keyboard_toggle_pressed():
+    var current_state = KBMan.get_current_keyboard_type()
+    var new_state = KBMan.KBType.FULL if current_state == KBMan.KBType.GAMING else KBMan.KBType.GAMING
+    KBMan.set_full_keyboard_enabled(new_state == KBMan.KBType.FULL)
+    _update_keyboard_button_label()
 
-func _on_full_keyboard_pressed():
-    KBMan.set_full_keyboard_enabled(true)
+func _update_keyboard_button_label():
+    var keyboard_btn = get_node("Arranger/HBoxContainer/Keyboard Btn")
+    if not keyboard_btn:
+        return
+    var current_type = KBMan.get_current_keyboard_type()
+    keyboard_btn.text = "fULL kEYBOARD" if current_type == KBMan.KBType.GAMING else "gAMING kEYBOARD"
+
+# Callback function for haptic toggle button
+func _on_haptic_toggle_pressed():
+    var current_state = get_haptic_enabled()
+    set_haptic_enabled(not current_state)
+    _update_haptic_button_label()
+
+func _update_haptic_button_label():
+    var haptic_btn = get_node("Arranger/HBoxContainer/Haptic Btn")
+    if not haptic_btn:
+        return
+    var current_state = get_haptic_enabled()
+    haptic_btn.text = "hAPTIC: oN" if current_state else "hAPTIC: oFF"

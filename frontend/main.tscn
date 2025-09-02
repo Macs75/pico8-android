@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://crejfo36g5bip"]
+[gd_scene load_steps=29 format=3 uid="uid://crejfo36g5bip"]
 
 [ext_resource type="Script" uid="uid://6wbbc364xejy" path="res://video_streamer.gd" id="1_ig7tw"]
 [ext_resource type="Texture2D" uid="uid://n7xqvr4frt03" path="res://assets/cartdl/cartdl_01.png" id="5_b1qrp"]
@@ -148,12 +148,6 @@ viewport_path = NodePath("Display")
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_d13ii"]
 
-[sub_resource type="LabelSettings" id="LabelSettings_1u8w0"]
-font = ExtResource("20_d13ii")
-font_size = 5
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_1u8w0"]
-
 [node name="Main" type="Node2D" node_paths=PackedStringArray("loading", "display", "displayContainer")]
 script = ExtResource("1_ig7tw")
 loading = NodePath("Display/loading")
@@ -199,28 +193,35 @@ centered = false
 offset = Vector2(256, 256)
 enabled = false
 
+[node name="HBoxContainer" type="HBoxContainer" parent="Arranger"]
+offset_top = 146.0
+offset_right = 128.0
+offset_bottom = 159.0
+
+[node name="Keyboard Btn" type="Button" parent="Arranger/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 2
+theme_override_fonts/font = ExtResource("20_d13ii")
+theme_override_font_sizes/font_size = 5
+theme_override_styles/focus = SubResource("StyleBoxEmpty_d13ii")
+text = "fULL kEYBOARD"
+
+[node name="Haptic Btn" type="Button" parent="Arranger/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 10
+theme_override_fonts/font = ExtResource("20_d13ii")
+theme_override_font_sizes/font_size = 5
+theme_override_styles/focus = SubResource("StyleBoxEmpty_d13ii")
+text = "hAPTIC: oN"
+alignment = 2
+metadata/_edit_use_anchors_ = true
+
 [node name="kbanchor" type="Node2D" parent="Arranger"]
 position = Vector2(0, 300)
 
 [node name="kb_pocketchip" type="Node2D" parent="Arranger/kbanchor"]
 position = Vector2(0, -125)
 script = ExtResource("37_come4")
-
-[node name="Gaming Btn" type="Button" parent="Arranger/kbanchor/kb_pocketchip"]
-offset_left = 2.0
-offset_top = -13.0
-offset_right = 65.0
-offset_bottom = -4.0
-theme_override_styles/focus = SubResource("StyleBoxEmpty_d13ii")
-
-[node name="Gaming KB" type="Label" parent="Arranger/kbanchor/kb_pocketchip/Gaming Btn"]
-layout_mode = 0
-offset_left = 2.0
-offset_top = 2.0
-offset_right = 62.0
-offset_bottom = 7.0
-text = "gAMING kEYBOARD"
-label_settings = SubResource("LabelSettings_1u8w0")
 
 [node name="Key" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
 offset_top = 44.0
@@ -921,22 +922,6 @@ visible = false
 position = Vector2(0, -70)
 script = ExtResource("37_come4")
 type = 0
-
-[node name="Full Btn" type="Button" parent="Arranger/kbanchor/kb_gaming"]
-offset_left = 2.0
-offset_top = -12.0
-offset_right = 57.0
-offset_bottom = -3.0
-theme_override_styles/focus = SubResource("StyleBoxEmpty_1u8w0")
-
-[node name="Full KB" type="Label" parent="Arranger/kbanchor/kb_gaming/Full Btn"]
-layout_mode = 0
-offset_left = 2.0
-offset_top = 2.0
-offset_right = 54.0
-offset_bottom = 7.0
-text = "fULL kEYBOARD"
-label_settings = SubResource("LabelSettings_1u8w0")
 
 [node name="esc" parent="Arranger/kbanchor/kb_gaming" instance=ExtResource("20_82xsv")]
 offset_left = 77.0
