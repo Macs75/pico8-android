@@ -22,7 +22,7 @@ by @unmatchedbracket"
 config/version="0.0.2"
 run/main_scene="uid://clwlaw414wfp8"
 config/quit_on_go_back=false
-config/features=PackedStringArray("4.4", "Mobile")
+config/features=PackedStringArray("4.5", "Mobile")
 boot_splash/bg_color=Color(0.00784314, 0.0156863, 0.0235294, 1)
 boot_splash/use_filter=false
 boot_splash/image="uid://c3dqg0oq8wp1"
