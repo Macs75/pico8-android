@@ -8,6 +8,7 @@
 offset_right = 31.0
 offset_bottom = 31.0
 scale = Vector2(2, 2)
+mouse_filter = 0
 texture = ExtResource("1_rsxs0")
 script = ExtResource("2_rsxs0")
 

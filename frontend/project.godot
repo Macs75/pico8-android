@@ -19,7 +19,7 @@ config/description="
 
 
 by @unmatchedbracket"
-config/version="0.0.2"
+config/version="0.0.3"
 run/main_scene="uid://clwlaw414wfp8"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.5", "Mobile")
@@ -32,7 +32,7 @@ config/icon="uid://cishtcd4y3no7"
 
 window/size/viewport_width=256
 window/size/viewport_height=512
-window/handheld/orientation=5
+window/handheld/orientation=6
 
 [editor_plugins]
 

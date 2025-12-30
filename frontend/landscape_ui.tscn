@@ -1,0 +1,121 @@
+[gd_scene load_steps=4 format=3 uid="uid://dgbacxvbwjfsh"]
+
+[ext_resource type="Script" uid="uid://cd42rybf366x2" path="res://landscape_ui.gd" id="1_land"]
+[ext_resource type="PackedScene" uid="uid://bgklhpsaac82q" path="res://omnipad.tscn" id="2_pad"]
+[ext_resource type="PackedScene" uid="uid://c5k0xmbhdlmaw" path="res://key.tscn" id="3_key"]
+
+[node name="LandscapeUI" type="CanvasLayer"]
+script = ExtResource("1_land")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LeftPad" type="Control" parent="Control"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 60.0
+offset_top = -200.0
+offset_right = 360.0
+offset_bottom = 200.0
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Omnipad" parent="Control/LeftPad" instance=ExtResource("2_pad")]
+layout_mode = 0
+offset_left = -15.5
+offset_top = -15.5
+offset_right = 15.5
+offset_bottom = 15.5
+scale = Vector2(12, 12)
+
+[node name="RightPad" type="Control" parent="Control"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -360.0
+offset_top = -200.0
+offset_right = -60.0
+offset_bottom = 200.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Z" parent="Control/RightPad" instance=ExtResource("3_key")]
+layout_mode = 0
+offset_left = 39.0
+offset_top = -90.0
+offset_right = 51.25
+offset_bottom = -78.583336
+scale = Vector2(12, 12)
+key_id = "Z"
+cap_type = 1
+cap_text = "06"
+font_type = 4
+special_behaviour = 1
+
+[node name="X" parent="Control/RightPad" instance=ExtResource("3_key")]
+layout_mode = 0
+offset_left = -135.99998
+offset_top = 21.0
+offset_right = -123.33331
+offset_bottom = 32.25
+scale = Vector2(12, 12)
+key_id = "X"
+cap_type = 1
+cap_text = "05"
+font_type = 4
+special_behaviour = 1
+
+[node name="SystemButtons" type="Control" parent="Control"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -300.0
+offset_bottom = 200.0
+grow_horizontal = 0
+mouse_filter = 2
+
+[node name="Escape" parent="Control/SystemButtons" instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.06333333
+anchor_top = 0.005
+anchor_right = 0.11222224
+anchor_bottom = 0.02583334
+offset_left = -120.0
+offset_top = 40.0
+offset_right = -114.0
+offset_bottom = 49.0
+scale = Vector2(6, 6)
+key_id = "Escape"
+cap_text = "eSC"
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Pause" parent="Control/SystemButtons" instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.043333333
+anchor_right = 0.0055555725
+anchor_bottom = 0.02083334
+offset_left = -240.0
+offset_top = 40.0
+offset_right = -234.0
+offset_bottom = 49.0
+scale = Vector2(6, 6)
+key_id = "P"
+cap_text = "pAUSE"
+unicode = false
+metadata/_edit_use_anchors_ = true
