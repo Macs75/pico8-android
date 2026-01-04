@@ -13,5 +13,13 @@
 3. In Godot, **Project > Install Android Build Template**
 4. then just do the normal **Project > Export**
 
+## 📱 Compatibility
+
+The current version of the APK has the following requirements:
+
+- **Operating System:** Android 9.0 (Pie) or higher (API level 28+)
+- **Architecture:** 64-bit (arm64-v8a)
+- **Note:** 32-bit devices (armeabi-v7a) and versions older than Android 9 are not supported.
+
 ## Support me ( this fork )
 If you like this project and would like to support me for more improvementsyou cab buy me a coffee with ko-fi: https://ko-fi.com/macs34661
