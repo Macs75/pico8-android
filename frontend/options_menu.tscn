@@ -52,10 +52,11 @@ layout_mode = 2
 [node name="ButtonHaptic" type="Button" parent="SlidePanel/VBoxContainer/HapticRow"]
 unique_name_in_owner = true
 layout_mode = 2
+layout_mode = 2
 size_flags_horizontal = 3
-focus_mode = 0
+focus_mode = 2
 mouse_filter = 1
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
@@ -80,9 +81,9 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-focus_mode = 0
+focus_mode = 2
 mouse_filter = 1
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
@@ -107,12 +108,12 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-focus_mode = 0
+focus_mode = 2
 mouse_filter = 1
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 text = "Integer Scaling"
 flat = true
 alignment = 0
@@ -127,6 +128,33 @@ unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 
+[node name="ShowControlsRow" type="HBoxContainer" parent="SlidePanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="ButtonShowControls" type="Button" parent="SlidePanel/VBoxContainer/ShowControlsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+text = "Hide UI w/ Controller"
+flat = true
+alignment = 0
+
+[node name="WrapperShowControls" type="Control" parent="SlidePanel/VBoxContainer/ShowControlsRow"]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+
+[node name="ToggleShowControls" type="CheckButton" parent="SlidePanel/VBoxContainer/ShowControlsRow/WrapperShowControls"]
+unique_name_in_owner = true
+layout_mode = 0
+focus_mode = 0
+
 [node name="InputModeRow" type="HBoxContainer" parent="SlidePanel/VBoxContainer"]
 layout_mode = 2
 
@@ -134,9 +162,9 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-focus_mode = 0
+focus_mode = 2
 mouse_filter = 1
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
@@ -176,7 +204,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 size_flags_vertical = 4
-focus_mode = 0
+focus_mode = 2
 min_value = 0.1
 max_value = 2.0
 step = 0.1
@@ -189,17 +217,41 @@ theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 text = "0.5"
 horizontal_alignment = 2
 
+[node name="Spacer" type="Control" parent="SlidePanel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ButtonAppSettings" type="Button" parent="SlidePanel/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+text = "Deep Links Settings"
+flat = true
+
 [node name="ButtonSave" type="Button" parent="SlidePanel/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_vertical = 10
-focus_mode = 0
+focus_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
 text = "Save Settings"
+flat = true
 
 [node name="CloseButton" type="Button" parent="SlidePanel/VBoxContainer"]
 layout_mode = 2
-focus_mode = 0
+focus_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
 text = "Close Menu"
+flat = true
 
 [node name="VersionLabel" type="Label" parent="SlidePanel/VBoxContainer"]
 unique_name_in_owner = true

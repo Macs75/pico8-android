@@ -21,15 +21,29 @@ func reconnect():
 	tcp = StreamPeerTCP.new()
 	var err = tcp.connect_to_host(HOST, PORT)
 	if err != OK:
-		print("Failed to start connection")
+		print("Failed to start connection. Error code: ", err)
 	last_message_time = Time.get_ticks_msec()
+
+func hard_reset_connection():
+	print("Forcing Hard TCP Reset...")
+	if tcp:
+		tcp.disconnect_from_host()
+		tcp = null
+	synched = false
+	last_message_time = 0 # Forces immediate reconnect in _process
 
 static var instance: PicoVideoStreamer
 func _ready() -> void:
 	instance = self
 	set_process_input(true)
 	
-	last_message_time = Time.get_ticks_msec() - RETRY_INTERVAL
+	instance = self
+	set_process_input(true)
+	
+	_setup_quit_overlay()
+	
+	# Try to start TCP connection
+	reconnect()
 	
 	# Connect the single keyboard toggle button
 	var keyboard_btn = get_node("Arranger/kbanchor/HBoxContainer/Keyboard Btn")
@@ -103,6 +117,7 @@ var last_mouse_state = [0, 0, 0]
 var synched = false
 
 func _process(delta: float) -> void:
+	#print("status :", current_custom_data[0])
 	if not (tcp and tcp.get_status() == StreamPeerTCP.STATUS_CONNECTED):
 		loading.visible = true
 	if not tcp:
@@ -211,7 +226,7 @@ func _process(delta: float) -> void:
 			print("timeout detected")
 			reconnect()
 	else:
-		print("connection failed")
+		print("connection failed, status: ", tcp.get_status())
 		tcp = null
 		
 const SDL_KEYMAP: Dictionary = preload("res://sdl_keymap.json").data
@@ -230,6 +245,12 @@ func send_input(char: int):
 			PIDOT_EVENT_CHAREV, char,
 			0, 0, 0, 0, 0, 0
 		])
+
+var quit_overlay: Control
+# Controller Navigation
+var btn_quit_yes: Button
+var btn_quit_no: Button
+var quit_focus_yes: bool = true
 
 var held_keys = []
 
@@ -267,12 +288,51 @@ static func is_system_landscape() -> bool:
 	return size.x >= size.y
 
 
-func vkb_setstate(id: String, down: bool, unicode: int = 0, echo: bool = false):
+func vkb_setstate(id: String, down: bool, unicode: int = 0, echo = false):
+	# INTENT SESSION EXIT (via specific button)
+	# Must be checked BEFORE SDL_KEYMAP validation because "IntentExit" is not in the map!
+	if id == "IntentExit":
+		if down:
+			if quit_overlay:
+				quit_overlay.visible = true
+				quit_focus_yes = true # Reset focus to "Yes"
+				_update_quit_focus_visuals()
+		return
+
 	if id not in SDL_KEYMAP:
 		return
 	if (id not in held_keys) and not down:
 		return
+		
 	if down:
+		# CONTROLLER NAVIGATION for Quit Overlay
+		if quit_overlay and quit_overlay.visible:
+			if id == "Left":
+				if quit_focus_yes:
+					quit_focus_yes = false
+					_update_quit_focus_visuals()
+				return
+			
+			if id == "Right":
+				if not quit_focus_yes:
+					quit_focus_yes = true
+					_update_quit_focus_visuals()
+				return
+			
+			if id == "Z": # JoyButton A (Confirm)
+				if quit_focus_yes:
+					_quit_app()
+				else:
+					quit_overlay.visible = false
+				return
+				
+			if id == "X": # JoyButton B (Cancel)
+				quit_overlay.visible = false
+				return
+			
+			# Block other inputs while overlay is open
+			return
+		
 		# Add haptic feedback for key presses (only on key down, not key up)
 		if not echo and haptic_enabled:
 			Input.vibrate_handheld(35, 1)
@@ -348,7 +408,14 @@ static func set_integer_scaling_enabled(enabled: bool):
 static func get_integer_scaling_enabled() -> bool:
 	return integer_scaling_enabled
 
-const TAP_MAX_DURATION = 350 # ms (Relaxed from 200)
+static var always_show_controls: bool = false
+static func set_always_show_controls(enabled: bool):
+	always_show_controls = enabled
+	
+static func get_always_show_controls() -> bool:
+	return always_show_controls
+
+const TAP_MAX_DURATION = 350 # ms
 var _trackpad_click_pending = false
 var _trackpad_tap_start_time = 0
 var _trackpad_total_move = 0.0
@@ -365,6 +432,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			touch_last_pos = event.position
 			touch_down_time = Time.get_ticks_msec()
 			is_touching = true
+			
+			# Tap-to-Dismiss Keyboard
+			var kb_height = DisplayServer.virtual_keyboard_get_height()
+			if kb_height > 0:
+				var screen_height = get_viewport().get_visible_rect().size.y
+				# If tap is above the keyboard area
+				if event.position.y < (screen_height - kb_height):
+					DisplayServer.virtual_keyboard_hide()
 			
 			if input_mode == InputMode.TRACKPAD:
 				_trackpad_click_pending = true
@@ -456,6 +531,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			JoyButton.JOY_BUTTON_DPAD_DOWN: key_id = "Down"
 			JoyButton.JOY_BUTTON_DPAD_LEFT: key_id = "Left"
 			JoyButton.JOY_BUTTON_DPAD_RIGHT: key_id = "Right"
+			JoyButton.JOY_BUTTON_LEFT_SHOULDER:
+				if event.pressed:
+					_toggle_options_menu()
 		
 		if key_id != "":
 			# Only send if state actually changed to avoid spam if logic elsewhere was flawed
@@ -490,7 +568,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				if "Down" not in held_keys: vkb_setstate("Down", true)
 			else:
 				if "Down" in held_keys: vkb_setstate("Down", false)
-
+		
 
 	#if not (tcp and tcp.get_status() == StreamPeerTCP.STATUS_CONNECTED):
 		#return;
@@ -556,3 +634,129 @@ func _send_trackpad_click():
 		tcp.put_data([PIDOT_EVENT_MOUSEEV, up_state[0], up_state[1], up_state[2], 0, 0, 0, 0])
 	
 	last_mouse_state = up_state
+	
+func _quit_app():
+	get_tree().quit()
+
+func _setup_quit_overlay():
+	var canvas_layer = CanvasLayer.new()
+	canvas_layer.layer = 100
+	add_child(canvas_layer)
+	
+	quit_overlay = Control.new()
+	quit_overlay.name = "QuitOverlay"
+	quit_overlay.visible = false
+	quit_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	canvas_layer.add_child(quit_overlay)
+	
+
+	# Dimmer
+	var bg = ColorRect.new()
+	bg.color = Color(0, 0, 0, 0.8)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP # Block input
+	quit_overlay.add_child(bg)
+	
+	# Robust Centering Container
+	var center_container = CenterContainer.new()
+	center_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	quit_overlay.add_child(center_container)
+	
+	# Panel
+	var panel = PanelContainer.new()
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.1, 0.1, 0.1, 1.0)
+	style.border_width_left = 4
+	style.border_width_top = 4
+	style.border_width_right = 4
+	style.border_width_bottom = 4
+	style.border_color = Color(1, 1, 1, 1)
+	style.expand_margin_top = 10
+	style.expand_margin_bottom = 10
+	style.expand_margin_left = 10
+	style.expand_margin_right = 10
+	panel.add_theme_stylebox_override("panel", style)
+	center_container.add_child(panel)
+	
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 40)
+	# Add padding around the VBox content
+	var margin_container = MarginContainer.new()
+	margin_container.add_theme_constant_override("margin_top", 40)
+	margin_container.add_theme_constant_override("margin_bottom", 40)
+	margin_container.add_theme_constant_override("margin_left", 40)
+	margin_container.add_theme_constant_override("margin_right", 40)
+	margin_container.add_child(vbox)
+	panel.add_child(margin_container)
+	
+	# Font setup
+	var font = load("res://assets/font/atlas-0.png")
+	
+	var label = Label.new()
+	label.text = "RETURN TO LAUNCHER?"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if font:
+		label.add_theme_font_override("font", font)
+		label.add_theme_font_size_override("font_size", 48) # Increased to 48
+	vbox.add_child(label)
+	
+	var hbox = HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 60)
+	vbox.add_child(hbox)
+	
+	var btn_cancel = _create_pixel_button("NO", font)
+	btn_cancel.pressed.connect(func(): quit_overlay.visible = false)
+	hbox.add_child(btn_cancel)
+	btn_quit_no = btn_cancel
+	
+	var btn_quit = _create_pixel_button("YES", font)
+	btn_quit.pressed.connect(_quit_app)
+	hbox.add_child(btn_quit)
+	btn_quit_yes = btn_quit
+	
+	_update_quit_focus_visuals()
+
+func _toggle_options_menu():
+	var menu = get_node_or_null("OptionsMenu")
+	if menu:
+		if menu.is_open:
+			menu.close_menu()
+		else:
+			menu.open_menu()
+
+func _update_quit_focus_visuals():
+	if not btn_quit_yes or not btn_quit_no: return
+	
+	# Focus Color (Redish)
+	var col_focus = Color(1, 0.2, 0.4, 1)
+	# Normal Color (Dark Blue)
+	var col_normal = Color(0.2, 0.2, 0.3, 1)
+	
+	var style_yes = btn_quit_yes.get_theme_stylebox("normal")
+	if style_yes is StyleBoxFlat:
+		style_yes.bg_color = col_focus if quit_focus_yes else col_normal
+		
+	var style_no = btn_quit_no.get_theme_stylebox("normal")
+	if style_no is StyleBoxFlat:
+		style_no.bg_color = col_focus if not quit_focus_yes else col_normal
+
+func _create_pixel_button(text, font) -> Button:
+	var btn = Button.new()
+	btn.text = text
+	# Minimal style for pixel art look
+	var style_normal = StyleBoxFlat.new()
+	style_normal.bg_color = Color(0.2, 0.2, 0.3, 1)
+	style_normal.set_content_margin_all(20) # Increased padding
+	var style_pressed = StyleBoxFlat.new()
+	style_pressed.bg_color = Color(1, 0.2, 0.4, 1) # Pico-8 Redish
+	style_pressed.set_content_margin_all(20) # Increased padding
+	
+	btn.add_theme_stylebox_override("normal", style_normal)
+	btn.add_theme_stylebox_override("hover", style_normal)
+	btn.add_theme_stylebox_override("pressed", style_pressed)
+	
+	if font:
+		btn.add_theme_font_override("font", font)
+		btn.add_theme_font_size_override("font_size", 48) # Increased to 48
+	return btn

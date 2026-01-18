@@ -63,6 +63,11 @@ func _ready() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	
+	# Force auto_show to false to prevent Arranger from overriding visibility
+	%AllFileAccessContainer.auto_show = false
+	%SelectPicoZip.auto_show = false
+	%UnpackProgressContainer.auto_show = false
+	
 	if has_storage_access():
 		check_for_files()
 	else:

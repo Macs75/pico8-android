@@ -1,5 +1,8 @@
 # Godot 4+ specific ignores
 .godot/
-/android/
+/android/*
+!/android/build/
+/android/build/*
+!/android/build/AndroidManifest.xml
 .vscode/
 *.apk

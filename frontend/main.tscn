@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=3 uid="uid://crejfo36g5bip"]
+[gd_scene load_steps=40 format=3 uid="uid://crejfo36g5bip"]
 
 [ext_resource type="Script" uid="uid://6wbbc364xejy" path="res://video_streamer.gd" id="1_ig7tw"]
 [ext_resource type="Texture2D" uid="uid://n7xqvr4frt03" path="res://assets/cartdl/cartdl_01.png" id="5_b1qrp"]
@@ -170,7 +170,6 @@ script = ExtResource("41_4lmeg")
 
 [node name="OptionsMenu" parent="." instance=ExtResource("170_options")]
 
-
 [node name="Display" type="SubViewport" parent="."]
 handle_input_locally = false
 size = Vector2i(128, 128)
@@ -226,8 +225,6 @@ theme_override_fonts/font = ExtResource("20_d13ii")
 theme_override_font_sizes/font_size = 5
 theme_override_styles/focus = SubResource("StyleBoxEmpty_d13ii")
 text = "fULL kEYBOARD"
-
-
 
 [node name="kb_pocketchip" type="Node2D" parent="Arranger/kbanchor"]
 visible = false
@@ -885,7 +882,6 @@ texture = ExtResource("23_1u8w0")
 offset_left = 77.0
 offset_top = 4.0
 offset_right = 88.0
-offset_bottom = 10.0
 texture = ExtResource("47_esc_norm")
 patch_margin_left = 0
 patch_margin_top = 0
@@ -903,7 +899,6 @@ metadata/_edit_use_anchors_ = true
 offset_left = 103.0
 offset_top = 4.0
 offset_right = 114.0
-offset_bottom = 10.0
 texture = ExtResource("49_menu_norm")
 patch_margin_left = 0
 patch_margin_top = 0

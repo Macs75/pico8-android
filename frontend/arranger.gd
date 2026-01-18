@@ -2,6 +2,7 @@ extends Control
 
 @export var rect: Control
 @export var center_y: bool = false
+@export var auto_show: bool = true
 @export var kb_anchor: Node2D = null
 
 var display_frame: Node2D = null
@@ -39,6 +40,7 @@ func _on_resize():
 	dirty = true
 
 func _ready() -> void:
+	visible = false
 	var streamer = get_parent()
 	if streamer.has_signal("input_mode_changed"):
 		streamer.input_mode_changed.connect(_update_buttons_for_mode)
@@ -64,7 +66,41 @@ func _ready() -> void:
 	
 	# Initial check
 	update_controller_state()
-	visible = false
+
+	# Connect runcmd separately to avoid dependency issues if it's not ready yet
+	# Trigger deferred setup to ensure runcmd is ready
+	call_deferred("_setup_intent_listener")
+
+func _setup_intent_listener():
+	var runcmd = get_tree().root.get_node_or_null("Main/runcmd")
+	if runcmd:
+		if not runcmd.intent_session_started.is_connected(_on_intent_session_started):
+			runcmd.intent_session_started.connect(_on_intent_session_started)
+		# Check late join
+		if runcmd.is_intent_session:
+			_on_intent_session_started()
+
+func _on_intent_session_started():
+	# 1. Patch Gaming Keyboard (Node: 'esc')
+	var gaming_esc = get_node_or_null("kbanchor/kb_gaming/esc")
+	if gaming_esc:
+		_patch_exit_button(gaming_esc)
+
+func _patch_exit_button(btn: Control):
+	# Load Power Icon (if not already loaded globally, load locally)
+	var tex_pwr = load("res://assets/btn_power_normal.png")
+	var tex_pwr_press = load("res://assets/btn_power_pressed.png")
+	
+	if btn.has_method("set_textures") and tex_pwr and tex_pwr_press:
+		btn.set_textures(tex_pwr, tex_pwr_press)
+		
+	if "key_id" in btn:
+		btn.key_id = "IntentExit"
+	
+	if btn.has_method("set_cap_text"):
+		btn.cap_text = ""
+	elif "text" in btn:
+		btn.text = ""
 
 var frames_rendered = 0
 
@@ -133,7 +169,7 @@ func _process(delta: float) -> void:
 			# 80 * 2 = 160. Total width 288.
 			scale_calc_size.x += 160
 		
-
+	
 		# Calculate raw scale based on virtual size
 		# We use floor if integer scaling is enabled, otherwise we use the raw float
 		var ratio_x = available_size.x / scale_calc_size.x
@@ -163,7 +199,7 @@ func _process(delta: float) -> void:
 		var target_scale = 8.5 / float(maxScale)
 		dpad.scale = Vector2(target_scale, target_scale)
 
-	if not visible:
+	if auto_show and not visible:
 		visible = true
 	# Calculate kb_height based on overlap
 	if cached_kb_active:
@@ -200,16 +236,18 @@ func _process(delta: float) -> void:
 		
 	# Keyboard Anchor Control
 	if kb_anchor != null:
-		if is_landscape or is_controller_connected:
-			# Normal logic: Hide in landscape or if controller connected
+		var always_show = PicoVideoStreamer.get_always_show_controls()
+		
+		if is_landscape:
+			kb_anchor.visible = false # Always hide portrait anchor in landscape
+		elif is_controller_connected and not always_show:
 			kb_anchor.visible = false
 		else:
-			# Normal Portrait logic
 			kb_anchor.visible = true
 
 
 	if is_landscape:
-		landscape_ui.visible = not is_controller_connected
+		landscape_ui.visible = (not is_controller_connected) or PicoVideoStreamer.get_always_show_controls()
 		# Perfect Centering for Landscape Game Display
 		self.position = (Vector2(screensize) / 2).floor()
 	else:

@@ -65,11 +65,11 @@ font_size = 10
 [node name="Boot" type="Node2D"]
 script = ExtResource("1_hjvc4")
 
-[node name="SelectPicoZip" type="Node2D" parent="."]
+[node name="SelectPicoZipNode" type="Node2D" parent="."]
+
+[node name="SelectPicoZip" type="Control" parent="SelectPicoZipNode" node_paths=PackedStringArray("rect")]
 unique_name_in_owner = true
 visible = false
-
-[node name="Control2" type="Control" parent="SelectPicoZip" node_paths=PackedStringArray("rect")]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 128.0
@@ -80,8 +80,9 @@ scale = Vector2(2.055, 2.055)
 script = ExtResource("6_xf3if")
 rect = NodePath("StackContainer")
 center_y = true
+auto_show = false
 
-[node name="StackContainer" type="VBoxContainer" parent="SelectPicoZip/Control2"]
+[node name="StackContainer" type="VBoxContainer" parent="SelectPicoZipNode/SelectPicoZip"]
 layout_mode = 0
 offset_left = -74.0
 offset_top = -32.0
@@ -89,10 +90,10 @@ offset_right = 76.0
 offset_bottom = 32.0
 alignment = 1
 
-[node name="CenterContainer" type="CenterContainer" parent="SelectPicoZip/Control2/StackContainer"]
+[node name="CenterContainer" type="CenterContainer" parent="SelectPicoZipNode/SelectPicoZip/StackContainer"]
 layout_mode = 2
 
-[node name="OpenPickerButton" type="Button" parent="SelectPicoZip/Control2/StackContainer/CenterContainer"]
+[node name="OpenPickerButton" type="Button" parent="SelectPicoZipNode/SelectPicoZip/StackContainer/CenterContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_default_cursor_shape = 2
@@ -113,13 +114,13 @@ theme_override_styles/focus = ExtResource("5_m6jb1")
 text = "sELECT pico-8 RASPBERRY pI .ZIP
 (PICO-8_X.X.XX_RASPI.ZIP)"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="SelectPicoZip/Control2/StackContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="SelectPicoZipNode/SelectPicoZip/StackContainer"]
 custom_minimum_size = Vector2(128, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme = SubResource("Theme_8ye5a")
 
-[node name="Label" type="Label" parent="SelectPicoZip/Control2/StackContainer/ScrollContainer"]
+[node name="Label" type="Label" parent="SelectPicoZipNode/SelectPicoZip/StackContainer/ScrollContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "..."
@@ -133,6 +134,7 @@ anchors_preset = 0
 script = ExtResource("6_xf3if")
 rect = NodePath("UnpackProgress")
 center_y = true
+auto_show = false
 
 [node name="UnpackProgress" type="Label" parent="UnpackProgressContainer"]
 unique_name_in_owner = true
@@ -160,6 +162,7 @@ anchors_preset = 0
 script = ExtResource("6_xf3if")
 rect = NodePath("VBoxContainer")
 center_y = true
+auto_show = false
 
 [node name="VBoxContainer" type="VBoxContainer" parent="AllFileAccessContainer"]
 clip_contents = true

@@ -7,17 +7,16 @@
 [node name="Omnipad" type="TextureRect"]
 offset_right = 44.0
 offset_bottom = 43.0
-scale = Vector2(1, 1)
 mouse_filter = 0
 texture = ExtResource("1_rsxs0")
 script = ExtResource("2_rsxs0")
 
 [node name="Stick" type="Sprite2D" parent="."]
 unique_name_in_owner = true
+visible = false
 position = Vector2(10, 9)
 texture = ExtResource("3_o0p1c")
 centered = false
-visible = false
 
 [node name="Up" type="TextureRect" parent="."]
 unique_name_in_owner = true
