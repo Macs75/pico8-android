@@ -38,6 +38,8 @@ This fork introduces several enhancements to improve the experience on Android d
 *   **Android Handheld Support:** Tested and verified on devices like the **RG Cube**.
 *   **Virtual Keyboard:** Access the Android keyboard at any time by sliding up from the bottom of the screen.
 *   **Options Menu:** Access the side menu for settings and options by sliding from the left side of the screen.
+*   **Frontend support:** Now you can use ES-DE to launch Pico-8 games with this application as alternative emulator. ( see release notes of v.0.0.7 waiting for integrated support from ES-DE team )
+*   **Direct card launch:** You can now launch cards directly from any file manager. Moreover,   if you activate deep links, you can also launch cards directly from the https://www.lexaloffle.com/ website. Alternatively available on browser that support it is available "Send Link " and "Send Image" options to launch the card in this app.
 
 
 ## 📂 Project Structure
