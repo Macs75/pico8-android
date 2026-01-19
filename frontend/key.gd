@@ -41,7 +41,7 @@ func send_ev(down: bool, echo: bool = false):
 			unicode_id = (shift_unicode_override if shift_unicode_override else cap_text.to_upper()).to_ascii_buffer()[0]
 		else:
 			unicode_id = (unicode_override if unicode_override else cap_text.to_lower()).to_ascii_buffer()[0]
-		print("sending unicode " + String.chr(unicode_id))
+		# print("sending unicode " + String.chr(unicode_id))
 	var id = key_id
 	if key_id_shift_override and shifting:
 		id = key_id_shift_override
@@ -54,7 +54,7 @@ func send_ev(down: bool, echo: bool = false):
 	
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch or event is InputEventMouseButton:
-		print(event)
+		# print(event)
 		if event.pressed:
 			if key_state == KeyState.RELEASED:
 				if can_lock and (event.double_tap if (event is InputEventScreenTouch) else event.double_click):
@@ -63,12 +63,15 @@ func _gui_input(event: InputEvent) -> void:
 					key_state = KeyState.HELD
 					repeat_timer = Time.get_ticks_msec() + REPEAT_TIME_FIRST
 				send_ev(true)
+				_update_visuals()
 			elif key_state == KeyState.LOCKED:
 				key_state = KeyState.HELD
 				repeat_timer = INF
+				_update_visuals()
 		elif key_state == KeyState.HELD:
 			key_state = KeyState.RELEASED
 			send_ev(false)
+			_update_visuals()
 
 	match key_state:
 		KeyState.RELEASED:
@@ -98,6 +101,8 @@ func _ready() -> void:
 		self.texture = texture_pressed
 		self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		%Label.visible = false
+	
+	_update_visuals()
 
 func set_textures(new_normal: Texture2D, new_pressed: Texture2D):
 	texture_normal = new_normal
@@ -108,22 +113,37 @@ func set_textures(new_normal: Texture2D, new_pressed: Texture2D):
 		self.texture = texture_normal if texture_normal else keycap_normal
 	elif key_state == KeyState.HELD:
 		self.texture = texture_pressed if texture_pressed else keycap_held
+	_update_visuals()
+
+var last_shift_state := false
 
 func _process(delta: float) -> void:
-	var shift_held = "Shift" in PicoVideoStreamer.instance.held_keys
+	# 1. Handle Key Repeats
 	if key_state == KeyState.HELD and Time.get_ticks_msec() > repeat_timer:
 		if can_lock:
 			key_state = KeyState.LOCKED
 			self.texture = keycap_locked
+			_update_visuals()
 		else:
 			repeat_timer = Time.get_ticks_msec() + REPEAT_TIME_AFTER
 			send_ev(true, true)
-		#self.modulate = self.modulate.inverted()
+	
+	# 2. Check for Shift Toggle
+	var shift_held = "Shift" in PicoVideoStreamer.instance.held_keys
+	if shift_held != last_shift_state:
+		last_shift_state = shift_held
+		_update_visuals()
+
+func _update_visuals() -> void:
+	var shift_held = last_shift_state
+	
+	# Update Text
 	if shift_held:
 		%Label.text = cap_text_shift
 	else:
 		%Label.text = cap_text
 		
+	# Update Font settings
 	var myrect = self.get_rect().size / 2
 	var lblrect = %Label.get_rect().size
 
@@ -134,6 +154,7 @@ func _process(delta: float) -> void:
 		and (font_type != FontType.WIDE_W_SHIFT or not shift_held)
 	)
 	var small_font_on = (not regular_font_on or font_type == FontType.SMALL) and font_type != FontType.CUSTOM
+	
 	if regular_font_on:
 		%Label.label_settings.font = font_normal
 	elif font_type == FontType.CUSTOM or font_type == FontType.CUSTOM_SMALL:
@@ -141,23 +162,23 @@ func _process(delta: float) -> void:
 	else:
 		%Label.label_settings.font = font_wide
 	
-	# %Label.label_settings.font_color = Color(1, 0, 0, 1) # Force BLACK color
-	
 	if small_font_on:
 		%Label.label_settings.font_size = 5
 	else:
 		%Label.label_settings.font_size = 10
 		
-	%Label.position = Vector2(
-		round(myrect.x - lblrect.x),
-		round(myrect.y - lblrect.y)
-	) / 2
+	# Calculate Position
+	var pos = (myrect - lblrect) / 2
+	
 	if regular_font_on:
-		%Label.position += Vector2(0.5, -1)
+		pos += Vector2(0.5, -1)
 	else:
-		%Label.position += Vector2(0, -1)
+		pos += Vector2(0, -1)
+		
 	if key_state != KeyState.RELEASED:
-		%Label.position += Vector2(0, 1)
+		pos += Vector2(0, 1)
+		
+	%Label.position = pos.round()
 		
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_VISIBILITY_CHANGED:
@@ -165,3 +186,4 @@ func _notification(what: int) -> void:
 			key_state = KeyState.RELEASED
 			send_ev(false)
 			self.texture = texture_normal if texture_normal else keycap_normal
+			_update_visuals()

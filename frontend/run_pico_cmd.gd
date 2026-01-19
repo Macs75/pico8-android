@@ -11,6 +11,7 @@ enum RestartState {IDLE, REQUESTED, SENDING_CTRL_DOWN, SENDING_Q_DOWN, SENDING_Q
 var restart_state: RestartState = RestartState.IDLE
 var pending_restart_path: String = ""
 var state_timer: int = 0
+var process_check_timer: int = 0
 var last_received_data = ""
 var last_received_time = 0
 
@@ -106,6 +107,18 @@ func _launch_pico8(target_path: String) -> void:
 		else:
 			# External path: bind the parent directory to /home/custom_mount
 			var parent_dir = target_path.get_base_dir()
+			
+			# VALIDATE PATH EXISTENCE
+			# Android External Storage paths often arrive valid but unreadable if permissions are missing
+			# Or if they are symbolic links (like /Roms/) that apps can't see.
+			var dir_access = DirAccess.open(parent_dir)
+			if not dir_access:
+				print("ERROR: Cannot access external bind directory: ", parent_dir)
+				print("Attempting to proceed, but bind will likely fail.")
+				# Fallback? No, we can't guess where the file is if the path is wrong.
+			else:
+				print("External bind directory validated: ", parent_dir)
+			
 			var filename = target_path.get_file()
 			extra_bind_export = "export PROOT_EXTRA_BIND='--bind=" + parent_dir + ":/home/custom_mount'; "
 			run_arg = " -run /home/custom_mount/" + filename
@@ -215,10 +228,12 @@ func _kill_all_pico_processes() -> void:
 func _process(delta: float) -> void:
 	match restart_state:
 		RestartState.IDLE:
-			# Normal monitoring
-			if pico_pid and not OS.is_process_running(pico_pid):
-				# print("PICO-8 Process died! (PID: " + str(pico_pid) + ")")
-				get_tree().quit()
+			# Normal monitoring - Throttled to 1s
+			if Time.get_ticks_msec() > process_check_timer:
+				process_check_timer = Time.get_ticks_msec() + 1000
+				if pico_pid and not OS.is_process_running(pico_pid):
+					# print("PICO-8 Process died! (PID: " + str(pico_pid) + ")")
+					get_tree().quit()
 				
 		RestartState.REQUESTED:
 			# Step 1: Send Ctrl Down
@@ -282,10 +297,7 @@ func _complete_restart() -> void:
 	# Force TCP reset on streamer side to ensure immediate pickup
 	if PicoVideoStreamer.instance:
 		PicoVideoStreamer.instance.hard_reset_connection()
-		
-	# Wait for ports to clear and system to stabilize (OS needs time to release sockets)
-	OS.delay_msec(1500)
-		
+
 	# Final Step: Launch new process
 	print("Launching new PICO-8 instance: ", pending_restart_path)
 	_launch_pico8(pending_restart_path)

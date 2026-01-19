@@ -15,6 +15,12 @@ var tex_esc_pressed = preload("res://assets/btn_esc_pressed.png")
 var tex_power_normal = preload("res://assets/btn_poweroff_normal.png")
 var tex_power_pressed = preload("res://assets/btn_poweroff_pressed.png")
 
+@onready var arranger = get_node_or_null("../Arranger")
+@onready var dpad = get_node_or_null("Control/LeftPad/Omnipad")
+@onready var x_btn = get_node_or_null("Control/RightPad/X")
+@onready var z_btn = get_node_or_null("Control/RightPad/Z")
+@onready var esc_btn = get_node_or_null("Control/SystemButtons/Escape")
+
 func _ready() -> void:
 	# LandscapeUI is a child of Main (where PicoVideoStreamer script is attached)
 	var streamer = get_parent()
@@ -31,9 +37,13 @@ func _ready() -> void:
 		# Check if already started (late join)
 		if runcmd.is_intent_session:
 			_on_intent_session_started()
+			
+	# Optimize: Listen for resize instead of polling
+	get_tree().root.size_changed.connect(_on_resize)
+	# Initial Layout
+	_on_resize()
 
 func _on_intent_session_started():
-	var esc_btn = get_node_or_null("Control/SystemButtons/Escape")
 	if esc_btn:
 		esc_btn.set_textures(tex_power_normal, tex_power_pressed)
 		if "key_id" in esc_btn:
@@ -44,8 +54,7 @@ func _on_intent_session_started():
 		elif "text" in esc_btn:
 			esc_btn.text = ""
 
-func _process(delta: float) -> void:
-	var arranger = get_node_or_null("../Arranger")
+func _on_resize():
 	if arranger:
 		# Always update scale to ensure synchronization with Arranger
 		# Force uniform scaling to prevent distortion (use X scale for both axes)
@@ -55,7 +64,6 @@ func _process(delta: float) -> void:
 		size = get_viewport_rect().size / s
 		
 		# Inverse scale the high-res D-Pad so it stays physical size
-		var dpad = get_node_or_null("Control/LeftPad/Omnipad")
 		if dpad:
 			var target_scale = 8.5 / s
 			dpad.scale = Vector2(target_scale, target_scale)
@@ -63,14 +71,16 @@ func _process(delta: float) -> void:
 		size = get_viewport_rect().size
 
 	var is_landscape = PicoVideoStreamer.is_system_landscape()
-	var should_be_visible = is_landscape and not ControllerUtils.is_real_controller_connected()
+	var should_be_visible = is_landscape and not arranger.cached_controller_connected
 	
 	visible = should_be_visible
 
+func _process(_delta: float) -> void:
+	if arranger and arranger.dirty:
+		_on_resize()
+
+
 func _update_buttons_for_mode(is_trackpad: bool):
-	var x_btn = get_node_or_null("Control/RightPad/X")
-	var z_btn = get_node_or_null("Control/RightPad/Z")
-	
 	if is_trackpad:
 		if x_btn:
 			x_btn.set_textures(tex_mouse_l_normal, tex_mouse_l_pressed)

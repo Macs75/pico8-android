@@ -36,8 +36,6 @@ func update_controller_state():
 		cached_controller_connected = new_state
 		dirty = true
 
-func _on_resize():
-	dirty = true
 
 func _ready() -> void:
 	visible = false
@@ -70,6 +68,11 @@ func _ready() -> void:
 	# Connect runcmd separately to avoid dependency issues if it's not ready yet
 	# Trigger deferred setup to ensure runcmd is ready
 	call_deferred("_setup_intent_listener")
+
+	# Optimize: Listen for resize instead of polling
+	get_tree().root.size_changed.connect(_on_resize)
+	# Force initial layout check
+	_on_resize()
 
 func _setup_intent_listener():
 	var runcmd = get_tree().root.get_node_or_null("Main/runcmd")
@@ -104,46 +107,52 @@ func _patch_exit_button(btn: Control):
 
 var frames_rendered = 0
 
-func _process(delta: float) -> void:
+func _on_resize():
+	# Update cached size and dirtiness
+	var screensize = DisplayServer.window_get_size()
+	if screensize != last_screensize:
+		last_screensize = screensize
+		_update_layout()
+
+func _process(_delta: float) -> void:
 	if frames_rendered < 10:
 		frames_rendered += 1
+		# Force layout update during initial frames to settle
+		_on_resize()
+		_update_layout()
 		return
-		
-	var screensize := DisplayServer.window_get_size()
-	if screensize.x == 0 or screensize.y == 0:
-		return
-		
-	if screensize != last_screensize:
-		dirty = true
-		last_screensize = screensize
-		# Safe to check keyboard height on resize (rare event)
-		var real_kb_height = DisplayServer.virtual_keyboard_get_height()
-		if real_kb_height == 0:
-			cached_kb_active = false
+
+	# Poll keyboard height only (Android specific weirdness often requires this)
+	var real_kb_height = DisplayServer.virtual_keyboard_get_height()
+	
+	var kb_active_now = (real_kb_height > 0)
+	if cached_kb_active != kb_active_now:
+		cached_kb_active = kb_active_now
+		if not cached_kb_active:
 			# Restore focus to game loop if keyboard closed
 			if PicoVideoStreamer.instance:
 				PicoVideoStreamer.instance.release_input_locks()
+		_update_layout()
 		
-		if real_kb_height > 0:
-			cached_kb_active = true
+	if dirty:
+		_update_layout()
+
+func _update_layout():
+	dirty = false
+	var screensize = last_screensize
+	# If for some reason we missed a resize
+	if screensize == Vector2i.ZERO:
+		screensize = DisplayServer.window_get_size()
+		last_screensize = screensize
 		
-	if not dirty:
-		return
-	dirty = false # Reset flag
-	
 	var kb_height = 0
-	
 	var is_landscape = PicoVideoStreamer.is_system_landscape()
 
-	
 	var target_size = rect.size
 	var target_pos = rect.position
 	
 	# Reserve space for side controls:
-	# Assume we need at least some pixels on each side.
-	# Let's subtract a "safe zone" width from the available screen width calculation.
 	var available_size = Vector2(screensize)
-
 
 	# Use cached state instead of polling every frame
 	var is_controller_connected = cached_controller_connected
@@ -151,14 +160,12 @@ func _process(delta: float) -> void:
 	# If Landscape OR Controller is connected, we target the game-only size (128x128)
 	# BUT only if this is the actual game display (has display_container)
 	var maxScale: float = 1.0
-	var scale_factor: float = 1.0
+	var _scale_factor: float = 1.0
 	
 	if (is_landscape or is_controller_connected) and display_container:
 		target_size = Vector2(128, 128)
 		target_pos = Vector2(0, 0)
 		
-		# Define a "virtual" target size used ONLY for calculating the max scale.
-		# This ensures that we reserve enough "game-pixel" equivalent space for the UI.
 		var scale_calc_size = Vector2(128, 128)
 		
 		# Only reserve space for side controls if:
@@ -169,9 +176,6 @@ func _process(delta: float) -> void:
 			# 80 * 2 = 160. Total width 288.
 			scale_calc_size.x += 160
 		
-	
-		# Calculate raw scale based on virtual size
-		# We use floor if integer scaling is enabled, otherwise we use the raw float
 		var ratio_x = available_size.x / scale_calc_size.x
 		var ratio_y = available_size.y / scale_calc_size.y
 		var raw_scale = min(ratio_x, ratio_y)
@@ -204,17 +208,11 @@ func _process(delta: float) -> void:
 	# Calculate kb_height based on overlap
 	if cached_kb_active:
 		var real_kb_h = DisplayServer.virtual_keyboard_get_height()
-		# Calculate where the bottom of the Pico-8 specific screen is (in window coordinates)
 		var screen_bottom = 0
 		
-		# For this calculation, we need to know where the "Arranger" top-left is effectively placed
-		# Landscape is always centered. Portrait is usually 0, unless centered_y is on.
 		if is_landscape:
 			screen_bottom = (screensize.y / 2) + (64 * maxScale)
 		else:
-			# Portrait Logic:
-			# Arranger Y = (Centered ? (ScreenY - ContentY)/2 : 0)
-			# Screen Y = Arranger Y + 12 (top padding) + 128 (screen height)
 			var content_height = target_size.y * maxScale
 			var arr_y = (screensize.y - content_height) / 2 if center_y else 0
 			screen_bottom = arr_y + (140 * maxScale) # 140 = 12 (padding) + 128 (screen)
@@ -222,7 +220,6 @@ func _process(delta: float) -> void:
 		if screen_bottom > (screensize.y - real_kb_h):
 			kb_height = 64
 
-	
 	var extraSpace = Vector2(screensize) - (target_size * maxScale)
 	if kb_height:
 		extraSpace.y -= kb_height
@@ -247,7 +244,8 @@ func _process(delta: float) -> void:
 
 
 	if is_landscape:
-		landscape_ui.visible = (not is_controller_connected) or PicoVideoStreamer.get_always_show_controls()
+		if landscape_ui:
+			landscape_ui.visible = (not is_controller_connected) or PicoVideoStreamer.get_always_show_controls()
 		# Perfect Centering for Landscape Game Display
 		self.position = (Vector2(screensize) / 2).floor()
 	else:

@@ -14,9 +14,16 @@ const PIDOT_EVENT_MOUSEEV = 1;
 const PIDOT_EVENT_KEYEV = 2;
 const PIDOT_EVENT_CHAREV = 3;
 
+var stream_texture: ImageTexture
+
 var last_message_time: int = 0
 const RETRY_INTERVAL: int = 200
 const READ_TIMEOUT: int = 5000
+var is_intent_session: bool = false
+func _on_intent_session_started():
+	print("Video Streamer: Intent Session Started (Controller Mapping Updated)")
+	is_intent_session = true
+
 func reconnect():
 	tcp = StreamPeerTCP.new()
 	var err = tcp.connect_to_host(HOST, PORT)
@@ -42,6 +49,14 @@ func _ready() -> void:
 	
 	_setup_quit_overlay()
 	
+	# Pre-calculate PackedByteArray for fast sync check
+	SYNC_SEQ_PBA = PackedByteArray(SYNC_SEQ)
+	
+	# Pre-allocate texture for performance
+	_rendering_image = Image.create(128, 128, false, Image.FORMAT_RGB8)
+	stream_texture = ImageTexture.create_from_image(_rendering_image)
+	display.texture = stream_texture
+
 	# Try to start TCP connection
 	reconnect()
 	
@@ -54,6 +69,13 @@ func _ready() -> void:
 		
 	KBMan.subscribe(_on_external_keyboard_change)
 	
+
+	# Connect to RunCmd for Intent Session updates
+	var runcmd = get_node_or_null("runcmd")
+	if runcmd:
+		runcmd.intent_session_started.connect(_on_intent_session_started)
+		if runcmd.is_intent_session:
+			is_intent_session = true
 
 	# Listen for controller hot-plugging
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
@@ -83,23 +105,18 @@ func release_input_locks():
 
 var buffer := []
 const SYNC_SEQ = [80, 73, 67, 79, 56, 83, 89, 78, 67] # "PICO8SYNC"
+var SYNC_SEQ_PBA: PackedByteArray
 const CUSTOM_BYTE_COUNT = 1
 var current_custom_data := range(CUSTOM_BYTE_COUNT)
 const DISPLAY_BYTES = 128 * 128 * 3
 const PACKLEN = len(SYNC_SEQ) + CUSTOM_BYTE_COUNT + DISPLAY_BYTES
 
-func set_im_from_data(rgb: Array):
-	#var rgb = []
-	#for i in range(len(xrgb)*0.75):
-		#var reali = (2 - (i % 3)) + floor(i/3)*4
-		#rgb.append(xrgb[reali])
-	var image = Image.create_from_data(128, 128, false, Image.FORMAT_RGB8, rgb)
-	
-	if display.texture and display.texture is ImageTexture:
-		(display.texture as ImageTexture).set_image(image)
-	else:
-		var texture = ImageTexture.create_from_image(image)
-		display.texture = texture
+var _rendering_image: Image
+
+func set_im_from_data(rgb: PackedByteArray):
+	# Zero-allocation update: Set data on existing image and update texture
+	_rendering_image.set_data(128, 128, false, Image.FORMAT_RGB8, rgb)
+	stream_texture.update(_rendering_image)
 
 func find_seq(host: Array, sub: Array):
 	for i in range(len(host) - len(sub) + 1):
@@ -116,7 +133,7 @@ var last_mouse_state = [0, 0, 0]
 
 var synched = false
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	#print("status :", current_custom_data[0])
 	if not (tcp and tcp.get_status() == StreamPeerTCP.STATUS_CONNECTED):
 		loading.visible = true
@@ -131,32 +148,18 @@ func _process(delta: float) -> void:
 		var screen_pos: Vector2i = Vector2i.ZERO
 		
 		if input_mode == InputMode.MOUSE:
-			var local_pos = (
-				(get_viewport().get_mouse_position()
-				- displayContainer.global_position)
-				/ displayContainer.global_scale
-			)
-			if displayContainer.centered:
-				local_pos += Vector2(64, 64)
-			screen_pos = local_pos
+			screen_pos = current_screen_pos
 			
-			# Hide cursor logic
+			# Enforce cursor state (moved back to _process to fight OS cursor overrides)
 			if is_processing_input():
-				var is_inside = displayContainer.get_rect().has_point(displayContainer.to_local(get_global_mouse_position()))
-				
-				if is_inside:
+				if is_mouse_inside_display:
 					if Input.mouse_mode != Input.MOUSE_MODE_HIDDEN:
-						# Change shape to HAND while hiding, so the switch back to ARROW causes a refresh
 						Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
 						Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 				else:
 					if Input.mouse_mode != Input.MOUSE_MODE_VISIBLE:
 						Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 						Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-			else:
-				if Input.mouse_mode != Input.MOUSE_MODE_VISIBLE:
-					Input.set_default_cursor_shape(Input.CURSOR_ARROW)
-					Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		else:
 			# Trackpad Mode
 			screen_pos = virtual_cursor_pos
@@ -164,18 +167,7 @@ func _process(delta: float) -> void:
 				Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
-		var mask = 0
-		if input_mode == InputMode.MOUSE:
-			var g_mask = Input.get_mouse_button_mask()
-			# Map Godot Mask to SDL Mask
-			if g_mask & MOUSE_BUTTON_MASK_LEFT: mask |= 1
-			if g_mask & MOUSE_BUTTON_MASK_MIDDLE: mask |= 2 # SDL Middle is 2
-			if g_mask & MOUSE_BUTTON_MASK_RIGHT: mask |= 4 # SDL Right is 4
-		else:
-			# Trackpad Mode: Combine virtual mask (controller/touch buttons)
-			mask |= _virtual_mouse_mask
-			
-		var current_mouse_state = [screen_pos.x, screen_pos.y, mask]
+		var current_mouse_state = [screen_pos.x, screen_pos.y, current_mouse_mask]
 		if current_mouse_state != last_mouse_state:
 			# and 
 			tcp.put_data([
@@ -184,56 +176,89 @@ func _process(delta: float) -> void:
 			])
 			last_mouse_state = current_mouse_state
 		# recv screen
-		if tcp.get_available_bytes() > 0:
-			last_message_time = Time.get_ticks_msec()
-			var errdata = tcp.get_data(tcp.get_available_bytes())
-			var err = errdata[0]
-			var data = errdata[1]
-			buffer.append_array(data)
-			if len(buffer) > PACKLEN * 2:
-				#print("buffer overloaded, skipping")
-				var chopCount = floor((len(buffer) / PACKLEN)) - 1
-				#print(chopCount)
-				buffer = buffer.slice(chopCount * PACKLEN)
-			if synched and len(buffer) > len(SYNC_SEQ) and buffer.slice(0, len(SYNC_SEQ)) != SYNC_SEQ:
-				print("synch fail", buffer.slice(0, len(SYNC_SEQ)), SYNC_SEQ)
-				synched = false
-			if not synched:
-				print("resynching")
-				var syncpoint = find_seq(buffer, SYNC_SEQ)
-				buffer = buffer.slice(syncpoint)
-				synched = true
-			var im
-			if len(buffer) >= PACKLEN:
-				current_custom_data = buffer.slice(
-					len(SYNC_SEQ),
-					len(SYNC_SEQ) + CUSTOM_BYTE_COUNT
-				)
-				im = buffer.slice(
-					len(SYNC_SEQ) + CUSTOM_BYTE_COUNT,
-					len(SYNC_SEQ) + CUSTOM_BYTE_COUNT + DISPLAY_BYTES
-				)
-				buffer = buffer.slice(PACKLEN)
-			if im != null:
-				#if find_seq(im, SYNC_SEQ) != -1:
-					#print("image has sync ", find_seq(im, SYNC_SEQ))
-					#print(im)
-					#DisplayServer.clipboard_set(str(im))
-					#breakpoint
+		if not synched:
+			# RESYNC MODE
+			if tcp.get_available_bytes() > 0:
+				last_message_time = Time.get_ticks_msec()
+				var errdata = tcp.get_data(tcp.get_available_bytes())
+				if errdata[0] == OK:
+					buffer.append_array(errdata[1])
+					
+					# Search for SYNC_SEQ
+					var syncpoint = find_seq(buffer, SYNC_SEQ)
+					if syncpoint != -1:
+						print("Resync successful at index: ", syncpoint)
+						if len(buffer) >= syncpoint + PACKLEN:
+							var packet = buffer.slice(syncpoint, syncpoint + PACKLEN)
+							_process_packet(packet)
+							buffer = [] # Clear buffer completely
+							synched = true # Now we assume TCP stream is aligned for next read
+						else:
+							# Clean up garbage but keep waiting for rest of packet
+							if syncpoint > 0:
+								buffer = buffer.slice(syncpoint)
+					else:
+						# Keep buffer small if no sync found to prevent OOM
+						if len(buffer) > PACKLEN * 2:
+							buffer = buffer.slice(PACKLEN)
+
+		else:
+			# SYNCED MODE (Direct Read)
+			var avail = tcp.get_available_bytes()
+			if avail >= PACKLEN:
+				last_message_time = Time.get_ticks_msec()
 				loading.visible = false
-				set_im_from_data(im)
-		elif Time.get_ticks_msec() - last_message_time > READ_TIMEOUT:
-			print("timeout detected")
-			reconnect()
+				
+				# Optimization: Skip intermediate frames if backlog is large
+				# This significantly helps framerate by dropping stale frames
+				var num_packets = int(avail / PACKLEN)
+				if num_packets > 1:
+					# Skip (n-1) packets
+					tcp.get_data((num_packets - 1) * PACKLEN)
+				
+				# ZERO-COPY READ STRATEGY
+				# 1. Read Header + Meta
+				var header_len = len(SYNC_SEQ) + CUSTOM_BYTE_COUNT
+				var header_res = tcp.get_data(header_len)
+				
+				if header_res[0] == OK:
+					var header_data = header_res[1]
+					
+					# Fast Sync Check
+					# We rely on SYNC_SEQ being at the start
+					if header_data.slice(0, len(SYNC_SEQ)) == SYNC_SEQ_PBA:
+						# 2. Read Pixel Data Directly
+						var pixel_res = tcp.get_data(DISPLAY_BYTES)
+						if pixel_res[0] == OK:
+							# PASS DIRECTLY to image creation - NO COPY/SLICE!
+							# This saves ~50KB allocation per frame!
+							set_im_from_data(pixel_res[1])
+					else:
+						print("Sync lost! Entering resync mode.")
+						synched = false
+						# Put header back in buffer? No, just start buffering
+						buffer.append_array(header_data)
+				else:
+					# Read failed?
+					synched = false
+	elif Time.get_ticks_msec() - last_message_time > READ_TIMEOUT:
+		print("timeout detected")
+		reconnect()
 	else:
 		print("connection failed, status: ", tcp.get_status())
 		tcp = null
-		
+
+func _process_packet(data: PackedByteArray):
+	# Assuming data starts with SYNC_SEQ
+	var im_start = len(SYNC_SEQ) + CUSTOM_BYTE_COUNT
+	var im = data.slice(im_start, im_start + DISPLAY_BYTES)
+	set_im_from_data(im)
+
 const SDL_KEYMAP: Dictionary = preload("res://sdl_keymap.json").data
 
 func send_key(id: int, down: bool, repeat: bool, mod: int):
 	if tcp:
-		print("sending key ", id, " as ", down)
+		# print("sending key ", id, " as ", down)
 		tcp.put_data([
 			PIDOT_EVENT_KEYEV,
 			id, int(down), int(repeat),
@@ -415,11 +440,33 @@ static func set_always_show_controls(enabled: bool):
 static func get_always_show_controls() -> bool:
 	return always_show_controls
 
+
+var current_screen_pos: Vector2i = Vector2i.ZERO
+var current_mouse_mask: int = 0
+var is_mouse_inside_display: bool = false
+
+func _update_mouse_from_event(event_pos: Vector2):
+	var local_pos = (
+		(event_pos - displayContainer.global_position)
+		/ displayContainer.global_scale
+	)
+	if displayContainer.centered:
+		local_pos += Vector2(64, 64)
+	current_screen_pos = local_pos
+	
+	# Update inside state for _process to handle
+	is_mouse_inside_display = displayContainer.get_rect().has_point(displayContainer.to_local(event_pos))
+
 const TAP_MAX_DURATION = 350 # ms
 var _trackpad_click_pending = false
 var _trackpad_tap_start_time = 0
 var _trackpad_total_move = 0.0
-var _virtual_mouse_mask: int = 0
+var _virtual_mouse_mask: int = 0:
+	set(value):
+		_virtual_mouse_mask = value
+		# Update mask immediately when virtual mask changes
+		if input_mode == InputMode.TRACKPAD:
+			current_mouse_mask = _virtual_mouse_mask
 
 # Long press detection variables
 var touch_down_time: int = 0
@@ -469,6 +516,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			
 	# Also accept Mouse Button for robustness (and Desktop testing)
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if input_mode == InputMode.MOUSE:
+			_update_mouse_from_event(event.position)
+			
 		if event.pressed:
 			touch_start_pos = event.position
 			touch_last_pos = event.position
@@ -479,7 +529,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			_check_swipe(event.position)
 	
 	elif event is InputEventMouseMotion:
-		if input_mode == InputMode.TRACKPAD and is_touching:
+		if input_mode == InputMode.MOUSE:
+			_update_mouse_from_event(event.position)
+		elif input_mode == InputMode.TRACKPAD and is_touching:
 			var delta = event.relative * trackpad_sensitivity
 			virtual_cursor_pos += delta
 			virtual_cursor_pos = virtual_cursor_pos.clamp(Vector2.ZERO, Vector2(127, 127))
@@ -488,7 +540,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			if _trackpad_total_move > 15.0:
 				_trackpad_click_pending = false
 
-	#print(event)
+	# print(event)
 	if event is InputEventKey:
 		# because i keep doing this lolol
 		if event.keycode == KEY_ALT:
@@ -500,7 +552,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			send_input(event.unicode)
 			
 	elif event is InputEventMouseButton:
-		pass
+		if input_mode == InputMode.MOUSE:
+			var mask = 0
+			var g_mask = event.button_mask
+			# Map Godot Mask to SDL Mask
+			if g_mask & MOUSE_BUTTON_MASK_LEFT: mask |= 1
+			if g_mask & MOUSE_BUTTON_MASK_MIDDLE: mask |= 2
+			if g_mask & MOUSE_BUTTON_MASK_RIGHT: mask |= 4
+			current_mouse_mask = mask
 
 	elif event is InputEventJoypadButton:
 		if input_mode == InputMode.TRACKPAD:
@@ -526,7 +585,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			JoyButton.JOY_BUTTON_A, JoyButton.JOY_BUTTON_Y: key_id = "Z" # Pico-8 O
 			JoyButton.JOY_BUTTON_B, JoyButton.JOY_BUTTON_X: key_id = "X" # Pico-8 X
 			JoyButton.JOY_BUTTON_START: key_id = "P" # Pause
-			JoyButton.JOY_BUTTON_BACK, JoyButton.JOY_BUTTON_GUIDE: key_id = "Escape" # Menu
+			JoyButton.JOY_BUTTON_BACK, JoyButton.JOY_BUTTON_GUIDE:
+				key_id = "IntentExit" if is_intent_session else "Escape" # Menu / Exit
 			JoyButton.JOY_BUTTON_DPAD_UP: key_id = "Up"
 			JoyButton.JOY_BUTTON_DPAD_DOWN: key_id = "Down"
 			JoyButton.JOY_BUTTON_DPAD_LEFT: key_id = "Left"
@@ -692,25 +752,36 @@ func _setup_quit_overlay():
 	# Font setup
 	var font = load("res://assets/font/atlas-0.png")
 	
+	# Calculate dynamic font size (5% of screen height, clamped)
+	var screen_size = get_viewport().get_visible_rect().size
+	var dynamic_font_size = 32 # Default fallback
+	if screen_size.y > 0:
+		dynamic_font_size = clamp(int(min(screen_size.x, screen_size.y) * 0.04), 16, 64)
+	
 	var label = Label.new()
 	label.text = "RETURN TO LAUNCHER?"
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD # Enable wrap for small screens
 	if font:
 		label.add_theme_font_override("font", font)
-		label.add_theme_font_size_override("font_size", 48) # Increased to 48
+		label.add_theme_font_size_override("font_size", dynamic_font_size)
 	vbox.add_child(label)
+	
+	# Constraint width to 80% of screen
+	if screen_size.x > 0:
+		panel.custom_minimum_size.x = min(600, screen_size.x * 0.8)
 	
 	var hbox = HBoxContainer.new()
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox.add_theme_constant_override("separation", 60)
+	hbox.add_theme_constant_override("separation", int(dynamic_font_size * 1.25))
 	vbox.add_child(hbox)
 	
-	var btn_cancel = _create_pixel_button("NO", font)
+	var btn_cancel = _create_pixel_button("NO", font, dynamic_font_size)
 	btn_cancel.pressed.connect(func(): quit_overlay.visible = false)
 	hbox.add_child(btn_cancel)
 	btn_quit_no = btn_cancel
 	
-	var btn_quit = _create_pixel_button("YES", font)
+	var btn_quit = _create_pixel_button("YES", font, dynamic_font_size)
 	btn_quit.pressed.connect(_quit_app)
 	hbox.add_child(btn_quit)
 	btn_quit_yes = btn_quit
@@ -741,22 +812,37 @@ func _update_quit_focus_visuals():
 	if style_no is StyleBoxFlat:
 		style_no.bg_color = col_focus if not quit_focus_yes else col_normal
 
-func _create_pixel_button(text, font) -> Button:
+
+func _create_pixel_button(text, font, size = 32) -> Button:
 	var btn = Button.new()
 	btn.text = text
+	if font:
+		btn.add_theme_font_override("font", font)
+		btn.add_theme_font_size_override("font_size", size)
+	
 	# Minimal style for pixel art look
 	var style_normal = StyleBoxFlat.new()
 	style_normal.bg_color = Color(0.2, 0.2, 0.3, 1)
-	style_normal.set_content_margin_all(20) # Increased padding
+	
+	# Dynamic Padding: Slim vertical, Wide horizontal
+	var pad_v = int(size * 0.2)
+	var pad_h = int(size * 0.8)
+	
+	style_normal.content_margin_top = pad_v
+	style_normal.content_margin_bottom = pad_v
+	style_normal.content_margin_left = pad_h
+	style_normal.content_margin_right = pad_h
+	
 	var style_pressed = StyleBoxFlat.new()
 	style_pressed.bg_color = Color(1, 0.2, 0.4, 1) # Pico-8 Redish
-	style_pressed.set_content_margin_all(20) # Increased padding
+	style_pressed.content_margin_top = pad_v
+	style_pressed.content_margin_bottom = pad_v
+	style_pressed.content_margin_left = pad_h
+	style_pressed.content_margin_right = pad_h
 	
 	btn.add_theme_stylebox_override("normal", style_normal)
 	btn.add_theme_stylebox_override("hover", style_normal)
 	btn.add_theme_stylebox_override("pressed", style_pressed)
+	btn.add_theme_stylebox_override("focus", style_normal)
 	
-	if font:
-		btn.add_theme_font_override("font", font)
-		btn.add_theme_font_size_override("font_size", 48) # Increased to 48
 	return btn

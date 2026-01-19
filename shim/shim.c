@@ -8,7 +8,7 @@
 
 
 #include <stdio.h>
-// #include <string.h>
+#include <string.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -81,7 +81,7 @@ DECLSPEC int SDLCALL SDL_Init(Uint32 flags) {
         printf("false start\n");
         false_start = false;
     } else {
-        printf("making fifos\n");
+        // printf("making fifos\n");
         mkfifo(INPUT_FIFO, 0666);
         mkfifo(OUTPUT_FIFO, 0666);
 
@@ -106,7 +106,7 @@ DECLSPEC SDL_Window* SDLCALL SDL_CreateWindow(const char *title,
     flags &= ~(SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_RESIZABLE);
     SDL_Window* window = realf(title, x, y, 128, 128, flags);
     currentsurf = SDL_GetWindowSurface(window);
-    printf("surf yoinked direct from window");
+    // printf("surf yoinked direct from window");
     return window;
 }
 
@@ -114,22 +114,38 @@ static Uint64 last_frame = 0;
 // this comes in at about 67fps
 #define MINFRAMEMS 15
 
+#define HEADER_SIZE 9 // "PICO8SYNC"
+#define META_SIZE 1
+#define PIXEL_SIZE (128*128*3)
+#define TOTAL_PACKET_SIZE (HEADER_SIZE + META_SIZE + PIXEL_SIZE)
+
+// Single static buffer to avoid stack allocation and allow single-syscall writing
+static uint8_t packet_buffer[TOTAL_PACKET_SIZE];
+static bool header_initialized = false;
+
 void pico_send_vid_data() {
     if (currentsurf != NULL && currentsurf->format->format == SDL_PIXELFORMAT_XRGB8888) {
-        /*uint32_t pixelcount = (
-            (uint32_t)(currentsurf->w)
-            * (uint32_t)(currentsurf->h)
-            * (uint32_t)(currentsurf->format->BytesPerPixel)
-        );
-        write(output_fd, "PICO8SYNC", 9);
-        write(output_fd, currentsurf->pixels, pixelcount);*/
-        static uint8_t screenbuf[128*128*3];
-        for (uint16_t i = 0; i < 128*128; i++) {
-            screenbuf[i*3+0] = ((uint8_t*)currentsurf->pixels)[i*4+2];
-            screenbuf[i*3+1] = ((uint8_t*)currentsurf->pixels)[i*4+1];
-            screenbuf[i*3+2] = ((uint8_t*)currentsurf->pixels)[i*4+0];
+        
+        // Initialize header once
+        if (!header_initialized) {
+            memcpy(packet_buffer, "PICO8SYNC", HEADER_SIZE);
+            header_initialized = true;
         }
-        static u_int8_t custombuf[1];
+
+        // Optimized Pixel Copy (BGRA -> RGB) using pointer arithmetic
+        const uint8_t* src = (const uint8_t*)currentsurf->pixels;
+        // Skip Header + Meta to get to pixel area
+        uint8_t* dst = packet_buffer + HEADER_SIZE + META_SIZE; 
+        
+        // Unrolling or vectorizing this loop could be next, but pointer math is already much faster than [i*4+...]
+        // 128*128 = 16384 pixels
+        for (int i = 0; i < 16384; i++) {
+            // Little Endian: B G R X in memory
+            *dst++ = src[2]; // R
+            *dst++ = src[1]; // G
+            *dst++ = src[0]; // B
+            src += 4;        // Skip Alpha/X
+        }
 
         uint8_t navstate = 0x00;
         if (picoram != NULL) {
@@ -143,15 +159,15 @@ void pico_send_vid_data() {
                 navstate |= 0x04;
             }
         }
-        custombuf[0] = navstate;
+        
+        // Write Metadata
+        packet_buffer[HEADER_SIZE] = navstate;
 
-        write(output_fd, "PICO8SYNC", 9);
-        write(output_fd, custombuf, sizeof(custombuf));
-        write(output_fd, screenbuf, 128*128*3);
-        // printf("========\n");
-        // for (uint32_t i = 0; i < pixelcount; i++) {
-        //     printf("%02x", ((uint8_t*)currentsurf->pixels)[i]);
-        // }
+        // Split System Calls to allow Streamer to read Header then Pixels separately
+        // 1. Write Header + Meta
+        write(output_fd, packet_buffer, HEADER_SIZE + META_SIZE);
+        // 2. Write Pixels
+        write(output_fd, packet_buffer + HEADER_SIZE + META_SIZE, PIXEL_SIZE);
     }
     Uint64 ticks_now = SDL_GetTicks64();
     if (last_frame + MINFRAMEMS > ticks_now) {
@@ -338,7 +354,7 @@ void *memset (void *__s, int __c, size_t __n) {
     static void* (*realf)(void*, int, size_t) = NULL;
     FINDSDL(realf, memset);
     if (__c == 0 && __n == 0x372b8) {
-        printf("PICO-8 RAM identified\n");
+        // printf("PICO-8 RAM identified\n");
         picoram = __s;
     }
     return realf(__s, __c, __n);
