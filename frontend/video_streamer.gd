@@ -629,7 +629,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		match event.button_index:
 			JoyButton.JOY_BUTTON_A, JoyButton.JOY_BUTTON_Y: key_id = "Z" # Pico-8 O
 			JoyButton.JOY_BUTTON_B, JoyButton.JOY_BUTTON_X: key_id = "X" # Pico-8 X
-			JoyButton.JOY_BUTTON_START: key_id = "P" # Pause
+			JoyButton.JOY_BUTTON_START, JoyButton.JOY_BUTTON_RIGHT_SHOULDER: key_id = "P" # Pause
 			JoyButton.JOY_BUTTON_BACK, JoyButton.JOY_BUTTON_GUIDE:
 				key_id = "IntentExit" if is_intent_session else "Escape" # Menu / Exit
 			JoyButton.JOY_BUTTON_DPAD_UP: key_id = "Up"
@@ -718,11 +718,6 @@ func _trigger_keyboard():
 	# Show Android Keyboard
 	DisplayServer.virtual_keyboard_show('')
 	
-	# REMOVED: Manual Arranger Notification
-	# We removed the direct call to set_keyboard_active(true) because it caused a race condition.
-	# We now let _process in Arranger detect the keyboard height naturally.
-
-		
 	if haptic_enabled:
 		Input.vibrate_handheld(50)
 

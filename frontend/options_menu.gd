@@ -262,11 +262,6 @@ func open_menu():
 	
 	# Disable game input via streamer
 	if PicoVideoStreamer.instance:
-		# Send Pause (P)
-		PicoVideoStreamer.instance.vkb_setstate("P", true)
-		await get_tree().create_timer(0.1).timeout
-		PicoVideoStreamer.instance.vkb_setstate("P", false)
-		
 		# Only disable input if still open (prevents race with fast toggling)
 		if is_open:
 			PicoVideoStreamer.instance.set_process_unhandled_input(false)
