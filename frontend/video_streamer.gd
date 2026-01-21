@@ -718,10 +718,10 @@ func _trigger_keyboard():
 	# Show Android Keyboard
 	DisplayServer.virtual_keyboard_show('')
 	
-	# Notify arranger to shift screen
-	var arranger = get_tree().root.get_node_or_null("Main/Arranger")
-	if arranger:
-		arranger.set_keyboard_active(true)
+	# REMOVED: Manual Arranger Notification
+	# We removed the direct call to set_keyboard_active(true) because it caused a race condition.
+	# We now let _process in Arranger detect the keyboard height naturally.
+
 		
 	if haptic_enabled:
 		Input.vibrate_handheld(50)
