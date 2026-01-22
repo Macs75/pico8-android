@@ -85,6 +85,9 @@ func _ready() -> void:
 
 	if OS.is_debug_build():
 		_setup_debug_fps()
+	
+	# Start Update Checker
+	_check_for_updates()
 
 func _exit_tree():
 	_thread_active = false
@@ -812,6 +815,130 @@ func _trigger_keyboard():
 	# Show Android Keyboard
 	DisplayServer.virtual_keyboard_show('')
 	
+# Update Checker
+func _check_for_updates():
+	var config = ConfigFile.new()
+	var err = config.load("user://settings.cfg")
+	
+	var current_time = Time.get_unix_time_from_system()
+	
+	# 1. First Run Check
+	# If the "updates" section doesn't exist, this is likely the first run (or first run with this feature).
+	# We skip the check to not annoy the user immediately after install.
+	if err != OK or not config.has_section("updates"):
+		print("First run detected (or config missing). Skipping update check.")
+		config.set_value("updates", "last_check", current_time)
+		config.save("user://settings.cfg")
+		return
+		
+	var last_check = config.get_value("updates", "last_check", 0)
+	
+	# 2. Daily Frequency Check (86400 seconds)
+	if (current_time - last_check) < 86400:
+		print("Skipping update check (checked recently)")
+		return
+	
+	# 3. Internet Connectivity Check (Simple)
+	# IP.resolve_hostname returns an empty string/IP if failed? 
+	# Actually blocking resolve might freeze main thread. 
+	# Best way is to rely on HTTPRequest failure, but request "no check if no internet".
+	# We can check if we have a valid IP interface.
+	var has_network = false
+	for iface in IP.get_local_interfaces():
+		# identifying valid non-localhost interface
+		if iface.friendly != "lo" and iface.addresses.size() > 0:
+			has_network = true
+			break
+			
+	if not has_network:
+		print("No active network interface. Skipping update check.")
+		return
+		
+	print("Checking for updates...")
+	
+	# Update check time immediately
+	config.set_value("updates", "last_check", current_time)
+	config.save("user://settings.cfg")
+	
+	var http = HTTPRequest.new()
+	add_child(http)
+	http.request_completed.connect(_on_update_request_completed.bind(http))
+	http.request("https://api.github.com/repos/Macs75/pico8-android/releases/latest")
+
+func _on_update_request_completed(result, response_code, headers, body, http_node):
+	http_node.queue_free()
+	
+	if response_code != 200:
+		print("Update check failed. Response code: ", response_code)
+		return
+		
+	var json = JSON.new()
+	var error = json.parse(body.get_string_from_utf8())
+	if error != OK:
+		print("JSON Parse Error: ", json.get_error_message())
+		return
+		
+	var data = json.data
+	if not data.has("tag_name"):
+		print("Invalid JSON response (no tag_name)")
+		return
+		
+	var remote_tag = data["tag_name"] # e.g. "v0.0.8"
+	var current_version = ProjectSettings.get_setting("application/config/version")
+	if not current_version:
+		current_version = "0.0.0"
+	
+	print("Update Check: Local v", current_version, " vs Remote ", remote_tag)
+	
+	# Compare versions (Simple string compare or more complex semantic check)
+	# Assuming remote_tag starts with "v", strip it
+	var remote_ver_str = remote_tag.replace("v", "")
+	
+	if _is_version_newer(current_version, remote_ver_str):
+		# Check ignore list
+		var config = ConfigFile.new()
+		config.load("user://settings.cfg")
+		var ignored = config.get_value("updates", "ignored_tag", "")
+		
+		# Reset ignore if a NEWER update comes out (different tag)
+		if ignored != "" and ignored != remote_tag:
+			config.set_value("updates", "ignored_tag", "")
+			config.save("user://settings.cfg")
+			ignored = ""
+		
+		if ignored == remote_tag:
+			print("Update ", remote_tag, " is ignored by user.")
+			return
+			
+		print("New update found!")
+		call_deferred("_show_update_dialog", remote_tag, data.get("html_url", ""))
+
+func _is_version_newer(current: String, remote: String) -> bool:
+	var v_curr = current.split(".")
+	var v_remote = remote.split(".")
+	
+	for i in range(min(v_curr.size(), v_remote.size())):
+		if int(v_remote[i]) > int(v_curr[i]):
+			return true
+		if int(v_remote[i]) < int(v_curr[i]):
+			return false
+			
+	# If equal so far, longer one is newer? (e.g. 1.0.1 > 1.0)
+	return v_remote.size() > v_curr.size()
+
+func _show_update_dialog(tag: String, url: String):
+	PicoVideoStreamer.instance.set_process_unhandled_input(false)
+	PicoVideoStreamer.instance.set_process_input(false)
+	
+	var dialog = load("res://update_dialog.tscn").instantiate()
+	add_child(dialog)
+	dialog.setup(tag, url)
+	
+	dialog.closed.connect(func():
+		PicoVideoStreamer.instance.set_process_unhandled_input(true)
+		PicoVideoStreamer.instance.set_process_input(true)
+	)
+
 	if haptic_enabled:
 		Input.vibrate_handheld(50)
 
