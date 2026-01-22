@@ -96,11 +96,11 @@ func _launch_pico8(target_path: String) -> void:
 	var extra_bind_export = ""
 	
 	if not target_path.is_empty():
-		# Check if it's in the standard public folder
-		# /sdcard/Documents/pico8/ -> /home/public/
-		var public_root = PicoBootManager.PUBLIC_FOLDER
-		if target_path.begins_with(public_root):
-			run_arg = " -run " + target_path.replace(public_root, "/home/public")
+		var fname_lower = target_path.get_file().to_lower()
+		if fname_lower == "splore.p8" or fname_lower == "splore.p8.png":
+			run_arg = " -splore"
+		elif target_path.begins_with(PicoBootManager.PUBLIC_FOLDER):
+			run_arg = " -run " + target_path.replace(PicoBootManager.PUBLIC_FOLDER, "/home/public")
 		else:
 			# External path: bind the parent directory to /home/custom_mount
 			# properly escape single quotes for shell context: ' becomes '\''
