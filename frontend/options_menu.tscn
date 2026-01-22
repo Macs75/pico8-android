@@ -13,48 +13,63 @@ offset_left = -250.0
 grow_vertical = 2
 color = Color(0.1, 0.1, 0.1, 0.95)
 
-[node name="VBoxContainer" type="VBoxContainer" parent="SlidePanel"]
+[node name="ScrollContainer" type="ScrollContainer" parent="SlidePanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 40.0
-offset_right = -20.0
-offset_bottom = -20.0
+offset_left = 7.0
+offset_right = -4.0
 grow_horizontal = 2
 grow_vertical = 2
+follow_focus = true
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SlidePanel/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/separation = 20
 
-[node name="Header" type="HBoxContainer" parent="SlidePanel/VBoxContainer"]
+[node name="Header" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 15
 alignment = 1
 
-[node name="Icon" type="TextureRect" parent="SlidePanel/VBoxContainer/Header"]
+[node name="Icon" type="TextureRect" parent="SlidePanel/ScrollContainer/VBoxContainer/Header"]
 unique_name_in_owner = true
 layout_mode = 2
 texture = ExtResource("2_cog")
 expand_mode = 2
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="SlidePanel/VBoxContainer/Header"]
+[node name="Label" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/Header"]
 layout_mode = 2
 text = "OPTIONS"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="SlidePanel/VBoxContainer"]
+[node name="empty" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/Header"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 
-[node name="HapticRow" type="HBoxContainer" parent="SlidePanel/VBoxContainer"]
-layout_mode = 2
-
-[node name="ButtonHaptic" type="Button" parent="SlidePanel/VBoxContainer/HapticRow"]
+[node name="VersionLabel" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/Header"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+text = "v1.0"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="SlidePanel/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HapticRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ButtonHaptic" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/HapticRow"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-focus_mode = 2
 mouse_filter = 1
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
@@ -64,24 +79,23 @@ text = "Haptic Feedback"
 flat = true
 alignment = 0
 
-[node name="WrapperHaptic" type="Control" parent="SlidePanel/VBoxContainer/HapticRow"]
+[node name="WrapperHaptic" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/HapticRow"]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleHaptic" type="CheckButton" parent="SlidePanel/VBoxContainer/HapticRow/WrapperHaptic"]
+[node name="ToggleHaptic" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/HapticRow/WrapperHaptic"]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 
-[node name="KeyboardRow" type="HBoxContainer" parent="SlidePanel/VBoxContainer"]
+[node name="KeyboardRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="ButtonKeyboard" type="Button" parent="SlidePanel/VBoxContainer/KeyboardRow"]
+[node name="ButtonKeyboard" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/KeyboardRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-focus_mode = 2
 mouse_filter = 1
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
@@ -91,24 +105,23 @@ text = "Full Keyboard"
 flat = true
 alignment = 0
 
-[node name="WrapperKeyboard" type="Control" parent="SlidePanel/VBoxContainer/KeyboardRow"]
+[node name="WrapperKeyboard" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/KeyboardRow"]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleKeyboard" type="CheckButton" parent="SlidePanel/VBoxContainer/KeyboardRow/WrapperKeyboard"]
+[node name="ToggleKeyboard" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/KeyboardRow/WrapperKeyboard"]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 
-[node name="IntegerScalingRow" type="HBoxContainer" parent="SlidePanel/VBoxContainer"]
+[node name="IntegerScalingRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="ButtonIntegerScaling" type="Button" parent="SlidePanel/VBoxContainer/IntegerScalingRow"]
+[node name="ButtonIntegerScaling" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/IntegerScalingRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-focus_mode = 2
 mouse_filter = 1
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
@@ -118,24 +131,23 @@ text = "Integer Scaling"
 flat = true
 alignment = 0
 
-[node name="WrapperIntegerScaling" type="Control" parent="SlidePanel/VBoxContainer/IntegerScalingRow"]
+[node name="WrapperIntegerScaling" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/IntegerScalingRow"]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleIntegerScaling" type="CheckButton" parent="SlidePanel/VBoxContainer/IntegerScalingRow/WrapperIntegerScaling"]
+[node name="ToggleIntegerScaling" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/IntegerScalingRow/WrapperIntegerScaling"]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 
-[node name="ShowControlsRow" type="HBoxContainer" parent="SlidePanel/VBoxContainer"]
+[node name="ShowControlsRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="ButtonShowControls" type="Button" parent="SlidePanel/VBoxContainer/ShowControlsRow"]
+[node name="ButtonShowControls" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/ShowControlsRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-focus_mode = 2
 mouse_filter = 1
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
@@ -145,24 +157,23 @@ text = "Hide UI w/ Controller"
 flat = true
 alignment = 0
 
-[node name="WrapperShowControls" type="Control" parent="SlidePanel/VBoxContainer/ShowControlsRow"]
+[node name="WrapperShowControls" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/ShowControlsRow"]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleShowControls" type="CheckButton" parent="SlidePanel/VBoxContainer/ShowControlsRow/WrapperShowControls"]
+[node name="ToggleShowControls" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/ShowControlsRow/WrapperShowControls"]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 
-[node name="InputModeRow" type="HBoxContainer" parent="SlidePanel/VBoxContainer"]
+[node name="InputModeRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="ButtonInputMode" type="Button" parent="SlidePanel/VBoxContainer/InputModeRow"]
+[node name="ButtonInputMode" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/InputModeRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-focus_mode = 2
 mouse_filter = 1
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
@@ -172,59 +183,62 @@ text = "Input: Mouse"
 flat = true
 alignment = 0
 
-[node name="WrapperInputMode" type="Control" parent="SlidePanel/VBoxContainer/InputModeRow"]
+[node name="WrapperInputMode" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/InputModeRow"]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleInputMode" type="CheckButton" parent="SlidePanel/VBoxContainer/InputModeRow/WrapperInputMode"]
+[node name="ToggleInputMode" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/InputModeRow/WrapperInputMode"]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 
-[node name="SensitivityRow" type="HBoxContainer" parent="SlidePanel/VBoxContainer"]
+[node name="SensitivityRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="LabelSensitivity" type="Label" parent="SlidePanel/VBoxContainer/SensitivityRow"]
+[node name="LabelSensitivity" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SensitivityRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 1
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "T.Sensitivity"
+horizontal_alignment = 1
 
-[node name="WrapperSensitivity" type="HBoxContainer" parent="SlidePanel/VBoxContainer/SensitivityRow"]
+[node name="WrapperSensitivity" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SensitivityRow"]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 theme_override_constants/separation = 10
 
-[node name="SliderSensitivity" type="HSlider" parent="SlidePanel/VBoxContainer/SensitivityRow/WrapperSensitivity"]
+[node name="SliderSensitivity" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SensitivityRow/WrapperSensitivity"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 size_flags_vertical = 4
-focus_mode = 2
 min_value = 0.1
 max_value = 2.0
 step = 0.1
 value = 0.5
 
-[node name="LabelSensitivityValue" type="Label" parent="SlidePanel/VBoxContainer/SensitivityRow/WrapperSensitivity"]
+[node name="LabelSensitivityValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SensitivityRow/WrapperSensitivity"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 text = "0.5"
-horizontal_alignment = 2
 
-[node name="Spacer" type="Control" parent="SlidePanel/VBoxContainer"]
+[node name="empty" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SensitivityRow/WrapperSensitivity"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+text = "            "
+
+[node name="Spacer" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ButtonAppSettings" type="Button" parent="SlidePanel/VBoxContainer"]
+[node name="ButtonAppSettings" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
-focus_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
@@ -232,33 +246,15 @@ theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
 text = "Deep Links Settings"
 flat = true
 
-[node name="ButtonSave" type="Button" parent="SlidePanel/VBoxContainer"]
+[node name="ButtonSave" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
-focus_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
 text = "Save Settings"
 flat = true
-
-[node name="CloseButton" type="Button" parent="SlidePanel/VBoxContainer"]
-layout_mode = 2
-focus_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
-theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
-theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-text = "Close Menu"
-flat = true
-
-[node name="VersionLabel" type="Label" parent="SlidePanel/VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
-text = "v1.0"
-horizontal_alignment = 1
 
 [node name="EdgeHandler" type="Control" parent="."]
 layout_mode = 3

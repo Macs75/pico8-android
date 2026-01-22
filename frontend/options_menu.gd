@@ -47,8 +47,6 @@ func _ready() -> void:
 	if not %SliderSensitivity.value_changed.is_connected(_on_sensitivity_changed):
 		%SliderSensitivity.value_changed.connect(_on_sensitivity_changed)
 
-	# Close Button
-	$SlidePanel/VBoxContainer/CloseButton.pressed.connect(close_menu)
 	%ButtonAppSettings.pressed.connect(_on_app_settings_pressed)
 	%ButtonSave.pressed.connect(save_config)
 	
@@ -152,8 +150,11 @@ func _update_layout():
 	%ButtonKeyboard.disabled = is_landscape
 	# Visually indicate disabled state if needed, but standard disabled style should suffice
 	
-	# Calculate dynamic font size (e.g., 1/50th of screen height for smaller text)
-	var dynamic_font_size = int(max(12, viewport_size.y / 50))
+	# Calculate dynamic font size
+	# IMPROVED: Use min dimension to keep text readable in landscape
+	# Base on 5% of smaller dimension, clamped to at least 24px
+	var min_dim = min(viewport_size.x, viewport_size.y)
+	var dynamic_font_size = int(max(24, min_dim * 0.05))
 	
 	# Scale Factors
 	# Keep icon readable but scaled relative to the new small font
@@ -162,9 +163,8 @@ func _update_layout():
 	
 	# --- Apply Styling & Scaling ---
 	
-	# 1. Main Options Label
 	# 1. Main Options Header
-	var header_label = $SlidePanel/VBoxContainer/Header/Label
+	var header_label = $SlidePanel/ScrollContainer/VBoxContainer/Header/Label
 	header_label.add_theme_font_size_override("font_size", dynamic_font_size)
 	
 	# Scale Icon
@@ -172,22 +172,22 @@ func _update_layout():
 	%Icon.custom_minimum_size = Vector2(icon_size, icon_size)
 	
 	# 2. Haptic Row
-	_style_option_row(%ButtonHaptic, %ToggleHaptic, $SlidePanel/VBoxContainer/HapticRow/WrapperHaptic, dynamic_font_size, scale_factor)
+	_style_option_row(%ButtonHaptic, %ToggleHaptic, $SlidePanel/ScrollContainer/VBoxContainer/HapticRow/WrapperHaptic, dynamic_font_size, scale_factor)
 	
 	# 3. Keyboard Row
-	_style_option_row(%ButtonKeyboard, %ToggleKeyboard, $SlidePanel/VBoxContainer/KeyboardRow/WrapperKeyboard, dynamic_font_size, scale_factor)
+	_style_option_row(%ButtonKeyboard, %ToggleKeyboard, $SlidePanel/ScrollContainer/VBoxContainer/KeyboardRow/WrapperKeyboard, dynamic_font_size, scale_factor)
 
 	# 4. Integer Scaling Row
 	# Override text just in case .tscn is stale
 	%ButtonShowControls.text = "Always Show Controls"
 	
-	_style_option_row(%ButtonIntegerScaling, %ToggleIntegerScaling, $SlidePanel/VBoxContainer/IntegerScalingRow/WrapperIntegerScaling, dynamic_font_size, scale_factor)
+	_style_option_row(%ButtonIntegerScaling, %ToggleIntegerScaling, $SlidePanel/ScrollContainer/VBoxContainer/IntegerScalingRow/WrapperIntegerScaling, dynamic_font_size, scale_factor)
 
 	# 5. Show Controls Row
-	_style_option_row(%ButtonShowControls, %ToggleShowControls, $SlidePanel/VBoxContainer/ShowControlsRow/WrapperShowControls, dynamic_font_size, scale_factor)
+	_style_option_row(%ButtonShowControls, %ToggleShowControls, $SlidePanel/ScrollContainer/VBoxContainer/ShowControlsRow/WrapperShowControls, dynamic_font_size, scale_factor)
 
 	# 6. Input Mode Row
-	_style_option_row(%ButtonInputMode, %ToggleInputMode, $SlidePanel/VBoxContainer/InputModeRow/WrapperInputMode, dynamic_font_size, scale_factor)
+	_style_option_row(%ButtonInputMode, %ToggleInputMode, $SlidePanel/ScrollContainer/VBoxContainer/InputModeRow/WrapperInputMode, dynamic_font_size, scale_factor)
 
 	# 7. Sensitivity Row
 	%LabelSensitivity.add_theme_font_size_override("font_size", dynamic_font_size)
@@ -199,8 +199,7 @@ func _update_layout():
 	# Note: HSlider height scales reasonably well automatically or via theme, but we can enforce logic if needed.
 
 	
-	# 4. Close and Save Buttons
-	$SlidePanel/VBoxContainer/CloseButton.add_theme_font_size_override("font_size", dynamic_font_size)
+	# 4. Save Buttons
 	%ButtonAppSettings.add_theme_font_size_override("font_size", dynamic_font_size)
 	%ButtonSave.add_theme_font_size_override("font_size", dynamic_font_size)
 	
@@ -212,16 +211,19 @@ func _update_layout():
 	await get_tree().process_frame
 	
 	# Adjust panel width if content is wider (due to scaling)
-	var content_min_width = $SlidePanel/VBoxContainer.get_combined_minimum_size().x
+	var content_min_width = $SlidePanel/ScrollContainer/VBoxContainer.get_combined_minimum_size().x
 	# Add some padding (margin of proper fit)
 	var required_width = content_min_width + 50
 	
 	# Minimum safe width
-	var final_width = max(required_width, min(400, viewport_size.x * 0.5))
+	var final_width = max(required_width, min(500, viewport_size.x * 0.5))
 	
 	panel.size.x = final_width
-	panel.position.x = - final_width
-
+	if is_open:
+		panel.position.x = 0
+	else:
+		panel.position.x = - final_width
+	
 func _style_option_row(label_btn: Button, toggle: CheckButton, wrapper: Control, font_size: int, scale_factor: float):
 	# Style Label Button
 	label_btn.add_theme_font_size_override("font_size", font_size)
