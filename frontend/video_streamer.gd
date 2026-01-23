@@ -711,6 +711,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			current_mouse_mask = mask
 
 	elif event is InputEventJoypadButton:
+		# Check ignore list
+		if event.device >= 0:
+			var joy_name = Input.get_joy_name(event.device).to_lower()
+			if joy_name in ControllerUtils.ignored_devices_by_user:
+				return
+
 		if input_mode == InputMode.TRACKPAD:
 			# Controller Mouse Click Mapping
 			# Map PICO-8 O (A/Y) -> Right Click (Mask 4)
@@ -753,6 +759,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			vkb_setstate(key_id, event.pressed)
 
 	elif event is InputEventJoypadMotion:
+		# Check ignore list
+		if event.device >= 0:
+			var joy_name = Input.get_joy_name(event.device).to_lower()
+			if joy_name in ControllerUtils.ignored_devices_by_user:
+				return
+
 		var axis_threshold = 0.5
 		# Handle Left Stick X (Left/Right)
 		if event.axis == JoyAxis.JOY_AXIS_LEFT_X:

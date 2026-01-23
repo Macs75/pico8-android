@@ -11,6 +11,8 @@ var panel_width = 250.0
 var is_open: bool = false
 var touch_start_x = 0.0
 var is_dragging = false
+var connected_controllers_dialog_scene = preload("res://connected_controllers_dialog.tscn")
+
 
 # Swipe to Open Variables
 var edge_drag_start = Vector2.ZERO
@@ -48,6 +50,7 @@ func _ready() -> void:
 	%ButtonKeyboard.pressed.connect(_on_label_pressed.bind(%ToggleKeyboard))
 	%ButtonIntegerScaling.pressed.connect(_on_label_pressed.bind(%ToggleIntegerScaling))
 	%ButtonShowControls.pressed.connect(_on_label_pressed.bind(%ToggleShowControls))
+	%ButtonConnectedControllers.pressed.connect(_on_connected_controllers_pressed)
 	%ButtonBgColor.pressed.connect(func(): %ColorPickerBG.get_popup().popup_centered())
 	%ButtonInputMode.pressed.connect(_on_label_pressed.bind(%ToggleInputMode))
 	
@@ -204,6 +207,9 @@ func _update_layout():
 
 	# 5. Show Controls Row
 	_style_option_row(%ButtonShowControls, %ToggleShowControls, $SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow/WrapperShowControls, dynamic_font_size, scale_factor)
+
+	# 5a. Connected Controllers Row
+	_style_option_row(%ButtonConnectedControllers, %ArrowConnectedControllers, $SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ConnectedControllersRow/WrapperConnectedControllers, dynamic_font_size, scale_factor)
 
 	# 6. Background Color Row
 	_style_option_row(%ButtonBgColor, %ColorPickerBG, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BgColorRow/WrapperBgColor, dynamic_font_size, scale_factor)
@@ -532,6 +538,33 @@ func _on_show_controls_toggled(toggled_on: bool):
 	if arranger:
 		arranger.dirty = true
 
+var connected_controllers_dialog_instance = null
+
+func _on_connected_controllers_pressed():
+	if is_instance_valid(connected_controllers_dialog_instance):
+		return
+		
+	var dialog = connected_controllers_dialog_scene.instantiate()
+	get_tree().root.add_child(dialog)
+	connected_controllers_dialog_instance = dialog
+	
+	close_menu()
+	
+	# Scale Dialog (rough approximation based on current UI scale)
+	# We need to fetch the calculated scale_factor from _update_layout. 
+	# Or recalculate it. Let's recalculate cleanly.
+	var viewport_size = get_viewport().get_visible_rect().size
+	var min_dim = min(viewport_size.x, viewport_size.y)
+	var dynamic_font_size = int(max(24, min_dim * 0.04))
+	var scale_factor = float(dynamic_font_size) / 10.0
+	scale_factor = clamp(scale_factor, 1.2, 3.0)
+	
+	if dialog.has_method("set_scale_factor"):
+		dialog.set_scale_factor(scale_factor)
+		
+	# Center it
+	dialog.position = (viewport_size - dialog.size * scale_factor) / 2.0
+
 func _on_bg_color_picked(color: Color):
 	RenderingServer.set_default_clear_color(color)
 
@@ -542,6 +575,7 @@ func save_config():
 	config.set_value("settings", "trackpad_sensitivity", PicoVideoStreamer.get_trackpad_sensitivity())
 	config.set_value("settings", "integer_scaling_enabled", PicoVideoStreamer.get_integer_scaling_enabled())
 	config.set_value("settings", "always_show_controls", PicoVideoStreamer.get_always_show_controls())
+	config.set_value("settings", "ignored_devices_by_user", ControllerUtils.ignored_devices_by_user)
 	config.set_value("settings", "bg_color", %ColorPickerBG.color)
 	config.save(CONFIG_PATH)
 	
@@ -570,6 +604,11 @@ func load_config():
 		sensitivity = config.get_value("settings", "trackpad_sensitivity", 0.5)
 		integer_scaling = config.get_value("settings", "integer_scaling_enabled", true)
 		always_show = config.get_value("settings", "always_show_controls", false)
+		# Safely load typed array
+		var saved_ignored = config.get_value("settings", "ignored_devices_by_user", [])
+		ControllerUtils.ignored_devices_by_user.clear()
+		for device in saved_ignored:
+			ControllerUtils.ignored_devices_by_user.append(str(device))
 		
 		# Migration: Check for old oled_mode first
 		var default_bg = Color(0.0078, 0.0157, 0.0235, 1)
