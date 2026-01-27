@@ -1,4 +1,4 @@
-# PICO-8 for Android
+# PICO-8 for Android (v1.0.0)
 
 This application is a specialized frontend for the Android platform that allows you to run and play with the original PICO-8 (specifically the Raspberry Pi build) on your Android device.
 
@@ -38,8 +38,12 @@ This fork introduces several enhancements to improve the experience on Android d
 *   **Android Handheld Support:** Tested and verified on devices like the **RG Cube**.
 *   **Virtual Keyboard:** Access the Android keyboard at any time by sliding up from the bottom of the screen.
 *   **Options Menu:** Access the side menu for settings and options by sliding from the left side of the screen or pressing the **Left Shoulder (L1/LB)** button on a controller.
-*   **Frontend Integration:** Compatible with frontends like **ES-DE** to launch PICO-8 games directly (see v0.0.7 release notes for setup instructions; pending official integration from the ES-DE team).
+*   **Frontend Integration:** Compatible with frontends like **ES-DE** to launch PICO-8 games directly or access Splore (see v0.0.7 release notes for setup instructions; pending official integration from the ES-DE team). **Beacon Launcher** support added since v1.0.0 
 *   **Direct Cart Launch:** Launch `.p8.png` cartridges directly from any file manager or web browser. Supports **Deep Links** to launch carts directly from the [Lexaloffle website](https://www.lexaloffle.com/), as well as standard Android "Share Link" and "Share Image" actions.
+*   **2 Player support:** connect 2 controllers and you can play games that support them
+*   **Integrated shaders:** try to one of the integrated shaders to see if you like it more than the original output. They can be modified in /Documents/pico8/shaders . Copy one of the existing rename it in [name].custom.gslang, it will be loaded next time you select it from the menu, without need to restart. The format is Godot shader language, not the standard slang.
+*   **Bezel support:** you can activate a bezel around the pico8 screen, and personalize it changing the PNG in /Documents/pico9/bezel.png. Just rember to leave a square transparent space where the video should be.
+*   **Custom Color Calibration:** Take control over the visual profile by adjusting scolor parameters to your preference.
 
 
 ## 📂 Project Structure
