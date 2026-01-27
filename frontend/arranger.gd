@@ -15,6 +15,8 @@ var cached_controller_connected: bool = false
 var dirty: bool = true
 var last_screensize: Vector2i = Vector2i.ZERO
 
+signal layout_updated()
+
 var tex_x_normal = preload("res://assets/btn_x_normal.png")
 var tex_x_pressed = preload("res://assets/btn_x_pressed.png")
 var tex_o_normal = preload("res://assets/btn_o_normal.png")
@@ -254,7 +256,7 @@ func _update_layout():
 	else:
 		if not center_y:
 			extraSpace.y = 0
-		# Portrait / Generic UI Centering Logic (Top-Left Logic)
+	# Portrait / Generic UI Centering Logic (Top-Left Logic)
 		self.position = Vector2i(Vector2(extraSpace.x / 2, extraSpace.y / 2) - target_pos * maxScale)
 
 	# 2. Configure Display Container (if exists)
@@ -271,6 +273,8 @@ func _update_layout():
 			target_y -= 64
 			
 		display_container.position = Vector2(0, target_y)
+	
+	layout_updated.emit()
 
 func _update_buttons_for_mode(is_trackpad: bool):
 	var x_btn = get_node_or_null("kbanchor/kb_gaming/X")

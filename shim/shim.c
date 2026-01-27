@@ -148,8 +148,8 @@ DECLSPEC SDL_Window* SDLCALL SDL_CreateWindow(const char *title,
 }
 
 static Uint64 last_frame = 0;
-// this comes in at about 67fps
-#define MINFRAMEMS 15
+// this comes in at about 125fps
+#define MINFRAMEMS 8
 
 //Ensure packet_buffer is 4-byte aligned
 #define HEADER_SIZE 11 // "PICO8SYNC__"
@@ -214,6 +214,13 @@ void pico_send_vid_data() {
             
             if (client_fd >= 0) {
                 printf("SHIM: Client connected!\n");
+                
+                // Increase buffer size to 256KB to hold multiple frames (65KB each)
+                // This prevents blocking/fragmentation during burst sends
+                int buf_size = 256 * 1024;
+                setsockopt(client_fd, SOL_SOCKET, SO_SNDBUF, &buf_size, sizeof(buf_size));
+                setsockopt(client_fd, SOL_SOCKET, SO_RCVBUF, &buf_size, sizeof(buf_size));
+
                 // Enable NoDelay on the client socket too to be sure
                 int opt = 1;
                 setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
@@ -231,6 +238,8 @@ void pico_send_vid_data() {
             }
         }
     }
+    // Frame Limiter re-enabled to cap at 120 FPS (8ms)
+    // This prevents the shim from consuming 100% CPU on fast devices.
     Uint64 ticks_now = SDL_GetTicks64();
     if (last_frame + MINFRAMEMS > ticks_now) {
         SDL_Delay(last_frame + MINFRAMEMS - ticks_now);

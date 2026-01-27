@@ -14,6 +14,7 @@ var _mutex: Mutex
 var _thread_active: bool = false
 var _reset_requested: bool = false
 var _input_queue: Array = []
+var _main_thread_input_buffer: Array = []
 
 var tcp: StreamPeerTCP
 
@@ -27,6 +28,7 @@ var last_message_time: int = 0
 const RETRY_INTERVAL: int = 200
 const READ_TIMEOUT: int = 5000
 var is_intent_session: bool = false
+var is_pico_suspended: bool = false # Track if PICO-8 process is suspended
 func _on_intent_session_started():
 	print("Video Streamer: Intent Session Started (Controller Mapping Updated)")
 	is_intent_session = true
@@ -44,6 +46,10 @@ func _ready() -> void:
 	instance = self
 	set_process_input(true)
 	
+	# Apply shader if it was set before instance was ready
+	if current_shader_type != ShaderType.NONE:
+		set_shader_type(current_shader_type)
+	
 	_setup_quit_overlay()
 	
 	# Pre-calculate PackedByteArray for fast sync check
@@ -55,7 +61,14 @@ func _ready() -> void:
 		_buffer_images.append(img)
 		
 	stream_texture = ImageTexture.create_from_image(_buffer_images[0])
+	display.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	display.texture = stream_texture
+	
+	# Initialize Bezel Overlay (Custom)
+	# Defer this to ensure scene tree is fully ready or call directly
+	print("Video Streamer: Setting up Bezel Overlay...")
+	_setup_bezel_overlay()
+
 
 	# Start TCP Thread
 	_mutex = Mutex.new()
@@ -83,6 +96,12 @@ func _ready() -> void:
 	# Listen for controller hot-plugging
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 
+	# Connect to Arranger layout updates for Bezel Sync
+	var arranger = get_node_or_null("Arranger")
+	if arranger:
+		if not arranger.layout_updated.is_connected(_update_bezel_layout):
+			arranger.layout_updated.connect(_update_bezel_layout)
+
 	if OS.is_debug_build():
 		_setup_debug_fps()
 	
@@ -93,9 +112,39 @@ func _exit_tree():
 	_thread_active = false
 	if _thread and _thread.is_started():
 		_thread.wait_to_finish()
+
+# Shader Externalization: Load shaders with .custom file priority
+func load_external_shader(shader_name: String) -> Shader:
+	var shader_dir = PicoBootManager.PUBLIC_FOLDER + "/shaders/"
+	var builtin_path = "res://shaders/" + shader_name
 	
-	if tcp:
-		tcp.disconnect_from_host()
+	# Priority order:
+	# 1. shader_name.custom.gdshader (user's custom version)
+	# 2. shader_name.gdshader (base version in public folder)
+	# 3. res://shaders/shader_name.gdshader (builtin fallback)
+	
+	var custom_name = shader_name.replace(".gdshader", ".custom.gdshader")
+	var paths_to_try = [
+		shader_dir + custom_name, # User custom version
+		shader_dir + shader_name # Base external version
+	]
+	
+	for external_path in paths_to_try:
+		if FileAccess.file_exists(external_path):
+			var shader_file = FileAccess.open(external_path, FileAccess.READ)
+			if shader_file:
+				var shader_code = shader_file.get_as_text()
+				shader_file.close()
+				
+				var shader = Shader.new()
+				shader.code = shader_code
+				
+				var is_custom = external_path.ends_with(".custom.gdshader")
+				print("✓ Loaded ", "custom" if is_custom else "external", " shader: ", external_path.get_file())
+				return shader
+	# Fallback to builtin (no error notification, this is normal)
+	print("Using builtin shader: ", shader_name)
+	return load(builtin_path)
 
 func _thread_function():
 	print("TCP Thread Started")
@@ -105,6 +154,8 @@ func _thread_function():
 	var buffer: PackedByteArray = PackedByteArray()
 	
 	while _thread_active:
+		var did_work = false
+		
 		# check for reset request
 		var do_reset = false
 		if _mutex:
@@ -148,12 +199,15 @@ func _thread_function():
 			_input_queue.clear()
 			_mutex.unlock()
 			
-			for packet in inputs:
-				tcp.put_data(packet)
+			if inputs.size() > 0:
+				did_work = true
+				for packet in inputs:
+					tcp.put_data(packet)
 
 			# Read Data
 			var avail = tcp.get_available_bytes()
 			if avail > 0:
+				did_work = true
 				last_message_time = Time.get_ticks_msec()
 				
 				# If we have huge backlog, maybe we should skip?
@@ -209,8 +263,8 @@ func _thread_function():
 								synched = false
 								break
 		
-		# Check Timeout
-		if last_message_time > 0 and (Time.get_ticks_msec() - last_message_time > READ_TIMEOUT):
+		# Check Timeout (skip if process is suspended)
+		if not is_pico_suspended and last_message_time > 0 and (Time.get_ticks_msec() - last_message_time > READ_TIMEOUT):
 			print("timeout detected")
 			if tcp:
 				tcp.disconnect_from_host()
@@ -219,7 +273,8 @@ func _thread_function():
 			buffer.clear()
 
 		# Sleep to prevent burning CPU
-		OS.delay_msec(1)
+		if not did_work:
+			OS.delay_msec(1)
 
 func reconnect_threaded():
 	tcp = StreamPeerTCP.new()
@@ -281,35 +336,32 @@ const PACKLEN = len(SYNC_SEQ) + CUSTOM_BYTE_COUNT + DISPLAY_BYTES
 
 var _buffer_images: Array[Image] = []
 var _write_head: int = 0
+var _ready_index: int = -1 # Index of the latest fully written frame
+var _read_index: int = -1 # Index currently displayed
 var fps_timer: float = 0.0
 var fps_frame_count: int = 0
 var fps_skip_count: int = 0
 var debug_fps_label: Label = null
 
 # Thread-safe image update
-# Thread-safe image update using Ring Buffer (Triple Buffering)
+# Thread-safe image update using Ring Buffer (Triple Buffering - Pull Model)
 func set_im_from_data_threaded(rgba: PackedByteArray):
-	# Select next buffer
-	var img = _buffer_images[_write_head]
+	# Select buffer to write to
+	var write_idx = _write_head
+	var img = _buffer_images[write_idx]
 	
 	# Write data to it
 	img.set_data(128, 128, false, Image.FORMAT_RGBA8, rgba)
 	
-	# Handover to Main Thread
-	call_deferred("_update_texture", img)
+	# Mark as ready
+	if _mutex:
+		_mutex.lock()
+		_ready_index = write_idx
+		fps_frame_count += 1
+		_mutex.unlock()
 	
 	# Advance head (Ring Buffer 0 -> 1 -> 2 -> 0)
 	_write_head = (_write_head + 1) % 3
-	
-	# Update FPS counter
-	if _mutex:
-		_mutex.lock()
-		fps_frame_count += 1
-		_mutex.unlock()
-
-func _update_texture(rendering_image: Image):
-	stream_texture.update(rendering_image)
-
 
 func find_seq_pba(host: PackedByteArray, sub: PackedByteArray):
 	# Optimized search for PackedByteArray
@@ -339,6 +391,19 @@ var last_mouse_state = [0, 0, 0]
 var synched = false
 
 func _process(delta: float) -> void:
+	# 1. POLL FOR NEW FRAMES (Pull Method)
+	var latest_ready = -1
+	if _mutex:
+		_mutex.lock()
+		latest_ready = _ready_index
+		_mutex.unlock()
+	
+	if latest_ready != -1 and latest_ready != _read_index:
+		# We have a new frame ready to show!
+		_read_index = latest_ready
+		stream_texture.update(_buffer_images[_read_index])
+
+	# 2. UPDATE FPS DEBUG
 	if debug_fps_label:
 		fps_timer += delta
 		if fps_timer >= 1.0:
@@ -377,14 +442,20 @@ func _process(delta: float) -> void:
 
 	var current_mouse_state = [screen_pos.x, screen_pos.y, current_mouse_mask]
 	if current_mouse_state != last_mouse_state:
-		# Add to queue
-		_mutex.lock()
-		_input_queue.append([
+		# Add to local buffer (Batching)
+		_main_thread_input_buffer.append([
 			PIDOT_EVENT_MOUSEEV, current_mouse_state[0], current_mouse_state[1],
 			current_mouse_state[2], 0, 0, 0, 0
 		])
-		_mutex.unlock()
 		last_mouse_state = current_mouse_state
+		
+	# Flush Input Buffer (Single Mutex Lock per frame)
+	if _main_thread_input_buffer.size() > 0:
+		if _mutex:
+			_mutex.lock()
+			_input_queue.append_array(_main_thread_input_buffer)
+			_mutex.unlock()
+		_main_thread_input_buffer.clear()
 
 
 func _process_packet_thread(data: PackedByteArray):
@@ -395,23 +466,19 @@ func _process_packet_thread(data: PackedByteArray):
 const SDL_KEYMAP: Dictionary = preload("res://sdl_keymap.json").data
 
 func send_key(id: int, down: bool, repeat: bool, mod: int):
-	if _mutex:
-		_mutex.lock()
-		_input_queue.append([
-			PIDOT_EVENT_KEYEV,
-			id, int(down), int(repeat),
-			mod & 0xff, (mod >> 8) & 0xff, 0, 0
-		])
-		_mutex.unlock()
+	# Add to local buffer (Batching)
+	_main_thread_input_buffer.append([
+		PIDOT_EVENT_KEYEV,
+		id, int(down), int(repeat),
+		mod & 0xff, (mod >> 8) & 0xff, 0, 0
+	])
 			
 func send_input(char: int):
-	if _mutex:
-		_mutex.lock()
-		_input_queue.append([
-			PIDOT_EVENT_CHAREV, char,
-			0, 0, 0, 0, 0, 0
-		])
-		_mutex.unlock()
+	# Add to local buffer (Batching)
+	_main_thread_input_buffer.append([
+		PIDOT_EVENT_CHAREV, char,
+		0, 0, 0, 0, 0, 0
+	])
 
 var quit_overlay: Control
 # Controller Navigation
@@ -578,9 +645,22 @@ static func get_trackpad_sensitivity() -> float:
 static var integer_scaling_enabled: bool = true
 static func set_integer_scaling_enabled(enabled: bool):
 	integer_scaling_enabled = enabled
+	# Layout update is now handled via Arranger.dirty -> layout_updated signal
 
 static func get_integer_scaling_enabled() -> bool:
 	return integer_scaling_enabled
+
+static var bezel_enabled: bool = false
+static func set_bezel_enabled(enabled: bool):
+	bezel_enabled = enabled
+	if instance and instance.bezel_overlay:
+		instance.bezel_overlay.visible = enabled
+		# Trigger layout update if enabling, in case it wasn't sized correctly while hidden
+		if enabled:
+			instance.call_deferred("_update_bezel_layout")
+
+static func get_bezel_enabled() -> bool:
+	return bezel_enabled
 
 static var always_show_controls: bool = false
 static func set_always_show_controls(enabled: bool):
@@ -588,6 +668,180 @@ static func set_always_show_controls(enabled: bool):
 	
 static func get_always_show_controls() -> bool:
 	return always_show_controls
+
+enum ShaderType {
+	NONE = 0,
+	RETRO_V2 = 1,
+	RETRO_V3 = 2,
+	LCD3X = 3,
+	LCD_GBC = 4,
+	LCD_TRANSPARENCY = 5,
+	DOT_MATRIX = 6,
+	ZFAST_CRT = 7,
+	CRT_HYLLIAN = 8,
+	CRT_APERTURE = 9,
+	CRT_1TAP = 10
+}
+
+static var current_shader_type: ShaderType = ShaderType.NONE
+
+static func set_shader_type(shader_type: ShaderType):
+	current_shader_type = shader_type
+	
+	if instance:
+		if shader_type == ShaderType.NONE:
+			# Remove shader
+			instance.displayContainer.material = null
+		else:
+			# Load appropriate shader
+			var shader_path = ""
+			match shader_type:
+				ShaderType.RETRO_V2:
+					shader_path = "retro_v2.gdshader"
+				ShaderType.RETRO_V3:
+					shader_path = "retro_v3.gdshader"
+				ShaderType.LCD3X:
+					shader_path = "lcd3x.gdshader"
+				ShaderType.LCD_GBC:
+					shader_path = "lcd_gbc.gdshader"
+				ShaderType.LCD_TRANSPARENCY:
+					shader_path = "lcd_transparency.gdshader"
+				ShaderType.DOT_MATRIX:
+					shader_path = "dot_matrix.gdshader"
+				ShaderType.ZFAST_CRT:
+					shader_path = "zfast_crt.gdshader"
+				ShaderType.CRT_HYLLIAN:
+					shader_path = "crt_hyllian.gdshader"
+				ShaderType.CRT_APERTURE:
+					shader_path = "crt_aperture.gdshader"
+				ShaderType.CRT_1TAP:
+					shader_path = "crt_1tap.gdshader"
+			
+			if shader_path != "":
+				var shader = instance.load_external_shader(shader_path)
+				var mat = ShaderMaterial.new()
+				mat.shader = shader
+				
+				# Apply current saturation value
+				mat.set_shader_parameter("SATURATION", current_saturation)
+				
+				# Apply to displayContainer (the sprite showing the upscaled viewport texture)
+				instance.displayContainer.material = mat
+
+static func get_shader_type() -> ShaderType:
+	return current_shader_type
+
+# Saturation control
+static var current_saturation: float = 1.0
+
+static func set_saturation(saturation: float):
+	current_saturation = clamp(saturation, 0.0, 2.0)
+	
+	# Apply to current shader material if it exists
+	if instance and instance.displayContainer.material:
+		var mat = instance.displayContainer.material as ShaderMaterial
+		if mat and mat.shader:
+			mat.set_shader_parameter("SATURATION", current_saturation)
+
+static func get_saturation() -> float:
+	return current_saturation
+
+# Button hue control (-180 to +180 degrees)
+static var current_button_hue: float = 0.0
+static var current_button_saturation: float = 1.0
+static var current_button_lightness: float = 1.0
+
+static func set_button_hue(hue: float):
+	current_button_hue = clamp(hue, -180.0, 180.0)
+	_apply_button_hue()
+
+static func get_button_hue() -> float:
+	return current_button_hue
+
+static func set_button_saturation(saturation: float):
+	current_button_saturation = clamp(saturation, 0.0, 2.0)
+	_apply_button_hue()
+
+static func get_button_saturation() -> float:
+	return current_button_saturation
+
+static func set_button_lightness(lightness: float):
+	current_button_lightness = clamp(lightness, 0.0, 2.0)
+	_apply_button_hue()
+
+static func get_button_lightness() -> float:
+	return current_button_lightness
+
+static func _apply_button_hue():
+	if not instance:
+		print("Button hue: no instance")
+		return
+	
+	# Get button nodes
+	var root = instance.get_tree().root
+	
+	var portrait_buttons = [
+		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/X"),
+		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/Z"),
+		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/esc"),
+		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/P"),
+	]
+	
+	var landscape_buttons = [
+		root.get_node_or_null("Main/LandscapeUI/Control/RightPad/X"),
+		root.get_node_or_null("Main/LandscapeUI/Control/RightPad/Z"),
+		root.get_node_or_null("Main/LandscapeUI/Control/SystemButtons/Escape"),
+		root.get_node_or_null("Main/LandscapeUI/Control/SystemButtons/Pause"),
+	]
+	
+	# Load the hue shift shader
+	var hue_shader = instance.load_external_shader("hue_shift.gdshader") if instance else load("res://shaders/hue_shift.gdshader")
+	if not hue_shader:
+		print("Button hue: failed to load shader")
+		return
+	
+	var _buttons_found = 0
+	for button in portrait_buttons + landscape_buttons:
+		if not button:
+			continue
+		
+		_buttons_found += 1
+		
+		# At 0°, remove shader to restore original colors
+		if current_button_hue == 0.0 and current_button_saturation == 1.0 and current_button_lightness == 1.0:
+			button.material = null
+			button.self_modulate = Color.WHITE
+		else:
+			# Create shader material if needed
+			var mat: ShaderMaterial
+			if not button.material or not (button.material is ShaderMaterial):
+				mat = ShaderMaterial.new()
+				mat.shader = hue_shader
+				button.material = mat
+			else:
+				mat = button.material as ShaderMaterial
+			
+			# Set the shader parameters
+			mat.set_shader_parameter("hue_shift", current_button_hue)
+			mat.set_shader_parameter("saturation_mult", current_button_saturation)
+			mat.set_shader_parameter("lightness_mult", current_button_lightness)
+
+	
+# Legacy compatibility
+static var retro_shader_enabled: bool = false:
+	get:
+		return current_shader_type != ShaderType.NONE
+	set(value):
+		if value:
+			set_shader_type(ShaderType.RETRO_V2)
+		else:
+			set_shader_type(ShaderType.NONE)
+
+static func set_retro_shader_enabled(enabled: bool):
+	retro_shader_enabled = enabled
+
+static func get_retro_shader_enabled() -> bool:
+	return retro_shader_enabled
 
 
 var current_screen_pos: Vector2i = Vector2i.ZERO
@@ -711,14 +965,48 @@ func _unhandled_input(event: InputEvent) -> void:
 			current_mouse_mask = mask
 
 	elif event is InputEventJoypadButton:
-		# Check ignore list
-		if event.device >= 0:
-			var joy_name = Input.get_joy_name(event.device).to_lower()
-			if joy_name in ControllerUtils.ignored_devices_by_user:
-				return
+		# Check ignore list (System & User Disabled)
+		if ControllerUtils.is_system_ignored(event.device):
+			return
+		
+		var role = ControllerUtils.get_controller_role(event.device)
+		if role == ControllerUtils.ROLE_DISABLED:
+			return
 
-		if input_mode == InputMode.TRACKPAD:
-			# Controller Mouse Click Mapping
+		var is_p2 = false
+		
+		if role == ControllerUtils.ROLE_P2:
+			is_p2 = true
+		elif role == ControllerUtils.ROLE_P1:
+			is_p2 = false
+		else: # AUTO
+			# Fallback to Index Logic for Auto controllers
+			# We need to know where this controller sits in the "real" list
+			var real_joypads = ControllerUtils.get_real_controllers()
+			
+			# Filter out controllers that have explicit roles assigned?
+			# No, user wants simple logic: "Auto should be separate... set by default"
+			# If set to Auto, it participates in list ordering.
+			# But if P1 is taken explicitly, should Auto be P2?
+			# If we follow "Index Logic", then if Real List is [AutoControllerA, AutoControllerB]
+			# Index 0 -> P1, Index 1 -> P2. Yes.
+			
+			# If Real List is [ExplicitP1Controller, AutoControllerB]
+			# Index 0 is ExplicitP1. Index 1 is AutoControllerB.
+			# So AutoControllerB becomes P2. Correct.
+			
+			# If Real List is [AutoControllerA, ExplicitP2Controller]
+			# Index 0 is AutoControllerA -> P1.
+			# Index 1 is ExplicitPP2Controller -> P2.
+			# Correct.
+			
+			# Logic remains: If Index == 1 -> P2.
+			var idx = real_joypads.find(event.device)
+			if idx == 1:
+				is_p2 = true
+				
+		if input_mode == InputMode.TRACKPAD and not is_p2:
+			# Controller Mouse Click Mapping (P1 Only)
 			# Map PICO-8 O (A/Y) -> Right Click (Mask 4)
 			if event.button_index == JoyButton.JOY_BUTTON_A or event.button_index == JoyButton.JOY_BUTTON_Y:
 				if event.pressed:
@@ -736,19 +1024,37 @@ func _unhandled_input(event: InputEvent) -> void:
 				return # Consume
 				
 		var key_id = ""
-		match event.button_index:
-			JoyButton.JOY_BUTTON_A, JoyButton.JOY_BUTTON_Y: key_id = "X" if swap_zx_enabled else "Z" # Pico-8 O (or X if swapped)
-			JoyButton.JOY_BUTTON_B, JoyButton.JOY_BUTTON_X: key_id = "Z" if swap_zx_enabled else "X" # Pico-8 X (or O if swapped)
-			JoyButton.JOY_BUTTON_START, JoyButton.JOY_BUTTON_RIGHT_SHOULDER: key_id = "P" # Pause
-			JoyButton.JOY_BUTTON_BACK, JoyButton.JOY_BUTTON_GUIDE:
-				key_id = "IntentExit" if is_intent_session else "Escape" # Menu / Exit
-			JoyButton.JOY_BUTTON_DPAD_UP: key_id = "Up"
-			JoyButton.JOY_BUTTON_DPAD_DOWN: key_id = "Down"
-			JoyButton.JOY_BUTTON_DPAD_LEFT: key_id = "Left"
-			JoyButton.JOY_BUTTON_DPAD_RIGHT: key_id = "Right"
-			JoyButton.JOY_BUTTON_LEFT_SHOULDER:
-				if event.pressed:
-					_toggle_options_menu()
+		
+		if is_p2:
+			# Player 2 Mapping (ESDF + Tab/Q)
+			match event.button_index:
+				JoyButton.JOY_BUTTON_A, JoyButton.JOY_BUTTON_Y: key_id = "Tab"
+				JoyButton.JOY_BUTTON_B, JoyButton.JOY_BUTTON_X: key_id = "Q"
+				JoyButton.JOY_BUTTON_START, JoyButton.JOY_BUTTON_RIGHT_SHOULDER: key_id = "P" # Pause
+				JoyButton.JOY_BUTTON_BACK, JoyButton.JOY_BUTTON_GUIDE:
+					key_id = "IntentExit" if is_intent_session else "Escape" # Menu / Exit
+				JoyButton.JOY_BUTTON_DPAD_UP: key_id = "E"
+				JoyButton.JOY_BUTTON_DPAD_DOWN: key_id = "D"
+				JoyButton.JOY_BUTTON_DPAD_LEFT: key_id = "S"
+				JoyButton.JOY_BUTTON_DPAD_RIGHT: key_id = "F"
+				JoyButton.JOY_BUTTON_LEFT_SHOULDER:
+					if event.pressed:
+						_toggle_options_menu()
+		else:
+			# Player 1 Mapping (Standard)
+			match event.button_index:
+				JoyButton.JOY_BUTTON_A, JoyButton.JOY_BUTTON_Y: key_id = "X" if swap_zx_enabled else "Z" # Pico-8 O (or X if swapped)
+				JoyButton.JOY_BUTTON_B, JoyButton.JOY_BUTTON_X: key_id = "Z" if swap_zx_enabled else "X" # Pico-8 X (or O if swapped)
+				JoyButton.JOY_BUTTON_START, JoyButton.JOY_BUTTON_RIGHT_SHOULDER: key_id = "P" # Pause
+				JoyButton.JOY_BUTTON_BACK, JoyButton.JOY_BUTTON_GUIDE:
+					key_id = "IntentExit" if is_intent_session else "Escape" # Menu / Exit
+				JoyButton.JOY_BUTTON_DPAD_UP: key_id = "Up"
+				JoyButton.JOY_BUTTON_DPAD_DOWN: key_id = "Down"
+				JoyButton.JOY_BUTTON_DPAD_LEFT: key_id = "Left"
+				JoyButton.JOY_BUTTON_DPAD_RIGHT: key_id = "Right"
+				JoyButton.JOY_BUTTON_LEFT_SHOULDER:
+					if event.pressed:
+						_toggle_options_menu()
 		
 		if key_id != "":
 			# Only send if state actually changed to avoid spam if logic elsewhere was flawed
@@ -759,36 +1065,57 @@ func _unhandled_input(event: InputEvent) -> void:
 			vkb_setstate(key_id, event.pressed)
 
 	elif event is InputEventJoypadMotion:
-		# Check ignore list
-		if event.device >= 0:
-			var joy_name = Input.get_joy_name(event.device).to_lower()
-			if joy_name in ControllerUtils.ignored_devices_by_user:
-				return
+		# Check ignore list (System & User Disabled)
+		if ControllerUtils.is_system_ignored(event.device):
+			return
+		
+		var role = ControllerUtils.get_controller_role(event.device)
+		if role == ControllerUtils.ROLE_DISABLED:
+			return
+
+		var is_p2 = false
+		
+		if role == ControllerUtils.ROLE_P2:
+			is_p2 = true
+		elif role == ControllerUtils.ROLE_P1:
+			is_p2 = false
+		else: # AUTO
+			# Fallback to Index Logic
+			var real_joypads = ControllerUtils.get_real_controllers()
+			var idx = real_joypads.find(event.device)
+			if idx == 1:
+				is_p2 = true
+		
+		# Map Axes
+		var key_left = "S" if is_p2 else "Left"
+		var key_right = "F" if is_p2 else "Right"
+		var key_up = "E" if is_p2 else "Up"
+		var key_down = "D" if is_p2 else "Down"
 
 		var axis_threshold = 0.5
 		# Handle Left Stick X (Left/Right)
 		if event.axis == JoyAxis.JOY_AXIS_LEFT_X:
 			if event.axis_value < -axis_threshold:
-				if "Left" not in held_keys: vkb_setstate("Left", true)
+				if key_left not in held_keys: vkb_setstate(key_left, true)
 			else:
-				if "Left" in held_keys: vkb_setstate("Left", false)
+				if key_left in held_keys: vkb_setstate(key_left, false)
 
 			if event.axis_value > axis_threshold:
-				if "Right" not in held_keys: vkb_setstate("Right", true)
+				if key_right not in held_keys: vkb_setstate(key_right, true)
 			else:
-				if "Right" in held_keys: vkb_setstate("Right", false)
+				if key_right in held_keys: vkb_setstate(key_right, false)
 		
 		# Handle Left Stick Y (Up/Down)
 		elif event.axis == JoyAxis.JOY_AXIS_LEFT_Y:
 			if event.axis_value < -axis_threshold:
-				if "Up" not in held_keys: vkb_setstate("Up", true)
+				if key_up not in held_keys: vkb_setstate(key_up, true)
 			else:
-				if "Up" in held_keys: vkb_setstate("Up", false)
+				if key_up in held_keys: vkb_setstate(key_up, false)
 
 			if event.axis_value > axis_threshold:
-				if "Down" not in held_keys: vkb_setstate("Down", true)
+				if key_down not in held_keys: vkb_setstate(key_down, true)
 			else:
-				if "Down" in held_keys: vkb_setstate("Down", false)
+				if key_down in held_keys: vkb_setstate(key_down, false)
 		
 
 	#if not (tcp and tcp.get_status() == StreamPeerTCP.STATUS_CONNECTED):
@@ -1125,3 +1452,72 @@ func _create_pixel_button(text, font, size = 32) -> Button:
 	btn.add_theme_stylebox_override("focus", style_normal)
 	
 	return btn
+
+# --- Bezel Support ---
+var bezel_overlay: BezelOverlay
+
+func _setup_bezel_overlay():
+	if bezel_overlay:
+		print("Video Streamer: Bezel overlay already exists, skipping setup.")
+		return
+		
+	bezel_overlay = BezelOverlay.new()
+	bezel_overlay.name = "BezelOverlay"
+	bezel_overlay.visible = bezel_enabled # Set initial visibility
+	# Add as sibling of displayContainer so it renders ON TOP but is independent of shaders
+	# displayContainer is where the game is.
+	# Actually, we want it to be a child of this node (PicoVideoStreamer)
+	# But z-ordered above displayContainer?
+	# displayContainer is an @export var, likely a child.
+	add_child(bezel_overlay)
+	print("Video Streamer: BezelOverlay added to scene tree.")
+	
+	# Connect to resize for layout updates
+	get_tree().root.size_changed.connect(_on_viewport_size_changed)
+
+func _on_viewport_size_changed():
+	# Defer to allow UI layout to settle
+	call_deferred("_update_bezel_layout")
+
+func _update_bezel_layout():
+	if bezel_overlay and bezel_overlay.is_bezel_loaded:
+		bezel_overlay.update_layout(get_display_rect())
+
+# Helper to get the screen-space rect of the game display
+func get_display_rect() -> Rect2:
+	if not displayContainer:
+		return Rect2()
+		
+	# Use GLOBAL scale and position to get the actual on-screen size
+	var size_tex = Vector2(128, 128)
+	var final_scale = displayContainer.global_scale
+	var size_screen = size_tex * final_scale
+	
+	var pos_top_left = Vector2.ZERO
+	
+	if displayContainer.centered:
+		pos_top_left = displayContainer.global_position - (size_screen / 2.0)
+	else:
+		pos_top_left = displayContainer.global_position
+		
+	# Since BezelOverlay is a child of this node (which might be the root or not), 
+	# and this node might be scaled? 
+	# Actually BezelOverlay is a child of PicoVideoStreamer (this script).
+	# If PicoVideoStreamer is at (0,0) scale (1,1), global rect is fine.
+	# But BezelOverlay is a Control node (TextureRect). Control nodes use position relative to parent.
+	# Ideally we want the rect in the coordinate space of BezelOverlay's parent (this node).
+	# So we should convert global_position to local_position of 'this' node.
+	
+	var local_pos = to_local(pos_top_left)
+	
+	# BezelOverlay will set its position to this local_pos.
+	# BezelOverlay is a TextureRect, so its 'scale' propery does not affect 'size'.
+	# But we are manually setting 'size' in bezel_overlay.gd.
+	# Control nodes don't inherit Node2D scale in the same simple way? 
+	# Assuming this node is the scene root and unscaled.
+	
+	return Rect2(local_pos, size_screen)
+
+# We need to trigger layout update when scaling changes (e.g. Integer Scale toggle)
+# Hook into _process or key events?
+# Better: Whenever we change scale, call _update_bezel_layout.

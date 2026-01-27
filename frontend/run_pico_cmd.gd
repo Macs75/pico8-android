@@ -18,6 +18,9 @@ var last_received_time = 0
 var is_intent_session: bool = false
 signal intent_session_started
 
+# Process suspension state
+var is_process_suspended: bool = false
+
 func _ready() -> void:
 	if Engine.is_embedded_in_editor():
 		return
@@ -89,6 +92,9 @@ func _launch_pico8(target_path: String) -> void:
 	if pico_pid:
 		_kill_all_pico_processes()
 		pico_pid = null
+	
+	# Reset suspension state
+	is_process_suspended = false
 	
 	var pkg_path = PicoBootManager.APPDATA_FOLDER + "/package"
 	var env_setup = "export HOME=" + pkg_path + "; "
@@ -310,3 +316,69 @@ func _complete_restart() -> void:
 	print("Launching new PICO-8 instance: ", pending_restart_path)
 	_launch_pico8(pending_restart_path)
 	restart_state = RestartState.IDLE
+
+func _notification(what: int) -> void:
+	match what:
+		NOTIFICATION_APPLICATION_FOCUS_OUT:
+			suspend_pico_process()
+		NOTIFICATION_APPLICATION_FOCUS_IN:
+			resume_pico_process()
+
+func suspend_pico_process() -> void:
+	# Only suspend if we have a valid PID (meaning PICO-8 should be running)
+	if not pico_pid or pico_pid <= 0 or is_process_suspended:
+		return
+	
+	if not OS.is_process_running(pico_pid):
+		return
+	
+	# Notify video streamer to pause timeout monitoring
+	if PicoVideoStreamer.instance:
+		PicoVideoStreamer.instance.is_pico_suspended = true
+	
+	# Suspend proot and pico8_64
+	# Note: NOT suspending pulseaudio to avoid audio state issues on resume
+	var suspend_cmd = "pkill -STOP proot; pkill -STOP pico8_64"
+	var result = OS.execute(
+		PicoBootManager.BIN_PATH + "/sh",
+		["-c", suspend_cmd],
+		[],
+		false
+	)
+	
+	if result == OK:
+		is_process_suspended = true
+		print("PICO-8 process tree suspended")
+	else:
+		print("Failed to suspend PICO-8 process tree")
+
+func resume_pico_process() -> void:
+	# Only resume if we have a valid PID and process is currently suspended
+	if not pico_pid or pico_pid <= 0 or not is_process_suspended:
+		return
+	
+	if not OS.is_process_running(pico_pid):
+		is_process_suspended = false
+		return
+	
+	# Notify video streamer to resume timeout monitoring
+	if PicoVideoStreamer.instance:
+		PicoVideoStreamer.instance.is_pico_suspended = false
+		# Reset the timeout timer so we don't get false timeout immediately
+		PicoVideoStreamer.instance.last_message_time = Time.get_ticks_msec()
+	
+	# Resume proot and pico8_64
+	# Note: NOT resuming pulseaudio since we didn't suspend it
+	var resume_cmd = "pkill -CONT proot; pkill -CONT pico8_64"
+	var result = OS.execute(
+		PicoBootManager.BIN_PATH + "/sh",
+		["-c", resume_cmd],
+		[],
+		false
+	)
+	
+	if result == OK:
+		is_process_suspended = false
+		print("PICO-8 process tree resumed")
+	else:
+		print("Failed to resume PICO-8 process tree")

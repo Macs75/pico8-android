@@ -26,32 +26,62 @@ func _populate_list():
 	for child in container.get_children():
 		child.queue_free()
 		
-	var joypads = ControllerUtils.get_real_controllers()
+	# Iterate ALL connected (including user-disabled) but skip system-ignored
+	var joypads = Input.get_connected_joypads()
+	var visible_count = 0
 	
-	if joypads.is_empty():
-		var label = Label.new()
-		label.text = "No controllers found."
-		label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
-		container.add_child(label)
-		return
-
 	for device_id in joypads:
+		if ControllerUtils.is_system_ignored(device_id):
+			continue
+			
+		visible_count += 1
 		var joy_name = Input.get_joy_name(device_id).to_lower()
 		var display_name = joy_name
-		if display_name.length() > 25:
-			display_name = display_name.left(25) + "..."
+		if display_name.length() > 20:
+			display_name = display_name.left(20) + "..."
 			
-		var check = CheckButton.new()
-		check.text = display_name
-		check.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-		check.button_pressed = joy_name not in ControllerUtils.ignored_devices_by_user
+		var row = HBoxContainer.new()
 		
-		check.toggled.connect(func(toggled):
-			if not toggled: # Unchecked = Ignore
-				if joy_name not in ControllerUtils.ignored_devices_by_user:
-					ControllerUtils.ignored_devices_by_user.append(joy_name)
-			else: # Checked = Enable (Remove from ignore)
-				ControllerUtils.ignored_devices_by_user.erase(joy_name)
+		var label = Label.new()
+		label.text = display_name
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(label)
+		
+		var opt = OptionButton.new()
+		opt.add_item("Auto (Default)", ControllerUtils.ROLE_AUTO) # ID -1
+		opt.add_item("Player 1", ControllerUtils.ROLE_P1) # ID 0
+		opt.add_item("Player 2", ControllerUtils.ROLE_P2) # ID 1
+		opt.add_item("Disabled", ControllerUtils.ROLE_DISABLED) # ID 2
+		
+		# Determine current selection
+		var current_role = ControllerUtils.get_controller_role(device_id)
+		
+		# Map Role ID to Option Index? No, OptionButton stores IDs if we use add_item(label, id).
+		# But `selected` property works on INDEX (0, 1, 2, 3...)
+		# We must map Role -> Index
+		# Index 0: Auto (ROLE_AUTO = -1)
+		# Index 1: P1 (ROLE_P1 = 0)
+		# Index 2: P2 (ROLE_P2 = 1)
+		# Index 3: Disabled (ROLE_DISABLED = 2)
+		
+		if current_role == ControllerUtils.ROLE_AUTO:
+			opt.selected = 0
+		elif current_role == ControllerUtils.ROLE_P1:
+			opt.selected = 1
+		elif current_role == ControllerUtils.ROLE_P2:
+			opt.selected = 2
+		elif current_role == ControllerUtils.ROLE_DISABLED:
+			opt.selected = 3
+			
+		opt.item_selected.connect(func(index):
+			# Map Index -> Role
+			var new_role = ControllerUtils.ROLE_AUTO
+			if index == 0: new_role = ControllerUtils.ROLE_AUTO
+			elif index == 1: new_role = ControllerUtils.ROLE_P1
+			elif index == 2: new_role = ControllerUtils.ROLE_P2
+			elif index == 3: new_role = ControllerUtils.ROLE_DISABLED
+			
+			ControllerUtils.controller_assignments[joy_name] = new_role
 			
 			# Trigger update in arranger immediately
 			var arranger = get_tree().root.get_node_or_null("Main/Arranger")
@@ -59,7 +89,14 @@ func _populate_list():
 				arranger.update_controller_state()
 		)
 		
-		container.add_child(check)
+		row.add_child(opt)
+		container.add_child(row)
+		
+	if visible_count == 0:
+		var label = Label.new()
+		label.text = "No controllers connected."
+		label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+		container.add_child(label)
 
 func set_scale_factor(factor: float):
 	scale = Vector2(factor, factor)

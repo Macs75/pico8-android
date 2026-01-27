@@ -173,8 +173,10 @@ script = ExtResource("41_4lmeg")
 [node name="Display" type="SubViewport" parent="."]
 handle_input_locally = false
 size = Vector2i(128, 128)
+render_target_update_mode = 3
 
 [node name="Display" type="Sprite2D" parent="Display"]
+texture_filter = 1
 position = Vector2(64, 64)
 texture = SubResource("GradientTexture2D_0xm2m")
 

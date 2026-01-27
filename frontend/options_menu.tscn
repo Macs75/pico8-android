@@ -117,6 +117,31 @@ unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 
+[node name="BezelRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay"]
+layout_mode = 2
+
+[node name="ButtonBezel" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BezelRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+text = "Show Bezel"
+flat = true
+alignment = 0
+
+[node name="WrapperBezel" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BezelRow"]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+
+[node name="ToggleBezel" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BezelRow/WrapperBezel"]
+unique_name_in_owner = true
+layout_mode = 0
+focus_mode = 0
 [node name="BgColorRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay"]
 layout_mode = 2
 
@@ -144,6 +169,301 @@ layout_mode = 0
 focus_mode = 0
 color = Color(0.00784314, 0.0156863, 0.0235294, 1)
 edit_alpha = false
+
+[node name="ShaderSelectRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay"]
+layout_mode = 2
+
+[node name="ButtonShaderSelect" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+text = "Display Shader"
+flat = true
+alignment = 0
+
+[node name="WrapperShaderSelect" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow"]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+
+[node name="ShaderSelect" type="OptionButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow/WrapperShaderSelect"]
+unique_name_in_owner = true
+layout_mode = 0
+focus_mode = 0
+alignment = 1
+selected = 0
+item_count = 11
+popup/item_0/text = "OFF"
+popup/item_0/id = 0
+popup/item_1/text = "Retro V2"
+popup/item_1/id = 1
+popup/item_2/text = "Retro V3"
+popup/item_2/id = 2
+popup/item_3/text = "LCD3x"
+popup/item_3/id = 3
+popup/item_4/text = "LCD GBC"
+popup/item_4/id = 4
+popup/item_5/text = "LCD Transparency"
+popup/item_5/id = 5
+popup/item_6/text = "Dot Matrix"
+popup/item_6/id = 6
+popup/item_7/text = "ZFAST CRT"
+popup/item_7/id = 7
+popup/item_8/text = "CRT Hyllian"
+popup/item_8/id = 8
+popup/item_9/text = "CRT Aperture"
+popup/item_9/id = 9
+popup/item_10/text = "CRT-1tap"
+popup/item_10/id = 10
+
+[node name="SaturationRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay"]
+layout_mode = 2
+
+[node name="LabelSaturation" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "Sat."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WrapperSaturation" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+theme_override_constants/separation = 5
+
+[node name="ButtonSaturationMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_fonts/font = ExtResource("6_emoji")
+text = "➖"
+
+[node name="SliderScalerSaturation" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="SliderSaturation" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation/SliderScalerSaturation"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 0
+size_flags_vertical = 4
+max_value = 2.0
+step = 0.05
+value = 1.0
+ticks_on_borders = true
+
+[node name="ButtonSaturationPlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_fonts/font = ExtResource("6_emoji")
+text = "➕"
+
+[node name="LabelSaturationValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(35, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+text = "1.00"
+horizontal_alignment = 2
+
+[node name="ButtonsHeaderRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay"]
+layout_mode = 2
+
+[node name="LabelButtonsHeader" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsHeaderRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+text = "Buttons"
+vertical_alignment = 1
+
+[node name="ButtonsIndentWrapper" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+
+[node name="ButtonsContent" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="ButtonHueRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent"]
+layout_mode = 2
+
+[node name="LabelButtonHue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "Hue"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WrapperButtonHue" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+theme_override_constants/separation = 5
+
+[node name="ButtonHueMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_fonts/font = ExtResource("6_emoji")
+text = "➖"
+
+[node name="SliderScalerButtonHue" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="SliderButtonHue" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue/SliderScalerButtonHue"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 0
+size_flags_vertical = 4
+max_value = 2.0
+step = 0.05
+value = 1.0
+ticks_on_borders = true
+
+[node name="ButtonHuePlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_fonts/font = ExtResource("6_emoji")
+text = "➕"
+
+[node name="LabelButtonHueValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+text = "1.00"
+horizontal_alignment = 2
+
+[node name="ButtonSatRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent"]
+layout_mode = 2
+
+[node name="LabelButtonSat" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "Sat."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WrapperButtonSat" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+theme_override_constants/separation = 5
+
+[node name="ButtonSatMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_fonts/font = ExtResource("6_emoji")
+text = "➖"
+
+[node name="SliderScalerButtonSat" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="SliderButtonSat" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat/SliderScalerButtonSat"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 0
+size_flags_vertical = 4
+max_value = 2.0
+step = 0.05
+value = 1.0
+ticks_on_borders = true
+
+[node name="ButtonSatPlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_fonts/font = ExtResource("6_emoji")
+text = "➕"
+
+[node name="LabelButtonSatValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+text = "1.00"
+horizontal_alignment = 2
+
+[node name="ButtonLightRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent"]
+layout_mode = 2
+
+[node name="LabelButtonLight" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "Light"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WrapperButtonLight" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+theme_override_constants/separation = 5
+
+[node name="ButtonLightMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_fonts/font = ExtResource("6_emoji")
+text = "➖"
+
+[node name="SliderScalerButtonLight" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="SliderButtonLight" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight/SliderScalerButtonLight"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 0
+size_flags_vertical = 4
+max_value = 2.0
+step = 0.05
+value = 1.0
+ticks_on_borders = true
+
+[node name="ButtonLightPlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_fonts/font = ExtResource("6_emoji")
+text = "➕"
+
+[node name="LabelButtonLightValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+text = "1.00"
+horizontal_alignment = 2
 
 [node name="SectionControls" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer"]
 layout_mode = 2

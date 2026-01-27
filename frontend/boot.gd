@@ -73,7 +73,7 @@ func _ready() -> void:
 	else:
 		request_storage_permission()
 
-const BOOTSTRAP_PACKAGE_VERSION = "5"
+const BOOTSTRAP_PACKAGE_VERSION = "7"
 
 func setup():
 	set_ui_state(false, false, true) # permission_ui=false, select_zip_ui=false, progress_ui=true
@@ -160,8 +160,113 @@ func setup():
 		if get_tree():
 			await get_tree().process_frame
 	
+	# Copy shaders to public folder
+	copy_shaders_to_public_folder()
+	
+	# Copy other assets (bezel, etc)
+	copy_assets_to_public_folder()
+	
 	# Setup is complete, go to main scene
 	get_tree().change_scene_to_file("res://main.tscn")
+
+func copy_assets_to_public_folder():
+	# 1. Default Bezel
+	var bezel_target = PUBLIC_FOLDER + "/bezel.png"
+	if not FileAccess.file_exists(bezel_target):
+		var src_path = "res://assets/bezel.png"
+		print("Attempting to load default bezel resource: ", src_path)
+		
+		# Use load() instead of FileAccess because exported assets are packed
+		if ResourceLoader.exists(src_path):
+			var texture = load(src_path)
+			if texture and texture is Texture2D:
+				var image = texture.get_image()
+				if image:
+					var err = image.save_png(bezel_target)
+					if err == OK:
+						print("Successfully exported default bezel to: ", bezel_target)
+					else:
+						print("Failed to save bezel png: ", error_string(err))
+				else:
+					print("Failed to get image data from texture")
+			else:
+				print("Failed to load texture resource")
+		else:
+			print("Default bezel resource not found at: ", src_path)
+	else:
+		print("Bezel already exists, skipping default copy.")
+
+
+func copy_shaders_to_public_folder():
+	var shader_dir = PUBLIC_FOLDER + "/shaders"
+	DirAccess.make_dir_recursive_absolute(shader_dir)
+	
+	# List of shaders to copy
+	var shaders = [
+		"retro_v2.gdshader",
+		"retro_v3.gdshader",
+		"dot_matrix.gdshader",
+		"lcd_gbc.gdshader",
+		"lcd_transparency.gdshader",
+		"crt_1tap.gdshader",
+		"crt_aperture.gdshader",
+		"crt_hyllian.gdshader",
+		"hue_shift.gdshader",
+		"lcd3x.gdshader",
+		"zfast_crt.gdshader"
+	]
+	
+	# Always overwrite base shaders (users modify .custom files)
+	for shader_name in shaders:
+		var src_path = "res://shaders/" + shader_name
+		var dst_path = shader_dir + "/" + shader_name
+		
+		if FileAccess.file_exists(src_path):
+			var shader_code = FileAccess.get_file_as_string(src_path)
+			
+			# Prepend warning header
+			var warning = """/*
+ * ⚠️ WARNING: THIS FILE WILL BE OVERWRITTEN ON APP UPDATES! ⚠️
+ * 
+ * To customize this shader:
+ * 1. Copy this file
+ * 2. Rename it to: %s
+ * 3. Edit the .custom file instead
+ * 
+ * The app loads .custom files with priority, so your changes
+ * will be preserved across updates.
+ */
+
+""" % shader_name.replace(".gdshader", ".custom.gdshader")
+			
+			var final_content = warning + shader_code
+			
+			var dst_file = FileAccess.open(dst_path, FileAccess.WRITE)
+			if dst_file:
+				dst_file.store_string(final_content)
+				dst_file.close()
+	
+	# Create README if it doesn't exist
+	var readme_path = shader_dir + "/README.txt"
+	if not FileAccess.file_exists(readme_path):
+		var readme_content = """To customize a shader:
+1. Copy the shader file (e.g., crt_aperture.gdshader)
+2. Rename it with .custom suffix (e.g., crt_aperture.custom.gdshader)
+3. Edit the .custom file with a text editor
+4. Changes apply immediately when you switch shaders!
+
+The app will load .custom versions if they exist, otherwise use the base shader.
+If you break a shader, just delete the .custom file to reset to default.
+
+Shader files are located in: /sdcard/Documents/pico8/shaders/
+Error logs are saved to: /sdcard/Documents/pico8/logs/shader_errors.log
+"""
+		var readme_file = FileAccess.open(readme_path, FileAccess.WRITE)
+		if readme_file:
+			readme_file.store_string(readme_content)
+			readme_file.close()
+	
+	print("Shaders copied to: ", shader_dir)
 
 var waiting_for_focus = false
 

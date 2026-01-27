@@ -41,6 +41,10 @@ func _ready() -> void:
 		%ToggleIntegerScaling.toggled.connect(_on_integer_scaling_toggled)
 	if not %ToggleShowControls.toggled.is_connected(_on_show_controls_toggled):
 		%ToggleShowControls.toggled.connect(_on_show_controls_toggled)
+	if not %ToggleBezel.toggled.is_connected(_on_bezel_toggled):
+		%ToggleBezel.toggled.connect(_on_bezel_toggled)
+	if not %ShaderSelect.item_selected.is_connected(_on_shader_selected):
+		%ShaderSelect.item_selected.connect(_on_shader_selected)
 	if not %ColorPickerBG.color_changed.is_connected(_on_bg_color_picked):
 		%ColorPickerBG.color_changed.connect(_on_bg_color_picked)
 
@@ -49,7 +53,9 @@ func _ready() -> void:
 	%ButtonSwapZX.pressed.connect(_on_label_pressed.bind(%ToggleSwapZX))
 	%ButtonKeyboard.pressed.connect(_on_label_pressed.bind(%ToggleKeyboard))
 	%ButtonIntegerScaling.pressed.connect(_on_label_pressed.bind(%ToggleIntegerScaling))
+	%ButtonBezel.pressed.connect(_on_label_pressed.bind(%ToggleBezel))
 	%ButtonShowControls.pressed.connect(_on_label_pressed.bind(%ToggleShowControls))
+	%ButtonShaderSelect.pressed.connect(_on_shader_button_pressed)
 	%ButtonConnectedControllers.pressed.connect(_on_connected_controllers_pressed)
 	%ButtonBgColor.pressed.connect(func(): %ColorPickerBG.get_popup().popup_centered())
 	%ButtonInputMode.pressed.connect(_on_label_pressed.bind(%ToggleInputMode))
@@ -59,6 +65,42 @@ func _ready() -> void:
 
 	if not %SliderSensitivity.value_changed.is_connected(_on_sensitivity_changed):
 		%SliderSensitivity.value_changed.connect(_on_sensitivity_changed)
+
+	if not %SliderSaturation.value_changed.is_connected(_on_saturation_changed):
+		%SliderSaturation.value_changed.connect(_on_saturation_changed)
+	
+	if not %ButtonSaturationMinus.pressed.is_connected(_on_saturation_minus):
+		%ButtonSaturationMinus.pressed.connect(_on_saturation_minus)
+	
+	if not %ButtonSaturationPlus.pressed.is_connected(_on_saturation_plus):
+		%ButtonSaturationPlus.pressed.connect(_on_saturation_plus)
+	
+	if not %SliderButtonHue.value_changed.is_connected(_on_button_hue_changed):
+		%SliderButtonHue.value_changed.connect(_on_button_hue_changed)
+	
+	if not %ButtonHueMinus.pressed.is_connected(_on_button_hue_minus):
+		%ButtonHueMinus.pressed.connect(_on_button_hue_minus)
+	
+	if not %ButtonHuePlus.pressed.is_connected(_on_button_hue_plus):
+		%ButtonHuePlus.pressed.connect(_on_button_hue_plus)
+	
+	if not %SliderButtonSat.value_changed.is_connected(_on_button_sat_changed):
+		%SliderButtonSat.value_changed.connect(_on_button_sat_changed)
+	
+	if not %ButtonSatMinus.pressed.is_connected(_on_button_sat_minus):
+		%ButtonSatMinus.pressed.connect(_on_button_sat_minus)
+	
+	if not %ButtonSatPlus.pressed.is_connected(_on_button_sat_plus):
+		%ButtonSatPlus.pressed.connect(_on_button_sat_plus)
+	
+	if not %SliderButtonLight.value_changed.is_connected(_on_button_light_changed):
+		%SliderButtonLight.value_changed.connect(_on_button_light_changed)
+	
+	if not %ButtonLightMinus.pressed.is_connected(_on_button_light_minus):
+		%ButtonLightMinus.pressed.connect(_on_button_light_minus)
+	
+	if not %ButtonLightPlus.pressed.is_connected(_on_button_light_plus):
+		%ButtonLightPlus.pressed.connect(_on_button_light_plus)
 
 	%ButtonAppSettings.pressed.connect(_on_app_settings_pressed)
 	if %ButtonSupport:
@@ -205,6 +247,9 @@ func _update_layout():
 	# 4. Integer Scaling Row
 	_style_option_row(%ButtonIntegerScaling, %ToggleIntegerScaling, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/IntegerScalingRow/WrapperIntegerScaling, dynamic_font_size, scale_factor)
 
+	# 4a. Bezel Row
+	_style_option_row(%ButtonBezel, %ToggleBezel, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BezelRow/WrapperBezel, dynamic_font_size, scale_factor)
+
 	# 5. Show Controls Row
 	_style_option_row(%ButtonShowControls, %ToggleShowControls, $SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow/WrapperShowControls, dynamic_font_size, scale_factor)
 
@@ -213,6 +258,9 @@ func _update_layout():
 
 	# 6. Background Color Row
 	_style_option_row(%ButtonBgColor, %ColorPickerBG, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BgColorRow/WrapperBgColor, dynamic_font_size, scale_factor)
+
+	# 6a. Shader Select Row
+	_style_shader_select_row(%ButtonShaderSelect, %ShaderSelect, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow/WrapperShaderSelect, dynamic_font_size, scale_factor)
 
 	# 7. Input Mode Row
 	_style_option_row(%ButtonInputMode, %ToggleInputMode, $SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/InputModeRow/WrapperInputMode, dynamic_font_size, scale_factor)
@@ -230,6 +278,61 @@ func _update_layout():
 	# Adjust wrapper to hold scaled slider
 	var scaled_size = slider.size * scale_factor
 	slider_scaler.custom_minimum_size = scaled_size
+	
+	# 7a. Saturation Row
+	%LabelSaturation.add_theme_font_size_override("font_size", dynamic_font_size)
+	%LabelSaturationValue.add_theme_font_size_override("font_size", dynamic_font_size)
+	%ButtonSaturationMinus.add_theme_font_size_override("font_size", dynamic_font_size)
+	%ButtonSaturationPlus.add_theme_font_size_override("font_size", dynamic_font_size)
+	
+	var slider_sat = %SliderSaturation
+	var slider_scaler_sat = %SliderScalerSaturation
+	
+	slider_sat.scale = Vector2(scale_factor, scale_factor)
+	var scaled_size_sat = slider_sat.size * scale_factor
+	slider_scaler_sat.custom_minimum_size = scaled_size_sat
+	
+	# 7b. Buttons Header
+	%LabelButtonsHeader.add_theme_font_size_override("font_size", dynamic_font_size)
+	
+	# 7c. Button Hue Row
+	%LabelButtonHue.add_theme_font_size_override("font_size", dynamic_font_size)
+	%LabelButtonHueValue.add_theme_font_size_override("font_size", int(dynamic_font_size * 0.85))
+	%ButtonHueMinus.add_theme_font_size_override("font_size", dynamic_font_size)
+	%ButtonHuePlus.add_theme_font_size_override("font_size", dynamic_font_size)
+	
+	var slider_hue = %SliderButtonHue
+	var slider_scaler_hue = %SliderScalerButtonHue
+	
+	slider_hue.scale = Vector2(scale_factor, scale_factor)
+	var scaled_size_hue = slider_hue.size * scale_factor
+	slider_scaler_hue.custom_minimum_size = scaled_size_hue
+	
+	# 7c. Button Saturation Row
+	%LabelButtonSat.add_theme_font_size_override("font_size", dynamic_font_size)
+	%LabelButtonSatValue.add_theme_font_size_override("font_size", int(dynamic_font_size * 0.85))
+	%ButtonSatMinus.add_theme_font_size_override("font_size", dynamic_font_size)
+	%ButtonSatPlus.add_theme_font_size_override("font_size", dynamic_font_size)
+	
+	var slider_sat2 = %SliderButtonSat
+	var slider_scaler_sat2 = %SliderScalerButtonSat
+	
+	slider_sat2.scale = Vector2(scale_factor, scale_factor)
+	var scaled_size_sat2 = slider_sat2.size * scale_factor
+	slider_scaler_sat2.custom_minimum_size = scaled_size_sat2
+	
+	# 7d. Button Lightness Row
+	%LabelButtonLight.add_theme_font_size_override("font_size", dynamic_font_size)
+	%LabelButtonLightValue.add_theme_font_size_override("font_size", int(dynamic_font_size * 0.85))
+	%ButtonLightMinus.add_theme_font_size_override("font_size", dynamic_font_size)
+	%ButtonLightPlus.add_theme_font_size_override("font_size", dynamic_font_size)
+	
+	var slider_light = %SliderButtonLight
+	var slider_scaler_light = %SliderScalerButtonLight
+	
+	slider_light.scale = Vector2(scale_factor, scale_factor)
+	var scaled_size_light = slider_light.size * scale_factor
+	slider_scaler_light.custom_minimum_size = scaled_size_light
 
 	
 	# 4. Save Buttons
@@ -524,6 +627,57 @@ func _on_sensitivity_changed(val: float):
 	PicoVideoStreamer.set_trackpad_sensitivity(val * 0.5)
 	%LabelSensitivityValue.text = str(val)
 
+func _on_saturation_changed(val: float):
+	PicoVideoStreamer.set_saturation(val)
+	%LabelSaturationValue.text = "%.2f" % val
+
+func _on_saturation_minus():
+	var new_val = %SliderSaturation.value - %SliderSaturation.step
+	%SliderSaturation.value = clamp(new_val, %SliderSaturation.min_value, %SliderSaturation.max_value)
+
+func _on_saturation_plus():
+	var new_val = %SliderSaturation.value + %SliderSaturation.step
+	%SliderSaturation.value = clamp(new_val, %SliderSaturation.min_value, %SliderSaturation.max_value)
+
+func _on_button_hue_changed(val: float):
+	# Convert 0.0-2.0 range to -180 to +180 degrees
+	# 1.0 is neutral (0 degrees)
+	var degrees = (val - 1.0) * 180.0
+	PicoVideoStreamer.set_button_hue(degrees)
+	%LabelButtonHueValue.text = "%.2f" % val
+
+func _on_button_hue_minus():
+	var new_val = %SliderButtonHue.value - %SliderButtonHue.step
+	%SliderButtonHue.value = clamp(new_val, %SliderButtonHue.min_value, %SliderButtonHue.max_value)
+
+func _on_button_hue_plus():
+	var new_val = %SliderButtonHue.value + %SliderButtonHue.step
+	%SliderButtonHue.value = clamp(new_val, %SliderButtonHue.min_value, %SliderButtonHue.max_value)
+
+func _on_button_sat_changed(val: float):
+	PicoVideoStreamer.set_button_saturation(val)
+	%LabelButtonSatValue.text = "%.2f" % val
+
+func _on_button_sat_minus():
+	var new_val = %SliderButtonSat.value - %SliderButtonSat.step
+	%SliderButtonSat.value = clamp(new_val, %SliderButtonSat.min_value, %SliderButtonSat.max_value)
+
+func _on_button_sat_plus():
+	var new_val = %SliderButtonSat.value + %SliderButtonSat.step
+	%SliderButtonSat.value = clamp(new_val, %SliderButtonSat.min_value, %SliderButtonSat.max_value)
+
+func _on_button_light_changed(val: float):
+	PicoVideoStreamer.set_button_lightness(val)
+	%LabelButtonLightValue.text = "%.2f" % val
+
+func _on_button_light_minus():
+	var new_val = %SliderButtonLight.value - %SliderButtonLight.step
+	%SliderButtonLight.value = clamp(new_val, %SliderButtonLight.min_value, %SliderButtonLight.max_value)
+
+func _on_button_light_plus():
+	var new_val = %SliderButtonLight.value + %SliderButtonLight.step
+	%SliderButtonLight.value = clamp(new_val, %SliderButtonLight.min_value, %SliderButtonLight.max_value)
+
 func _on_integer_scaling_toggled(toggled_on: bool):
 	PicoVideoStreamer.set_integer_scaling_enabled(toggled_on)
 	# Force Arranger update
@@ -537,6 +691,42 @@ func _on_show_controls_toggled(toggled_on: bool):
 	var arranger = get_tree().root.get_node_or_null("Main/Arranger")
 	if arranger:
 		arranger.dirty = true
+
+func _on_bezel_toggled(toggled_on: bool):
+	PicoVideoStreamer.set_bezel_enabled(toggled_on)
+
+func _style_shader_select_row(label_btn: Button, option_btn: OptionButton, wrapper: Control, font_size: int, scale_factor: float):
+	# Style Label Button
+	label_btn.add_theme_font_size_override("font_size", font_size)
+	
+	# Style OptionButton - smaller font and scale for the selected text display
+	option_btn.add_theme_font_size_override("font_size", int(font_size * 0.5))
+	option_btn.scale = Vector2(scale_factor * 0.6, scale_factor * 0.6)
+	
+	# Calculate natural size
+	option_btn.custom_minimum_size = Vector2.ZERO
+	var natural_size = option_btn.get_combined_minimum_size()
+	
+	# Resize Wrapper
+	var wrapper_base_height = max(30.0, natural_size.y)
+	var reserved_width = 120.0 * scale_factor
+	var reserved_height = wrapper_base_height * scale_factor * 0.6
+	
+	wrapper.custom_minimum_size = Vector2(reserved_width, reserved_height)
+	
+	# Center option button in wrapper
+	var child_scaled_height = natural_size.y * scale_factor * 0.6
+	var y_offset = (reserved_height - child_scaled_height) / 2.0
+	option_btn.position.y = y_offset
+
+func _on_shader_button_pressed():
+	# Cycle through shader options
+	var current = %ShaderSelect.selected
+	%ShaderSelect.select((current + 1) % %ShaderSelect.item_count)
+	_on_shader_selected(%ShaderSelect.selected)
+
+func _on_shader_selected(index: int):
+	PicoVideoStreamer.set_shader_type(index as PicoVideoStreamer.ShaderType)
 
 var connected_controllers_dialog_instance = null
 
@@ -574,8 +764,15 @@ func save_config():
 	config.set_value("settings", "swap_zx_enabled", PicoVideoStreamer.get_swap_zx_enabled())
 	config.set_value("settings", "trackpad_sensitivity", PicoVideoStreamer.get_trackpad_sensitivity())
 	config.set_value("settings", "integer_scaling_enabled", PicoVideoStreamer.get_integer_scaling_enabled())
+	config.set_value("settings", "bezel_enabled", PicoVideoStreamer.get_bezel_enabled())
 	config.set_value("settings", "always_show_controls", PicoVideoStreamer.get_always_show_controls())
 	config.set_value("settings", "ignored_devices_by_user", ControllerUtils.ignored_devices_by_user)
+	config.set_value("settings", "controller_assignments", ControllerUtils.controller_assignments)
+	config.set_value("settings", "shader_type", PicoVideoStreamer.get_shader_type())
+	config.set_value("settings", "saturation", PicoVideoStreamer.get_saturation())
+	config.set_value("settings", "button_hue", PicoVideoStreamer.get_button_hue())
+	config.set_value("settings", "button_saturation", PicoVideoStreamer.get_button_saturation())
+	config.set_value("settings", "button_lightness", PicoVideoStreamer.get_button_lightness())
 	config.set_value("settings", "bg_color", %ColorPickerBG.color)
 	config.save(CONFIG_PATH)
 	
@@ -596,14 +793,43 @@ func load_config():
 	var swap_zx = false
 	var sensitivity = 0.5
 	var integer_scaling = true
+	var bezel = false
 	var always_show = false
+	var shader_type = PicoVideoStreamer.ShaderType.NONE
+	var saturation = 1.0
+	var button_hue = 0.0
+	var button_saturation = 1.0
+	var button_lightness = 1.0
 	
 	if err == OK:
 		haptic = config.get_value("settings", "haptic_enabled", false)
 		swap_zx = config.get_value("settings", "swap_zx_enabled", false)
 		sensitivity = config.get_value("settings", "trackpad_sensitivity", 0.5)
 		integer_scaling = config.get_value("settings", "integer_scaling_enabled", true)
+		bezel = config.get_value("settings", "bezel_enabled", false)
 		always_show = config.get_value("settings", "always_show_controls", false)
+		# Safely load typed array for ignored devices
+		var loaded_ignored = config.get_value("settings", "ignored_devices_by_user", [])
+		ControllerUtils.ignored_devices_by_user.clear()
+		for device in loaded_ignored:
+			ControllerUtils.ignored_devices_by_user.append(str(device))
+		
+		# ControllerUtils.ignored_devices_by_user = config.get_value("settings", "ignored_devices_by_user", [])
+		ControllerUtils.controller_assignments = config.get_value("settings", "controller_assignments", {})
+		
+		# Load shader type (defaults to NONE if not saved)
+		shader_type = config.get_value("settings", "shader_type", PicoVideoStreamer.ShaderType.NONE)
+		
+		# Load saturation
+		saturation = config.get_value("settings", "saturation", 1.0)
+		
+		# Load button hue
+		button_hue = config.get_value("settings", "button_hue", 0.0)
+		
+		# Load button saturation and lightness
+		button_saturation = config.get_value("settings", "button_saturation", 1.0)
+		button_lightness = config.get_value("settings", "button_lightness", 1.0)
+		
 		# Safely load typed array
 		var saved_ignored = config.get_value("settings", "ignored_devices_by_user", [])
 		ControllerUtils.ignored_devices_by_user.clear()
@@ -632,16 +858,38 @@ func load_config():
 	PicoVideoStreamer.set_swap_zx_enabled(swap_zx)
 	PicoVideoStreamer.set_trackpad_sensitivity(sensitivity)
 	PicoVideoStreamer.set_integer_scaling_enabled(integer_scaling)
+	PicoVideoStreamer.set_bezel_enabled(bezel)
 	PicoVideoStreamer.set_always_show_controls(always_show)
+	PicoVideoStreamer.set_shader_type(shader_type)
+	PicoVideoStreamer.set_saturation(saturation)
+	PicoVideoStreamer.set_button_hue(button_hue)
+	PicoVideoStreamer.set_button_saturation(button_saturation)
+	PicoVideoStreamer.set_button_lightness(button_lightness)
 	
 	# Update UI
 	if %ToggleHaptic: %ToggleHaptic.set_pressed_no_signal(haptic)
 	if %ToggleSwapZX: %ToggleSwapZX.set_pressed_no_signal(swap_zx)
 	if %ToggleIntegerScaling: %ToggleIntegerScaling.set_pressed_no_signal(integer_scaling)
+	if %ToggleBezel: %ToggleBezel.set_pressed_no_signal(bezel)
 	if %ToggleShowControls: %ToggleShowControls.set_pressed_no_signal(always_show)
+	if %ShaderSelect: %ShaderSelect.select(shader_type)
 	if %SliderSensitivity:
 		%SliderSensitivity.set_value_no_signal(sensitivity) # avoid double setting
 		%LabelSensitivityValue.text = str(sensitivity)
+	if %SliderSaturation:
+		%SliderSaturation.set_value_no_signal(saturation)
+		%LabelSaturationValue.text = "%.2f" % saturation
+	if %SliderButtonHue:
+		# Convert degrees (-180 to 180) back to slider range (0.0 to 2.0)
+		var slider_val = (button_hue / 180.0) + 1.0
+		%SliderButtonHue.set_value_no_signal(slider_val)
+		%LabelButtonHueValue.text = "%.2f" % slider_val
+	if %SliderButtonSat:
+		%SliderButtonSat.set_value_no_signal(button_saturation)
+		%LabelButtonSatValue.text = "%.2f" % button_saturation
+	if %SliderButtonLight:
+		%SliderButtonLight.set_value_no_signal(button_lightness)
+		%LabelButtonLightValue.text = "%.2f" % button_lightness
 		
 	# Sync other non-saved states usually comes from default checks
 	if %ToggleInputMode:

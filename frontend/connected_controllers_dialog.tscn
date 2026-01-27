@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://c8q7j2n1m4k5l"]
 
-[ext_resource type="Script" path="res://connected_controllers_dialog.gd" id="1_dialog"]
+[ext_resource type="Script" uid="uid://b6ltymnche76l" path="res://connected_controllers_dialog.gd" id="1_dialog"]
 
 [node name="ConnectedControllersDialog" type="PanelContainer"]
 anchors_preset = 8

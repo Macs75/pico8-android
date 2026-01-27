@@ -57,6 +57,9 @@ var applinks
 func _ready() -> void:
 	if Engine.has_singleton(PLUGIN_NAME):
 		applinks = Engine.get_singleton(PLUGIN_NAME)
+		applinks.connect("audio_route_changed", _on_audio_route_changed)
+		var is_connected = applinks.isExternalAudioConnected()
+		_on_audio_route_changed(is_connected, "initial")
 	elif OS.has_feature("android"):
 		printerr("Couldn't find plugin " + PLUGIN_NAME)
 
@@ -83,3 +86,9 @@ func open_app_settings() -> void:
 		applinks.open_app_settings()
 	else:
 		printerr("Applinks singleton is null")
+
+func _on_audio_route_changed(is_external: bool, device_name: String = ""):
+	if is_external:
+		print("Audio output switched to Headphones/Bluetooth: ", device_name)
+	else:
+		print("Audio output switched to System Speakers")
