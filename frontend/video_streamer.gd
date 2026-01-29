@@ -5,8 +5,15 @@ class_name PicoVideoStreamer
 @export var display: Sprite2D
 @export var displayContainer: Sprite2D
 
-var HOST = "192.168.0.42" if Engine.is_embedded_in_editor() else "127.0.0.1"
-var PORT = 18080
+var PIPE_VID = PicoBootManager.APPDATA_FOLDER + "/package/tmp/pico8.vid"
+var PIPE_IN = PicoBootManager.APPDATA_FOLDER + "/package/tmp/pico8.in"
+
+# Pipe Handles
+var vid_pipe_id: int = -1
+var in_pipe_id: int = -1
+var _applinks_plugin = null
+
+const TOTAL_PACKET_SIZE = 11 + 1 + (128 * 128 * 4)
 
 # TCP Threading
 var _thread: Thread
@@ -15,8 +22,6 @@ var _thread_active: bool = false
 var _reset_requested: bool = false
 var _input_queue: Array = []
 var _main_thread_input_buffer: Array = []
-
-var tcp: StreamPeerTCP
 
 const PIDOT_EVENT_MOUSEEV = 1;
 const PIDOT_EVENT_KEYEV = 2;
@@ -52,6 +57,12 @@ func _ready() -> void:
 	
 	_setup_quit_overlay()
 	
+	if Engine.has_singleton("applinks"):
+		_applinks_plugin = Engine.get_singleton("applinks")
+		print("Video Streamer: Applinks Plugin Found")
+	else:
+		print("Video Streamer: Applinks Plugin NOT FOUND (Critical for Pipes)")
+
 	# Pre-calculate PackedByteArray for fast sync check
 	SYNC_SEQ_PBA = PackedByteArray(SYNC_SEQ)
 	
@@ -69,6 +80,11 @@ func _ready() -> void:
 	print("Video Streamer: Setting up Bezel Overlay...")
 	_setup_bezel_overlay()
 
+
+	# Clean up pipes before starting thread 
+	# This prevents blocking on an old inode that the shell script might delete later
+	DirAccess.remove_absolute(PIPE_IN)
+	DirAccess.remove_absolute(PIPE_VID)
 
 	# Start TCP Thread
 	_mutex = Mutex.new()
@@ -167,15 +183,11 @@ func load_external_shader(shader_name: String) -> Shader:
 	return load(builtin_path)
 
 func _thread_function():
-	print("TCP Thread Started")
-	# Initial connect
-	reconnect_threaded()
-	
+	print("Pipe Thread Started")
+		
 	var buffer: PackedByteArray = PackedByteArray()
 	
 	while _thread_active:
-		var did_work = false
-		
 		# check for reset request
 		var do_reset = false
 		if _mutex:
@@ -186,129 +198,106 @@ func _thread_function():
 			_mutex.unlock()
 		
 		if do_reset:
-			if tcp:
-				tcp.disconnect_from_host()
-				tcp = null
 			synched = false
 			buffer.clear()
-			last_message_time = 0
 		
-		# Connection Management
-		if not (tcp and tcp.get_status() == StreamPeerTCP.STATUS_CONNECTED):
-			# Use call_deferred to update UI from thread
+		# Connection Management (Open Pipes)
+		if vid_pipe_id == -1 or in_pipe_id == -1:
 			loading.call_deferred("set_visible", true)
 			
-			if not tcp:
-				if Time.get_ticks_msec() - last_message_time > RETRY_INTERVAL:
-					print("reconnecting - random id %08x" % randi())
-					reconnect_threaded()
-			elif tcp.get_status() == StreamPeerTCP.STATUS_CONNECTING:
-				tcp.poll()
-			else:
-				# Reconnect logic for failed state
-				if Time.get_ticks_msec() - last_message_time > RETRY_INTERVAL:
-					reconnect_threaded()
-		
-		elif tcp.get_status() == StreamPeerTCP.STATUS_CONNECTED:
-			# Aggressive Polling to keep internal buffers fresh
-			tcp.poll()
-			
-			# Loading spinner update
-			loading.call_deferred("set_visible", false)
-			
-			# Send Input Queue
-			_mutex.lock()
-			var inputs = _input_queue.duplicate()
-			_input_queue.clear()
-			_mutex.unlock()
-			
-			if inputs.size() > 0:
-				did_work = true
-				for packet in inputs:
-					tcp.put_data(packet)
+			if _applinks_plugin:
+				# PLUGIN MODE (Native Blocking I/O)
+				# Input Pipe
+				if in_pipe_id == -1:
+					# Try Open (Blocking likely short if Shim opened it eager)
+					var pid = _applinks_plugin.pipe_open(PIPE_IN, 1) # Mode 1 = WRITE
+					if pid != -1:
+						in_pipe_id = pid
+						print("Pipe: Connected to Input Pipe (ID: ", pid, ")")
+					else:
+						# Open failed (not found?)
+						OS.delay_msec(500)
 
-			# Read Data
-			var avail = tcp.get_available_bytes()
-			if avail > 0:
-				did_work = true
-				last_message_time = Time.get_ticks_msec()
-				
-				# If we have huge backlog, maybe we should skip?
-				# But user asked to avoid skipping if possible. 
-				# Let's try to just process everything fast.
-				
-				if not synched:
-					var chunk = tcp.get_data(avail)
-					if chunk[0] == OK:
-						buffer.append_array(chunk[1])
-						
-						# Search for SYNC_SEQ
-						var syncpoint = find_seq_pba(buffer, SYNC_SEQ_PBA)
-						if syncpoint != -1:
-							#print("Resync successful at index: ", syncpoint)
-							if buffer.size() >= syncpoint + PACKLEN:
-								var packet = buffer.slice(syncpoint, syncpoint + PACKLEN)
-								_process_packet_thread(packet)
-								buffer.clear() # Clear buffer completely
-								synched = true
-							else:
-								# Keep enough buffer for next read
-								if syncpoint > 0:
-									buffer = buffer.slice(syncpoint)
-						else:
-							if buffer.size() > PACKLEN * 2:
-								buffer = buffer.slice(PACKLEN) # Discard old garbage
+				# Video Pipe
+				if vid_pipe_id == -1:
+					var pid = _applinks_plugin.pipe_open(PIPE_VID, 0) # Mode 0 = READ
+					if pid != -1:
+						vid_pipe_id = pid
+						print("Pipe: Connected to Video Pipe (ID: ", pid, ")")
+					else:
+						# Open failed
+						OS.delay_msec(500)
+			
+			# Check connection status
+			var pipes_connected = (vid_pipe_id != -1 and in_pipe_id != -1)
+			
+			if not pipes_connected:
+				continue
+		
+		# Connected
+		loading.call_deferred("set_visible", false)
+		
+		# 1. Send Inputs
+		_mutex.lock()
+		var inputs = _input_queue.duplicate()
+		_input_queue.clear()
+		_mutex.unlock()
+		
+		if inputs.size() > 0:
+			for packet in inputs:
+				var pba = PackedByteArray(packet)
+				if _applinks_plugin:
+					_applinks_plugin.pipe_write(in_pipe_id, pba)
+			
+		# 2. Read Video
+		var chunk: PackedByteArray
+		if _applinks_plugin:
+			chunk = _applinks_plugin.pipe_read(vid_pipe_id, TOTAL_PACKET_SIZE)
+
+		if chunk.size() > 0:
+			buffer.append_array(chunk)
+			
+			# Header Sync Check
+			if not synched:
+				var syncpoint = find_seq_pba(buffer, SYNC_SEQ_PBA)
+				if syncpoint != -1:
+					if buffer.size() >= syncpoint + TOTAL_PACKET_SIZE:
+						var packet = buffer.slice(syncpoint, syncpoint + TOTAL_PACKET_SIZE)
+						_process_packet_thread(packet)
+						buffer = buffer.slice(syncpoint + TOTAL_PACKET_SIZE)
+						synched = true
+					else:
+						# Found sync point but packet is incomplete, wait for more data
+						if syncpoint > 0:
+							buffer = buffer.slice(syncpoint)
 				else:
-					# Synched mode - Read frame by frame
-					if avail >= PACKLEN:
-						# Greedy read: If multiple frames are available, only render the latest one?
-						# User asked: "can set_im_from_data be done in the new thread to maximze the refresh rate as soon as the data is available?"
-						# But they also asked "avoid to skip frames like we do at line 257".
-						# If we respect "avoid skipping", we must process ALL frames (rendering them one by one).
-						# But if we process all frames, we might fall behind if rendering is slower than network.
-						# However, updating texture is fast.
-						# Let's try reading ALL available full frames in a loop
-						var num_frames = int(avail / PACKLEN)
-						for i in range(num_frames):
-							var header_res = tcp.get_data(len(SYNC_SEQ) + CUSTOM_BYTE_COUNT)
-							if header_res[0] == OK:
-								var header_data = header_res[1]
-								if header_data.slice(0, len(SYNC_SEQ)) == SYNC_SEQ_PBA:
-									var pixel_res = tcp.get_data(DISPLAY_BYTES)
-									if pixel_res[0] == OK:
-										set_im_from_data_threaded(pixel_res[1])
-								else:
-									print("Sync lost! Entering resync mode.")
-									synched = false
-									buffer.append_array(header_data)
-									break # Exit loop
-							else:
-								synched = false
-								break
-		
-		# Check Timeout (skip if process is suspended)
-		if not is_pico_suspended and last_message_time > 0 and (Time.get_ticks_msec() - last_message_time > READ_TIMEOUT):
-			print("timeout detected")
-			if tcp:
-				tcp.disconnect_from_host()
-				tcp = null
-			synched = false
-			buffer.clear()
-
-		# Sleep to prevent burning CPU
-		if not did_work:
-			# High Performance Yield: Sleep 100 microseconds (0.1ms)
-			# Enough to yield CPU, but wakes up faster than msec(1)
-			OS.delay_usec(100)
+					# No sync point in current buffer
+					if buffer.size() > TOTAL_PACKET_SIZE * 2:
+						# Buffer is too large and no sync found, prune it
+						buffer = buffer.slice(TOTAL_PACKET_SIZE)
+			else:
+				# Synched Mode - validate header at position 0
+				if buffer.size() >= TOTAL_PACKET_SIZE:
+					# Manual byte-by-byte header check (most reliable)
+					var header_valid = true
+					for i in range(11):
+						if buffer[i] != SYNC_SEQ_PBA[i]:
+							header_valid = false
+							break
+					
+					if header_valid:
+						var packet = buffer.slice(0, TOTAL_PACKET_SIZE)
+						_process_packet_thread(packet)
+						buffer = buffer.slice(TOTAL_PACKET_SIZE)
+					else:
+						# Header mismatch - lost sync, rescan
+						print("Pipe: Lost Sync! Rescanning...")
+						synched = false
+		else:
+			OS.delay_msec(1)
 
 func reconnect_threaded():
-	tcp = StreamPeerTCP.new()
-	var err = tcp.connect_to_host(HOST, PORT)
-	if err != OK:
-		print("Failed to start connection. Error code: ", err)
-	else:
-		tcp.set_no_delay(true)
-	last_message_time = Time.get_ticks_msec()
+	pass # No-op for pipes
 
 func _setup_debug_fps():
 	debug_fps_label = Label.new()
@@ -399,29 +388,28 @@ func set_im_from_data_threaded(rgba: PackedByteArray):
 	# Advance head (Ring Buffer 0 -> 1 -> 2 -> 0)
 	_write_head = (_write_head + 1) % 3
 
-func find_seq_pba(host: PackedByteArray, sub: PackedByteArray):
-	# Optimized search for PackedByteArray
+func find_seq_pba(host: PackedByteArray, sub: PackedByteArray) -> int:
 	var host_len = host.size()
 	var sub_len = sub.size()
-	if host_len < sub_len: return -1
 	
-	for i in range(host_len - sub_len + 1):
+	if host_len < sub_len or sub_len == 0:
+		return -1
+	
+	var first = sub[0]
+	var limit = host_len - sub_len
+	
+	for i in range(limit + 1):
 		# Quick check first byte
-		if host[i] == sub[0]:
-			if host.slice(i, i + sub_len) == sub:
+		if host[i] == first:
+			var is_match = true
+			for j in range(1, sub_len):
+				if host[i + j] != sub[j]:
+					is_match = false
+					break
+			if is_match:
 				return i
 	return -1
-	
-func find_seq(host: Array, sub: Array):
-	for i in range(len(host) - len(sub) + 1):
-		var success = true
-		for j in range(len(sub)):
-			if host[i + j] != sub[j]:
-				success = false
-				break
-		if success:
-			return i
-	return -1
+
 
 var last_mouse_state = [0, 0, 0]
 var synched = false

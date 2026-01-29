@@ -8,6 +8,10 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="Pico8-frontend"
@@ -22,7 +26,7 @@ by @unmatchedbracket"
 config/version="1.1.0"
 run/main_scene="uid://clwlaw414wfp8"
 config/quit_on_go_back=false
-config/features=PackedStringArray("4.5", "Mobile")
+config/features=PackedStringArray("4.6", "Mobile")
 boot_splash/bg_color=Color(0.00784314, 0.0156863, 0.0235294, 1)
 boot_splash/use_filter=false
 boot_splash/image="uid://c3dqg0oq8wp1"
@@ -30,7 +34,7 @@ config/icon="uid://cishtcd4y3no7"
 
 [autoload]
 
-Applinks="*res://addons/applinks/applinks.gd"
+Applinks="*uid://ch7ek4c57vn1q"
 
 [display]
 
@@ -54,7 +58,6 @@ pointing/emulate_touch_from_mouse=true
 
 textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
 anti_aliasing/screen_space_roughness_limiter/enabled=false
 textures/decals/filter=0

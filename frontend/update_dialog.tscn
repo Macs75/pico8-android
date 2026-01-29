@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid="uid://4vmngve4vdiw"]
+[gd_scene format=3 uid="uid://4vmngve4vdiw"]
 
 [ext_resource type="Script" uid="uid://0386nqvt1cg6" path="res://update_dialog.gd" id="1_update"]
 [ext_resource type="FontFile" uid="uid://c2jlc3nt8y38q" path="res://assets/font/atlas-0.png" id="2_font"]
@@ -30,11 +30,11 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
-[node name="UpdateDialog" type="CanvasLayer"]
+[node name="UpdateDialog" type="CanvasLayer" unique_id=1396494092]
 layer = 100
 script = ExtResource("1_update")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1615843170]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -42,7 +42,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.5)
 
-[node name="Panel" type="PanelContainer" parent="."]
+[node name="Panel" type="PanelContainer" parent="." unique_id=1117001461]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -57,18 +57,18 @@ grow_vertical = 2
 pivot_offset = Vector2(200, 120)
 theme_override_styles/panel = SubResource("StyleBoxFlat_update")
 
-[node name="Margin" type="MarginContainer" parent="Panel"]
+[node name="Margin" type="MarginContainer" parent="Panel" unique_id=1880452579]
 layout_mode = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBox" type="VBoxContainer" parent="Panel/Margin"]
+[node name="VBox" type="VBoxContainer" parent="Panel/Margin" unique_id=1389012650]
 layout_mode = 2
 theme_override_constants/separation = 15
 
-[node name="Title" type="Label" parent="Panel/Margin/VBox"]
+[node name="Title" type="Label" parent="Panel/Margin/VBox" unique_id=174726788]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
@@ -77,11 +77,11 @@ theme_override_font_sizes/font_size = 26
 text = "UPDATE AVAILABLE!"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="Panel/Margin/VBox"]
+[node name="HSeparator" type="HSeparator" parent="Panel/Margin/VBox" unique_id=186206440]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="VersionLabel" type="Label" parent="Panel/Margin/VBox"]
+[node name="VersionLabel" type="Label" parent="Panel/Margin/VBox" unique_id=1347488923]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6, 1, 0.6, 1)
@@ -91,7 +91,7 @@ text = "v0.0.X"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="LinkButton" type="Button" parent="Panel/Margin/VBox"]
+[node name="LinkButton" type="Button" parent="Panel/Margin/VBox" unique_id=176781559]
 unique_name_in_owner = true
 layout_mode = 2
 focus_neighbor_top = NodePath("../CloseButton")
@@ -104,7 +104,7 @@ theme_override_font_sizes/font_size = 24
 text = "OPEN GITHUB"
 flat = true
 
-[node name="IgnoreButton" type="Button" parent="Panel/Margin/VBox"]
+[node name="IgnoreButton" type="Button" parent="Panel/Margin/VBox" unique_id=1479724202]
 unique_name_in_owner = true
 layout_mode = 2
 focus_neighbor_top = NodePath("../LinkButton")
@@ -119,11 +119,11 @@ toggle_mode = true
 text = "[ ] IGNORE THIS VERSION"
 flat = true
 
-[node name="Spacer" type="Control" parent="Panel/Margin/VBox"]
+[node name="Spacer" type="Control" parent="Panel/Margin/VBox" unique_id=2104329234]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="CloseButton" type="Button" parent="Panel/Margin/VBox"]
+[node name="CloseButton" type="Button" parent="Panel/Margin/VBox" unique_id=2037468184]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4

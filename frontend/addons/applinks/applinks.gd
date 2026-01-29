@@ -92,3 +92,23 @@ func _on_audio_route_changed(is_external: bool, device_name: String = ""):
 		print("Audio output switched to Headphones/Bluetooth: ", device_name)
 	else:
 		print("Audio output switched to System Speakers")
+
+# Pipe Wrappers (Native Plugin)
+func pipe_open(path: String, mode: int) -> int:
+	if applinks:
+		return applinks.pipe_open(path, mode)
+	return -1
+
+func pipe_read(id: int, length: int) -> PackedByteArray:
+	if applinks:
+		return applinks.pipe_read(id, length)
+	return PackedByteArray()
+
+func pipe_write(id: int, data: PackedByteArray) -> bool:
+	if applinks:
+		return applinks.pipe_write(id, data)
+	return false
+
+func pipe_close(id: int) -> void:
+	if applinks:
+		applinks.pipe_close(id)

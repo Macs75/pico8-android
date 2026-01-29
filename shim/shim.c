@@ -9,11 +9,8 @@
 #include <string.h>
 #include <dlfcn.h>
 #include <stdbool.h>
-#include <sys/ioctl.h>  // FIONREAD
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
+#include <sys/stat.h>
+#include <errno.h>
 #include <SDL2/SDL.h>
 
 #define FINDSDL(VAR, NAME) \
@@ -25,8 +22,11 @@
         } \
     }
 
-static int server_fd = -1;
-static int client_fd = -1;
+static int vid_fd = -1;
+static int in_fd = -1;
+
+#define FIFO_VID_PATH "/tmp/pico8.vid"
+#define FIFO_IN_PATH "/tmp/pico8.in"
 
 static Uint8 keystate[256];
 
@@ -44,74 +44,65 @@ static uint8_t* picoram = NULL;
 
 #define IN_PACKET_SIZE 8 // Event(1) + X(2) + Y(2) + Mask(1) + Pad(2)
 static uint8_t in_packet[IN_PACKET_SIZE];
+#define HEADER_SIZE 11 // "PICO8SYNC__"
+#define META_SIZE 1
+#define PIXEL_SIZE (128*128*4)
+#define TOTAL_PACKET_SIZE (HEADER_SIZE + META_SIZE + PIXEL_SIZE)
 
-void shim_sock_init() {
-    if (server_fd != -1) return;
+// Helper to ensure all bytes are written to a potentially blocking FD
+static ssize_t write_all(int fd, const void* buf, size_t len) {
+    size_t total_sent = 0;
+    const uint8_t* p = (const uint8_t*)buf;
+    while (total_sent < len) {
+        ssize_t sent = write(fd, p + total_sent, len - total_sent);
+        if (sent <= 0) {
+            if (sent < 0 && errno == EINTR) continue;
+            return sent; // Error or broken pipe
+        }
+        total_sent += sent;
+    }
+    return total_sent;
+}
 
-    printf("SHIM: Initializing Direct TCP Server on 18080...\n");
+void shim_fifo_init() {
+    printf("SHIM: Using Host-Created FIFOs at %s and %s\n", FIFO_IN_PATH, FIFO_VID_PATH);
     
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_fd < 0) {
-        perror("SHIM: Socket creation failed");
-        return;
+    // Eagerly open Input FIFO so Godot (Writer) has a target
+    in_fd = open(FIFO_IN_PATH, O_RDONLY | O_NONBLOCK);
+    if (in_fd < 0) {
+        perror("SHIM: Failed to open Input FIFO eagerly");
+    } else {
+        printf("SHIM: Input FIFO opened eagerly\n");
     }
-
-    int opt = 1;
-    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
-    struct sockaddr_in address;
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(18080);
-
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        perror("SHIM: Bind failed (Is netcat still running?)");
-        return;
-    }
-
-    if (listen(server_fd, 1) < 0) {
-        perror("SHIM: Listen failed");
-        return;
-    }
-
-    // Set non-blocking to handle accept() in the loop without freezing PICO-8
-    int flags = fcntl(server_fd, F_GETFL, 0);
-    fcntl(server_fd, F_SETFL, flags | O_NONBLOCK);
-
-    printf("SHIM: Listening on 0.0.0.0:18080\n");
 }
 
 
 // Try to read a packet from the client
 // Returns true if a full packet was read
 static bool pico_poll_event() {
-    if (client_fd < 0) return false;
-
-    // Check available bytes
-    int available = 0;
-    if (ioctl(client_fd, FIONREAD, &available) == -1) {
-        // Error or disconnected
-        close(client_fd);
-        client_fd = -1;
-        printf("SHIM: Client disconnected (ioctl)\n");
-        return false;
+    // Check if open (eagerly opened in init, but maybe failed/closed)
+    if (in_fd < 0) {
+        // Try to reopen
+        in_fd = open(FIFO_IN_PATH, O_RDONLY | O_NONBLOCK);
+        if (in_fd < 0) return false;
+        printf("SHIM: Connected to Input FIFO (Lazy/Retry)\n");
     }
 
-    if (available >= IN_PACKET_SIZE) {
-        ssize_t n = recv(client_fd, in_packet, IN_PACKET_SIZE, 0);
-        if (n == IN_PACKET_SIZE) {
-            // Debug print only occasionally?
-             // for (int i = 0; i < IN_PACKET_SIZE; ++i) printf("%02x ", in_packet[i]); printf("\n");
-            return true;
+    ssize_t n = read(in_fd, in_packet, IN_PACKET_SIZE);
+    if (n == IN_PACKET_SIZE) {
+        return true;
+    } else if (n < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            // No data available
         } else {
-             // Partial read or error, treat as disconnect for simplicity or retry
-             if (n <= 0) {
-                 close(client_fd);
-                 client_fd = -1;
-                 printf("SHIM: Client disconnected (recv 0)\n");
-             }
-             return false;
+            close(in_fd);
+            in_fd = -1;
         }
+    } else if (n == 0) {
+        // EOF means writer closed pipe or no writer connected in non-blocking
+        // Don't close immediately to prevent spamming open()
+        close(in_fd);
+        in_fd = -1;
     }
     return false;
 }
@@ -126,7 +117,7 @@ DECLSPEC int SDLCALL SDL_Init(Uint32 flags) {
         printf("false start\n");
         false_start = false;
     } else {
-        shim_sock_init();
+        shim_fifo_init();
     }
 
     return realf(flags);
@@ -143,49 +134,43 @@ DECLSPEC SDL_Window* SDLCALL SDL_CreateWindow(const char *title,
     flags &= ~(SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_RESIZABLE);
     SDL_Window* window = realf(title, x, y, 128, 128, flags);
     currentsurf = SDL_GetWindowSurface(window);
-    // printf("surf yoinked direct from window");
+    printf("yoinking surface. ptr=%p\n", currentsurf);
+    if(currentsurf) {
+        printf("surface format: %s\n", SDL_GetPixelFormatName(currentsurf->format->format));
+    }
     return window;
 }
 
 static Uint64 last_frame = 0;
-// this comes in at about 125fps
-#define MINFRAMEMS 8
-
-//Ensure packet_buffer is 4-byte aligned
-#define HEADER_SIZE 11 // "PICO8SYNC__"
-#define META_SIZE 1
-#define PIXEL_SIZE (128*128*4)
-#define TOTAL_PACKET_SIZE (HEADER_SIZE + META_SIZE + PIXEL_SIZE)
 
 // Single static buffer to avoid stack allocation and allow single-syscall writing
 static uint8_t packet_buffer[TOTAL_PACKET_SIZE];
 static bool header_initialized = false;
+static int vid_open_attempts = 0;
 
 void pico_send_vid_data() {
-    if (currentsurf != NULL && currentsurf->format->format == SDL_PIXELFORMAT_XRGB8888) {
-        
+    if (currentsurf == NULL) {
+        return;
+    }
+
         // Initialize header once
         if (!header_initialized) {
             memcpy(packet_buffer, "PICO8SYNC__", HEADER_SIZE);
             header_initialized = true;
         }
 
-        // Optimized Pixel Copy (BGRA -> RGB) using pointer arithmetic
-        const uint32_t* src32 = (uint32_t*)currentsurf->pixels;
+        // Destination is always RGBA8888 (Godot format)
         // Skip Header + Meta to get to pixel area
         uint32_t* dst32 = (uint32_t*)(packet_buffer + HEADER_SIZE + META_SIZE); 
         
-        // Unrolling or vectorizing this loop could be next, but pointer math is already much faster than [i*4+...]
-        // 128*128 = 16384 pixels
+        // 32-bit stride 00RRGGBB (for RGB888) or XXRRGGBB (for XRGB8888)
+        const uint32_t* src32 = (uint32_t*)currentsurf->pixels;
         for (int i = 0; i < 16384; i++) {
-			uint32_t pixel = src32[i];
-			// Shift bytes to convert BGRX to RGBA
-			// Assumes Little Endian: Source 0xXXRRGGBB -> Target 0xAABBGGRR
-			// (Note: Godot's RGBA8 in memory on Little Endian is actually 0xAA_BB_GG_RR)
-			*dst32++ = ((pixel & 0x00FF0000) >> 16) | // R
-					   (pixel & 0x0000FF00)         | // G
-					   ((pixel & 0x000000FF) << 16) | // B
-					   0xFF000000;                    // A (Alpha 25
+        uint32_t pixel = src32[i];
+        *dst32++ = ((pixel & 0x00FF0000) >> 16) | 
+                    (pixel & 0x0000FF00)         | 
+                    ((pixel & 0x000000FF) << 16) | 
+                    0xFF000000;
         }
 
         uint8_t navstate = 0x00;
@@ -204,46 +189,43 @@ void pico_send_vid_data() {
         // Write Metadata
         packet_buffer[HEADER_SIZE] = navstate;
 
-        // DIRECT TCP SEND
+        // DIRECT FIFO SEND
         
-        // 1. Accept Connection if needed
-        if (client_fd < 0) {
-            struct sockaddr_in client_addr;
-            socklen_t addrlen = sizeof(client_addr);
-            client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &addrlen);
-            
-            if (client_fd >= 0) {
-                printf("SHIM: Client connected!\n");
-                
-                // Increase buffer size to 256KB to hold multiple frames (65KB each)
-                // This prevents blocking/fragmentation during burst sends
-                int buf_size = 256 * 1024;
-                setsockopt(client_fd, SOL_SOCKET, SO_SNDBUF, &buf_size, sizeof(buf_size));
-                setsockopt(client_fd, SOL_SOCKET, SO_RCVBUF, &buf_size, sizeof(buf_size));
-
-                // Enable NoDelay on the client socket too to be sure
-                int opt = 1;
-                setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
+        // 1. Lazy open Video FIFO
+        if (vid_fd < 0) {
+            // OPEN IN BLOCKING MODE for video. 
+            // This ensures we wait for Godot to clear the buffer if we exceed PIPE_BUF (64KB).
+            vid_fd = open(FIFO_VID_PATH, O_WRONLY);
+            if (vid_fd < 0) {
+                // If ENXIO, no reader is open yet. This is expected.
+                if (errno != ENXIO) {
+                   perror("SHIM: Failed to open video FIFO");
+                } else {
+                   if (vid_open_attempts++ % 60 == 0) {
+                       printf("SHIM: Waiting for video reader (ENXIO)...\n");
+                   }
+                }
+                return;
             }
+            printf("SHIM: Connected to Video FIFO!\n");
         }
 
-        // 2. Send Data if connected
-        if (client_fd >= 0) {
-            ssize_t sent = send(client_fd, packet_buffer, TOTAL_PACKET_SIZE, MSG_NOSIGNAL);
+        // 2. Write Data
+        if (vid_fd >= 0) {
+            ssize_t sent = write_all(vid_fd, packet_buffer, TOTAL_PACKET_SIZE);
             if (sent < 0) {
-                 // EPIPE or other error -> Client disconnected
-                 printf("SHIM: Send failed, client disconnected\n");
-                 close(client_fd);
-                 client_fd = -1;
+                 if (errno == EPIPE) {
+                     // Reader Closed
+                     printf("SHIM: Video Pipe broken (Reader closed)\n");
+                     close(vid_fd);
+                     vid_fd = -1;
+                 } else if (errno != EAGAIN) {
+                     // Other error
+                     // perror("SHIM: Write failed");
+                 }
             }
         }
-    }
 
-    // Uint64 ticks_now = SDL_GetTicks64();
-    // if (last_frame + MINFRAMEMS > ticks_now) {
-    //     SDL_Delay(last_frame + MINFRAMEMS - ticks_now);
-    // }
-    // last_frame = ticks_now;
 }
 
 DECLSPEC int SDLCALL SDL_UpdateWindowSurface(SDL_Window * window) {
