@@ -187,8 +187,29 @@ func setup():
 		print("Audio backend template not found: ", g_source)
 
 	
+	# Load custom SDL mappings
+	load_sdl_mappings()
+
 	# Setup is complete, go to main scene
 	get_tree().change_scene_to_file("res://main.tscn")
+
+func load_sdl_mappings():
+	var mapping_file = PUBLIC_FOLDER + "/sdl_controllers.txt"
+	if FileAccess.file_exists(mapping_file):
+		print("Loading SDL mappings from: ", mapping_file)
+		var f = FileAccess.open(mapping_file, FileAccess.READ)
+		if f:
+			while not f.eof_reached():
+				var line = f.get_line().strip_edges()
+				if line.begins_with("#") or line == "":
+					continue
+				# Basic validation: SDL strings typically have commas
+				if "," in line:
+					Input.add_joy_mapping(line, true)
+					print("Applied mapping: ", line)
+			f.close()
+	else:
+		print("No external SDL mapping file found at: ", mapping_file)
 
 func copy_assets_to_public_folder():
 	# 1. Default Bezel

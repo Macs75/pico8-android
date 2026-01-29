@@ -3,6 +3,11 @@ extends Control
 @onready var container = %VBoxContainer
 @onready var close_btn = %ButtonClose
 
+@onready var test_popup = %TestPopup
+@onready var test_label = %ResultLabel
+@onready var close_test_btn = %CloseTestBtn
+var test_device_id: int = -1
+
 func _ready() -> void:
 	# Enforce opaque background
 	var style = StyleBoxFlat.new()
@@ -19,12 +24,25 @@ func _ready() -> void:
 	add_theme_stylebox_override("panel", style)
 
 	close_btn.pressed.connect(queue_free)
+	
+	# Connect Test Popup Close Button
+	if close_test_btn:
+		close_test_btn.pressed.connect(func():
+			test_popup.visible = false
+			test_device_id = -1
+		)
+	
+	get_tree().root.size_changed.connect(_fit_to_screen)
 	_populate_list()
+	
+	# Initial fit
+	call_deferred("_fit_to_screen")
 
 func _populate_list():
-	# Clear existing children if any
+	# Clear existing children if any (except template)
 	for child in container.get_children():
-		child.queue_free()
+		if child != %RowTemplate:
+			child.queue_free()
 		
 	# Iterate ALL connected (including user-disabled) but skip system-ignored
 	var joypads = Input.get_connected_joypads()
@@ -40,29 +58,19 @@ func _populate_list():
 		if display_name.length() > 20:
 			display_name = display_name.left(20) + "..."
 			
-		var row = HBoxContainer.new()
+		var row = %RowTemplate.duplicate()
+		row.visible = true
 		
-		var label = Label.new()
+		# Setup Label
+		var label = row.get_node("NameLabel")
 		label.text = display_name
-		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(label)
 		
-		var opt = OptionButton.new()
-		opt.add_item("Auto (Default)", ControllerUtils.ROLE_AUTO) # ID -1
-		opt.add_item("Player 1", ControllerUtils.ROLE_P1) # ID 0
-		opt.add_item("Player 2", ControllerUtils.ROLE_P2) # ID 1
-		opt.add_item("Disabled", ControllerUtils.ROLE_DISABLED) # ID 2
+		# Setup OptionButton
+		var opt = row.get_node("RoleOption")
+		# Items are already set in scene, just need logic
 		
 		# Determine current selection
 		var current_role = ControllerUtils.get_controller_role(device_id)
-		
-		# Map Role ID to Option Index? No, OptionButton stores IDs if we use add_item(label, id).
-		# But `selected` property works on INDEX (0, 1, 2, 3...)
-		# We must map Role -> Index
-		# Index 0: Auto (ROLE_AUTO = -1)
-		# Index 1: P1 (ROLE_P1 = 0)
-		# Index 2: P2 (ROLE_P2 = 1)
-		# Index 3: Disabled (ROLE_DISABLED = 2)
 		
 		if current_role == ControllerUtils.ROLE_AUTO:
 			opt.selected = 0
@@ -89,7 +97,14 @@ func _populate_list():
 				arranger.update_controller_state()
 		)
 		
-		row.add_child(opt)
+		# Setup Test Button
+		var test_btn = row.get_node("TestBtn")
+		test_btn.pressed.connect(func(): _show_test_popup(device_id))
+
+		# Setup Export Button
+		var export_btn = row.get_node("ExportBtn")
+		export_btn.pressed.connect(func(): _export_mapping(device_id))
+
 		container.add_child(row)
 		
 	if visible_count == 0:
@@ -98,7 +113,69 @@ func _populate_list():
 		label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 		container.add_child(label)
 
+func _export_mapping(device_id: int):
+	var guid = Input.get_joy_guid(device_id)
+	var joy_name = Input.get_joy_name(device_id)
+	var path = PicoBootManager.PUBLIC_FOLDER + "/sdl_controllers.txt"
+	
+	print("Attempting export for: ", joy_name, " [", guid, "]")
+	
+	if FileAccess.file_exists(path):
+		var content = FileAccess.get_file_as_string(path)
+		if guid in content:
+			print("Mapping for GUID ", guid, " already exists in ", path)
+			return
+
+	var f = FileAccess.open(path, FileAccess.READ_WRITE)
+	if not FileAccess.file_exists(path):
+		f = FileAccess.open(path, FileAccess.WRITE)
+	else:
+		f.seek_end() # Append
+		
+	if f:
+		f.store_line("# " + joy_name)
+		# Template currently just adds the GUID and name, user must fill rest
+		f.store_line("%s,%s,platform:Android," % [guid, joy_name])
+		f.close()
+		print("Exported mapping template to: ", path)
+	else:
+		print("Failed to open mapping file for writing: ", path)
+
+
+func _show_test_popup(device_id: int):
+	test_device_id = device_id
+	test_popup.visible = true
+	test_label.text = "Waiting..."
+    # Helper label is static in scene now
+
+func _input(event):
+	if test_popup and is_instance_valid(test_popup) and test_popup.visible:
+		if event.device == test_device_id:
+			if event is InputEventJoypadButton and event.pressed:
+				test_label.text = "Button %d -> b%d" % [event.button_index, event.button_index]
+			elif event is InputEventJoypadMotion:
+				if abs(event.axis_value) > 0.5:
+					test_label.text = "Axis %d -> a%d" % [event.axis, event.axis]
+
+
 func set_scale_factor(factor: float):
 	scale = Vector2(factor, factor)
-	# Center it? Handled by anchors usually if it's a full overlay, 
-	# but if it's a popup we might need centering logic or PanelContainer
+	call_deferred("_fit_to_screen")
+
+func _fit_to_screen():
+	# Clamp scale to fit screen
+	var screen_size = get_viewport().get_visible_rect().size
+	var current_size = size * scale
+	
+	# Margin 20px
+	var max_w = screen_size.x - 40
+	var max_h = screen_size.y - 40
+	
+	if current_size.x > max_w or current_size.y > max_h:
+		var ratio_w = max_w / size.x
+		var ratio_h = max_h / size.y
+		var new_scale = min(scale.x, min(ratio_w, ratio_h))
+		scale = Vector2(new_scale, new_scale)
+		
+	# Center it
+	position = (screen_size - size * scale) / 2.0
