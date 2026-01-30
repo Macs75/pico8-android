@@ -4,9 +4,12 @@ extends Control
 @onready var close_btn = %ButtonClose
 
 @onready var test_popup = %TestPopup
-@onready var test_label = %ResultLabel
+@onready var button_test_label = %ResultLabel
+@onready var axis_test_label = %ResultLabel2
+@onready var key_test_label = %ResultLabel3
 @onready var close_test_btn = %CloseTestBtn
 var test_device_id: int = -1
+var last_event_time: int = 0
 
 func _ready() -> void:
 	# Enforce opaque background
@@ -30,6 +33,8 @@ func _ready() -> void:
 		close_test_btn.pressed.connect(func():
 			test_popup.visible = false
 			test_device_id = -1
+			if PicoVideoStreamer.instance:
+				PicoVideoStreamer.instance.set_input_blocked(false)
 		)
 	
 	get_tree().root.size_changed.connect(_fit_to_screen)
@@ -37,6 +42,10 @@ func _ready() -> void:
 	
 	# Initial fit
 	call_deferred("_fit_to_screen")
+
+func _exit_tree():
+	if PicoVideoStreamer.instance:
+		PicoVideoStreamer.instance.set_input_blocked(false)
 
 func _populate_list():
 	# Clear existing children if any (except template)
@@ -54,6 +63,8 @@ func _populate_list():
 			
 		visible_count += 1
 		var joy_name = Input.get_joy_name(device_id).to_lower()
+		print("Found controller: ", joy_name)
+		print("Info: ", Input.get_joy_info(device_id))
 		var display_name = joy_name
 		if display_name.length() > 20:
 			display_name = display_name.left(20) + "..."
@@ -116,26 +127,60 @@ func _populate_list():
 func _export_mapping(device_id: int):
 	var guid = Input.get_joy_guid(device_id)
 	var joy_name = Input.get_joy_name(device_id)
-	var path = PicoBootManager.PUBLIC_FOLDER + "/sdl_controllers.txt"
+	var path = PicoBootManager.PUBLIC_FOLDER + "/pico8_sdl_controllers.txt"
 	
 	print("Attempting export for: ", joy_name, " [", guid, "]")
 	
+	var f = null
 	if FileAccess.file_exists(path):
 		var content = FileAccess.get_file_as_string(path)
 		if guid in content:
 			print("Mapping for GUID ", guid, " already exists in ", path)
 			return
-
-	var f = FileAccess.open(path, FileAccess.READ_WRITE)
-	if not FileAccess.file_exists(path):
 		f = FileAccess.open(path, FileAccess.WRITE)
 	else:
-		f.seek_end() # Append
-		
+		f = FileAccess.open(path, FileAccess.WRITE)
+		f.store_line("# Pico8 SDL Controllers mapping file")
+		f.store_line("# Created by Pico8 Android")
+		f.store_line("# Button Name   Description")
+		f.store_line("# a             Bottom face button (Xbox A, PlayStation Cross)")
+		f.store_line("# b             Right face button (Xbox B, PlayStation Circle)")
+		f.store_line("# x             Left face button (Xbox X, PlayStation Square)")
+		f.store_line("# y             Top face button (Xbox Y, PlayStation Triangle)")
+		f.store_line("# dpup          D-pad up button (Xbox D-pad Up, PlayStation D-pad Up)")
+		f.store_line("# dpdown        D-pad down button (Xbox D-pad Down, PlayStation D-pad Down)")
+		f.store_line("# dpleft        D-pad left button (Xbox D-pad Left, PlayStation D-pad Left)")
+		f.store_line("# dpright       D-pad right button (Xbox D-pad Right, PlayStation D-pad Right)")
+		f.store_line("# start         Start/Options button (Xbox Start, PlayStation Options)")
+		f.store_line("# back          Back/Select button (Xbox Back, PlayStation Share/Create)")
+		f.store_line("# guide         Guide button (Xbox Guide, PlayStation PS button)")
+		f.store_line("# leftshoulder  Left shoulder button (Xbox LB, PlayStation L1)")
+		f.store_line("# rightshoulder Right shoulder button (Xbox RB, PlayStation R1)")
+		f.store_line("# lefttrigger   Left trigger button (Xbox LT, PlayStation L2)")
+		f.store_line("# righttrigger  Right trigger button (Xbox RT, PlayStation R2)")
+		f.store_line("# leftstick     Left stick button (Xbox LS, PlayStation L3)")
+		f.store_line("# rightstick    Right stick button (Xbox RS, PlayStation R3)")
+		f.store_line("# leftx         Left stick X axis (Xbox Left Stick X, PlayStation Left Stick X)")
+		f.store_line("# lefty         Left stick Y axis (Xbox Left Stick Y, PlayStation Left Stick Y)")
+		f.store_line("# rightx        Right stick X axis (Xbox Right Stick X, PlayStation Right Stick X)")
+		f.store_line("# righty        Right stick Y axis (Xbox Right Stick Y, PlayStation Right Stick Y)")
+		f.store_line("# ")
+		f.store_line("# A button name is associated with a physical button index. Ex. a:b0 Bottom face button action to button b0 of the controller.")
+		f.store_line("# Analog controls (a0-a3) are associated with a physical axis index. Ex.leftx:a0 Left stick X axis action to axis a0 of the controller.")
+		f.store_line("# Triggers can be analog or digital depending on your controller. Analog usually have reference a4 and a5. Digital triggers are mapped as buttons.")
+		f.store_line("# You don't have to map all buttons if you don't need to use them. If a button is not mapped, it will not send action if pressed.")
+		f.store_line("# Use the test utility to find the button and axis indices for your controller.")
+		f.store_line("# An example of button and axis mapping for a controller is: a:b0,b:b1,back:b4,dpdown:b12,dpleft:b13,dpright:b14,dpup:b11,leftshoulder:b9,leftstick:b7,lefttrigger:a4,leftx:a0,lefty:a1,rightshoulder:b10,rightstick:b8,righttrigger:a5,rightx:a2,righty:a3,start:b6,x:b2,y:b3")
+		f.store_line("# The complete configuration for a controller is: [GUID],[CONTROLLER NAME],[BUTTONS MAPPING HERE],platform:Android,")
+		f.store_line("# Example: 10000000000000000000000000000001,Random Controller,a:b0,b:b1,back:b4,dpdown:b12,dpleft:b13,dpright:b14,dpup:b11,leftshoulder:b9,leftstick:b7,lefttrigger:a4,leftx:a0,lefty:a1,rightshoulder:b10,rightstick:b8,righttrigger:a5,rightx:a2,righty:a3,start:b6,x:b2,y:b3,platform:Android,")
+		f.store_line("# ")
+		f.store_line("# ")
+
 	if f:
+		f.seek_end() # Append
 		f.store_line("# " + joy_name)
-		# Template currently just adds the GUID and name, user must fill rest
-		f.store_line("%s,%s,platform:Android," % [guid, joy_name])
+		f.store_line("# uncomment the line below (remove #) and fill in the mapping for your controller")
+		f.store_line("#%s,%s,[MAPPING HERE],platform:Android," % [guid, joy_name])
 		f.close()
 		print("Exported mapping template to: ", path)
 	else:
@@ -145,19 +190,77 @@ func _export_mapping(device_id: int):
 func _show_test_popup(device_id: int):
 	test_device_id = device_id
 	test_popup.visible = true
-	test_label.text = "Waiting..."
-    # Helper label is static in scene now
+	button_test_label.text = "Waiting..."
+	axis_test_label.text = ""
+	key_test_label.text = ""
+	last_event_time = 0
+	
+	# Adjust font sizes for small screens
+	var screen_size = get_viewport().get_visible_rect().size
+	var font_size = clamp(int(min(screen_size.x, screen_size.y) * 0.05), 12, 24)
+	
+	button_test_label.add_theme_font_size_override("font_size", font_size)
+	axis_test_label.add_theme_font_size_override("font_size", font_size)
+	key_test_label.add_theme_font_size_override("font_size", font_size)
+	
+	# Also resize static headers
+	var header = test_popup.get_node_or_null("VBoxContainer/Header")
+	if header: header.add_theme_font_size_override("font_size", font_size)
+	
+	var subheader = test_popup.get_node_or_null("VBoxContainer/SubHeader")
+	if subheader: subheader.add_theme_font_size_override("font_size", int(font_size * 0.8))
+	
+	# Force re-scale to fit new content size
+	call_deferred("_fit_to_screen")
+	
+	if PicoVideoStreamer.instance:
+		PicoVideoStreamer.instance.set_input_blocked(true)
+	# Helper label is static in scene now
 
 func _input(event):
 	if test_popup and is_instance_valid(test_popup) and test_popup.visible:
-		if event.device == test_device_id:
+		if event is InputEventScreenTouch or event is InputEventScreenDrag or event is InputEventMouse:
+			return
+			
+		# Allow InputEventKey from ANY device to pass through for debugging (to catch virtual keyboard inputs)
+		# For limits/buttons, we still restrict to the selected device to avoid noise
+		var is_key_event = event is InputEventKey
+		if event.device == test_device_id or is_key_event:
+			if last_event_time == 0:
+				button_test_label.text = ""
+			# Calculate and print delta
+			var now = Time.get_ticks_msec()
+			var delta = now - last_event_time
+						
+			# Helper to safely name ID
+			var _get_dev_name = func(id):
+				if id in Input.get_connected_joypads():
+					var n = Input.get_joy_name(id)
+					if n.length() > 15: return n.left(15) + ".."
+					return n
+				return "Non-Joypad"
+
 			if event is InputEventJoypadButton and event.pressed:
-				test_label.text = "Button %d -> b%d" % [event.button_index, event.button_index]
-			elif event is InputEventJoypadMotion:
+				last_event_time = now
+				button_test_label.text = "JoyBtn %d->b%d [ID: %d - %s]" % [event.button_index, event.button_index, event.device, _get_dev_name.call(event.device)]
+				if delta > 100:
+					axis_test_label.text = ""
+					key_test_label.text = ""
+			if event is InputEventJoypadMotion:
 				if abs(event.axis_value) > 0.5:
-					test_label.text = "Axis %d -> a%d" % [event.axis, event.axis]
-
-
+					last_event_time = now
+					axis_test_label.text = "JoyAxis %d->a%d [ID: %d - %s]" % [event.axis, event.axis, event.device, _get_dev_name.call(event.device)]
+					if delta > 100:
+						button_test_label.text = ""
+						key_test_label.text = ""
+			if event is InputEventKey:
+				last_event_time = now
+				key_test_label.text = "Key %d->%s [ID:%d - %s]" % [event.keycode, OS.get_keycode_string(event.keycode), event.device, _get_dev_name.call(event.device)]
+				if delta > 100:
+					button_test_label.text = ""
+					axis_test_label.text = ""
+		
+				
 func set_scale_factor(factor: float):
 	scale = Vector2(factor, factor)
 	call_deferred("_fit_to_screen")

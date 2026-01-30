@@ -194,7 +194,7 @@ func setup():
 	get_tree().change_scene_to_file("res://main.tscn")
 
 func load_sdl_mappings():
-	var mapping_file = PUBLIC_FOLDER + "/sdl_controllers.txt"
+	var mapping_file = PUBLIC_FOLDER + "/pico8_sdl_controllers.txt"
 	if FileAccess.file_exists(mapping_file):
 		print("Loading SDL mappings from: ", mapping_file)
 		var f = FileAccess.open(mapping_file, FileAccess.READ)
