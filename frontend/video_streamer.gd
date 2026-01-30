@@ -357,7 +357,6 @@ var fps_frame_count: int = 0
 var fps_skip_count: int = 0
 var debug_fps_label: Label = null
 
-# Thread-safe image update
 # Thread-safe image update using Ring Buffer (Triple Buffering - Pull Model)
 func set_im_from_data_threaded(rgba: PackedByteArray):
 	# Select buffer to write to
@@ -374,7 +373,7 @@ func set_im_from_data_threaded(rgba: PackedByteArray):
 			var delta_ms = (now - metrics_last_packet_time) / 1000.0
 			if _mutex:
 				_mutex.lock()
-				metrics_thread_jitter = delta_ms
+				metrics_pipe_interval = delta_ms
 				_mutex.unlock()
 		metrics_last_packet_time = now
 	
@@ -493,12 +492,12 @@ func _process(delta: float) -> void:
 		var jitter_val = 0.0
 		if _mutex:
 			_mutex.lock()
-			jitter_val = metrics_thread_jitter
+			jitter_val = metrics_pipe_interval
 			_mutex.unlock()
 		
 		var disp_fps = 1000.0 / max(0.1, frame_delta_ms)
-		var net_fps = 1000.0 / max(0.1, jitter_val) if jitter_val > 0 else 0.0
-		var fps_diff = net_fps - disp_fps
+		var pipe_fps = 1000.0 / max(0.1, jitter_val) if jitter_val > 0 else 0.0
+		var fps_diff = pipe_fps - disp_fps
 		
 		# Clamp weird spikes
 		if abs(fps_diff) > 200: fps_diff = 0.0
@@ -539,7 +538,7 @@ var graph_starvation: DebugGraph
 var graph_fps_diff: DebugGraph
 var metrics_last_frame_time: int = 0
 var metrics_last_packet_time: int = 0
-var metrics_thread_jitter: float = 0.0
+var metrics_pipe_interval: float = 0.0
 
 func _setup_metrics_display():
 	var container = VBoxContainer.new()
@@ -557,7 +556,7 @@ func _setup_metrics_display():
 	
 	# Jitter Graph (Network Inter-arrival time)
 	graph_jitter = DebugGraph.new()
-	graph_jitter.label_text = "Net Net Delta (ms)"
+	graph_jitter.label_text = "Pipe Interval (ms)"
 	graph_jitter.min_value = 0
 	graph_jitter.max_value = 33
 	graph_jitter.custom_minimum_size = Vector2(400, 100)
@@ -575,7 +574,7 @@ func _setup_metrics_display():
 	
 	# FPS Diff Graph (Net - Display)
 	graph_fps_diff = DebugGraph.new()
-	graph_fps_diff.label_text = "FPS Diff (Net-Disp)"
+	graph_fps_diff.label_text = "FPS Diff (Pipe-Disp)"
 	graph_fps_diff.min_value = -30 # Allow negative if Net < Disp (unlikely but possible with weird timing)
 	graph_fps_diff.max_value = 30 # Positive means Net > Disp (Dropping frames)
 	graph_fps_diff.custom_minimum_size = Vector2(400, 100)
@@ -602,7 +601,7 @@ func _start_logging():
 	var path = logs_dir + "/metrics_log_%d.csv" % Time.get_unix_time_from_system()
 	metrics_file = FileAccess.open(path, FileAccess.WRITE)
 	if metrics_file:
-		metrics_file.store_line("Timestamp,DisplayFPS,NetJitter,IsStutter,FPSDiff")
+		metrics_file.store_line("Timestamp,DisplayFPS,PipeInterval,IsStutter,FPSDiff")
 		metrics_logging_enabled = true
 		metrics_buffer.clear()
 		print("Metrics logging started: ", path)
@@ -710,6 +709,12 @@ static func is_system_landscape() -> bool:
 	return size.x >= size.y
 
 
+var input_blocked: bool = false
+
+func set_input_blocked(blocked: bool):
+	input_blocked = blocked
+	print("Input Blocked: ", blocked)
+
 func vkb_setstate(id: String, down: bool, unicode: int = 0, echo = false):
 	# INTENT SESSION EXIT (via specific button)
 	# Must be checked BEFORE SDL_KEYMAP validation because "IntentExit" is not in the map!
@@ -720,6 +725,11 @@ func vkb_setstate(id: String, down: bool, unicode: int = 0, echo = false):
 				quit_focus_yes = true # Reset focus to "Yes"
 				_update_quit_focus_visuals()
 		return
+
+	# If input is blocked (e.g. during controller test), ignore everything else
+	if input_blocked:
+		return
+
 
 	if id not in SDL_KEYMAP:
 		return
@@ -1012,23 +1022,6 @@ static func _apply_button_hue():
 			mat.set_shader_parameter("lightness_mult", current_button_lightness)
 
 	
-# Legacy compatibility
-static var retro_shader_enabled: bool = false:
-	get:
-		return current_shader_type != ShaderType.NONE
-	set(value):
-		if value:
-			set_shader_type(ShaderType.RETRO_V2)
-		else:
-			set_shader_type(ShaderType.NONE)
-
-static func set_retro_shader_enabled(enabled: bool):
-	retro_shader_enabled = enabled
-
-static func get_retro_shader_enabled() -> bool:
-	return retro_shader_enabled
-
-
 var current_screen_pos: Vector2i = Vector2i.ZERO
 var current_mouse_mask: int = 0
 var is_mouse_inside_display: bool = false
@@ -1130,6 +1123,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	# print(event)
 	if event is InputEventKey:
+		# Check Blocked State (e.g. Controller Test Mode)
+		if input_blocked:
+			return
+			
 		# because i keep doing this lolol
 		if event.keycode == KEY_ALT:
 			return
@@ -1168,23 +1165,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			# Fallback to Index Logic for Auto controllers
 			# We need to know where this controller sits in the "real" list
 			var real_joypads = ControllerUtils.get_real_controllers()
-			
-			# Filter out controllers that have explicit roles assigned?
-			# No, user wants simple logic: "Auto should be separate... set by default"
-			# If set to Auto, it participates in list ordering.
-			# But if P1 is taken explicitly, should Auto be P2?
-			# If we follow "Index Logic", then if Real List is [AutoControllerA, AutoControllerB]
-			# Index 0 -> P1, Index 1 -> P2. Yes.
-			
-			# If Real List is [ExplicitP1Controller, AutoControllerB]
-			# Index 0 is ExplicitP1. Index 1 is AutoControllerB.
-			# So AutoControllerB becomes P2. Correct.
-			
-			# If Real List is [AutoControllerA, ExplicitP2Controller]
-			# Index 0 is AutoControllerA -> P1.
-			# Index 1 is ExplicitPP2Controller -> P2.
-			# Correct.
-			
 			# Logic remains: If Index == 1 -> P2.
 			var idx = real_joypads.find(event.device)
 			if idx == 1:

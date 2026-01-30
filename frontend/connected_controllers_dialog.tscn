@@ -1,8 +1,11 @@
-[gd_scene load_steps=2 format=3 uid="uid://c8q7j2n1m4k5l"]
+[gd_scene format=3 uid="uid://b02ikjka7ahcu"]
 
 [ext_resource type="Script" uid="uid://b6ltymnche76l" path="res://connected_controllers_dialog.gd" id="1_dialog"]
 
-[node name="ConnectedControllersDialog" type="PanelContainer"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_test"]
+bg_color = Color(0, 0, 0, 0.9)
+
+[node name="ConnectedControllersDialog" type="PanelContainer" unique_id=1327420180]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -16,30 +19,121 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_dialog")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1123727916]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="LabelTitle" type="Label" parent="VBoxContainer"]
+[node name="LabelTitle" type="Label" parent="VBoxContainer" unique_id=2120172885]
 layout_mode = 2
 text = "Detected Controllers"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer" unique_id=153889350]
 layout_mode = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer" unique_id=1884500545]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/ScrollContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/ScrollContainer" unique_id=273310491]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 5
 
-[node name="ButtonClose" type="Button" parent="VBoxContainer"]
+[node name="RowTemplate" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/VBoxContainer" unique_id=1835388940]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="VBoxContainer/ScrollContainer/VBoxContainer/RowTemplate" unique_id=629080182]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Controller Name"
+
+[node name="RoleOption" type="OptionButton" parent="VBoxContainer/ScrollContainer/VBoxContainer/RowTemplate" unique_id=1170847925]
+layout_mode = 2
+selected = 0
+item_count = 4
+popup/item_0/text = "Auto (Default)"
+popup/item_0/id = -1
+popup/item_1/text = "Player 1"
+popup/item_1/id = 0
+popup/item_2/text = "Player 2"
+popup/item_2/id = 1
+popup/item_3/text = "Disabled"
+popup/item_3/id = 2
+
+[node name="TestBtn" type="Button" parent="VBoxContainer/ScrollContainer/VBoxContainer/RowTemplate" unique_id=204878187]
+layout_mode = 2
+text = "Test"
+
+[node name="ExportBtn" type="Button" parent="VBoxContainer/ScrollContainer/VBoxContainer/RowTemplate" unique_id=1631530013]
+layout_mode = 2
+text = "Export"
+
+[node name="ButtonClose" type="Button" parent="VBoxContainer" unique_id=2090834742]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Close"
+
+[node name="TestPopup" type="PanelContainer" parent="." unique_id=607872349]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_test")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TestPopup" unique_id=327322518]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Header" type="Label" parent="TestPopup/VBoxContainer" unique_id=1767858043]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "TEST INPUT MODE"
+horizontal_alignment = 1
+
+[node name="SubHeader" type="Label" parent="TestPopup/VBoxContainer" unique_id=329345367]
+layout_mode = 2
+text = "Press any button on the selected controller..."
+horizontal_alignment = 1
+
+[node name="ResultLabel" type="Label" parent="TestPopup/VBoxContainer" unique_id=2069921233]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 1, 0, 1)
+theme_override_font_sizes/font_size = 24
+text = "Waiting..."
+horizontal_alignment = 1
+
+[node name="ResultLabel2" type="Label" parent="TestPopup/VBoxContainer" unique_id=663971452]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 1, 0, 1)
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+
+[node name="ResultLabel3" type="Label" parent="TestPopup/VBoxContainer" unique_id=1827974929]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 1, 0, 1)
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+
+[node name="HelperLabel" type="Label" parent="TestPopup/VBoxContainer" unique_id=1105069994]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+text = "Use the code above (e.g. b5) in your mapping file."
+horizontal_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="TestPopup/VBoxContainer" unique_id=1429580165]
+layout_mode = 2
+alignment = 1
+
+[node name="CloseTestBtn" type="Button" parent="TestPopup/VBoxContainer/HBoxContainer" unique_id=1505070981]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+text = "Close Test"

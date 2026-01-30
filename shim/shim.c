@@ -207,6 +207,17 @@ void pico_send_vid_data() {
                 }
                 return;
             }
+            
+            // Optimization: Increase pipe capacity to 1MB (default is 64KB)
+            // This prevents blocking when writing ~65KB frames
+            int pipe_sz = fcntl(vid_fd, F_SETPIPE_SZ, 1048576);
+            if (pipe_sz < 0) {
+                // Not fatal, just means we use default size
+                // perror("SHIM: Failed to set pipe capacity"); 
+            } else {
+                printf("SHIM: Video FIFO capacity set to %d bytes\n", pipe_sz);
+            }
+
             printf("SHIM: Connected to Video FIFO!\n");
         }
 
