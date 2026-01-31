@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://b6p2v8g5q4x7y"]
+[gd_scene format=3 uid="uid://b6p2v8g5q4x7y"]
 
 [ext_resource type="Script" uid="uid://bl8wgg60ombjh" path="res://options_menu.gd" id="1_options"]
 [ext_resource type="Texture2D" uid="uid://cfy8e87xc6p0b" path="res://assets/cog_icon.png" id="2_cog"]
@@ -7,17 +7,17 @@
 [ext_resource type="Texture2D" uid="uid://chyjiv8phiah7" path="res://assets/icon_link.png" id="5_link"]
 [ext_resource type="FontFile" uid="uid://btr5i3t6k3xdx" path="res://assets/font/NotoEmoji-Regular.ttf" id="6_emoji"]
 
-[node name="OptionsMenu" type="CanvasLayer"]
+[node name="OptionsMenu" type="CanvasLayer" unique_id=245879019]
 script = ExtResource("1_options")
 
-[node name="SlidePanel" type="ColorRect" parent="."]
+[node name="SlidePanel" type="ColorRect" parent="." unique_id=505364182]
 anchors_preset = 9
 anchor_bottom = 1.0
 offset_left = -250.0
 grow_vertical = 2
 color = Color(0.1, 0.1, 0.1, 0.95)
 
-[node name="ScrollContainer" type="ScrollContainer" parent="SlidePanel"]
+[node name="ScrollContainer" type="ScrollContainer" parent="SlidePanel" unique_id=193434299]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -30,48 +30,48 @@ follow_focus = true
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="SlidePanel/ScrollContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="SlidePanel/ScrollContainer" unique_id=112907528]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 20
 
-[node name="Header" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer"]
+[node name="Header" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=1964164809]
 layout_mode = 2
 theme_override_constants/separation = 15
 alignment = 1
 
-[node name="Icon" type="TextureRect" parent="SlidePanel/ScrollContainer/VBoxContainer/Header"]
+[node name="Icon" type="TextureRect" parent="SlidePanel/ScrollContainer/VBoxContainer/Header" unique_id=496440815]
 unique_name_in_owner = true
 layout_mode = 2
 texture = ExtResource("2_cog")
 expand_mode = 2
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/Header"]
+[node name="Label" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/Header" unique_id=1562203676]
 layout_mode = 2
 text = "OPTIONS"
 horizontal_alignment = 1
 
-[node name="empty" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/Header"]
+[node name="empty" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/Header" unique_id=1129018599]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 
-[node name="VersionLabel" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/Header"]
+[node name="VersionLabel" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/Header" unique_id=1533078704]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
 text = "v1.0"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="SlidePanel/ScrollContainer/VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=663862221]
 layout_mode = 2
 
-[node name="SectionDisplay" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer"]
+[node name="SectionDisplay" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=1606340608]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="BtnDisplayToggle" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay"]
+[node name="BtnDisplayToggle" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay" unique_id=89140026]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
@@ -82,19 +82,19 @@ text = "🔽 🎨 DISPLAY"
 flat = true
 alignment = 0
 
-[node name="ContainerDisplay" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay"]
+[node name="ContainerDisplay" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay" unique_id=1441320803]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/margin_left = 30
 
-[node name="ContentDisplay" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay"]
+[node name="ContentDisplay" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay" unique_id=530087331]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="IntegerScalingRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay"]
+[node name="IntegerScalingRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=1485190483]
 layout_mode = 2
 
-[node name="ButtonIntegerScaling" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/IntegerScalingRow"]
+[node name="ButtonIntegerScaling" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/IntegerScalingRow" unique_id=839623873]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -107,20 +107,20 @@ text = "Integer Scaling"
 flat = true
 alignment = 0
 
-[node name="WrapperIntegerScaling" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/IntegerScalingRow"]
+[node name="WrapperIntegerScaling" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/IntegerScalingRow" unique_id=961479631]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleIntegerScaling" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/IntegerScalingRow/WrapperIntegerScaling"]
+[node name="ToggleIntegerScaling" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/IntegerScalingRow/WrapperIntegerScaling" unique_id=1944784518]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 
-[node name="BezelRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay"]
+[node name="BezelRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=2031562166]
 layout_mode = 2
 
-[node name="ButtonBezel" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BezelRow"]
+[node name="ButtonBezel" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BezelRow" unique_id=429563898]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -133,19 +133,46 @@ text = "Show Bezel"
 flat = true
 alignment = 0
 
-[node name="WrapperBezel" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BezelRow"]
+[node name="WrapperBezel" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BezelRow" unique_id=608587268]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleBezel" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BezelRow/WrapperBezel"]
+[node name="ToggleBezel" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BezelRow/WrapperBezel" unique_id=2087151118]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
-[node name="BgColorRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay"]
+
+[node name="RepositionRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=2123835649]
 layout_mode = 2
 
-[node name="ButtonBgColor" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BgColorRow"]
+[node name="ButtonReposition" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/RepositionRow" unique_id=1898140443]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+text = "Reposition Elements"
+flat = true
+alignment = 0
+
+[node name="WrapperReposition" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/RepositionRow" unique_id=925509288]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+
+[node name="ToggleReposition" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/RepositionRow/WrapperReposition" unique_id=80309969]
+unique_name_in_owner = true
+layout_mode = 0
+focus_mode = 0
+
+[node name="BgColorRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=703784103]
+layout_mode = 2
+
+[node name="ButtonBgColor" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BgColorRow" unique_id=991289062]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -158,22 +185,22 @@ text = "Background Color"
 flat = true
 alignment = 0
 
-[node name="WrapperBgColor" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BgColorRow"]
+[node name="WrapperBgColor" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BgColorRow" unique_id=577781223]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ColorPickerBG" type="ColorPickerButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BgColorRow/WrapperBgColor"]
+[node name="ColorPickerBG" type="ColorPickerButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BgColorRow/WrapperBgColor" unique_id=480718796]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 color = Color(0.00784314, 0.0156863, 0.0235294, 1)
 edit_alpha = false
 
-[node name="ShaderSelectRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay"]
+[node name="ShaderSelectRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=128213912]
 layout_mode = 2
 
-[node name="ButtonShaderSelect" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow"]
+[node name="ButtonShaderSelect" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow" unique_id=102769894]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -186,12 +213,12 @@ text = "Display Shader"
 flat = true
 alignment = 0
 
-[node name="WrapperShaderSelect" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow"]
+[node name="WrapperShaderSelect" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow" unique_id=713065520]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ShaderSelect" type="OptionButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow/WrapperShaderSelect"]
+[node name="ShaderSelect" type="OptionButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow/WrapperShaderSelect" unique_id=789330752]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
@@ -221,10 +248,10 @@ popup/item_9/id = 9
 popup/item_10/text = "CRT-1tap"
 popup/item_10/id = 10
 
-[node name="SaturationRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay"]
+[node name="SaturationRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=1171679046]
 layout_mode = 2
 
-[node name="LabelSaturation" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow"]
+[node name="LabelSaturation" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow" unique_id=866523145]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -234,25 +261,25 @@ text = "Sat."
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="WrapperSaturation" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow"]
+[node name="WrapperSaturation" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow" unique_id=1147146069]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
 theme_override_constants/separation = 5
 
-[node name="ButtonSaturationMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation"]
+[node name="ButtonSaturationMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation" unique_id=633293966]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 theme_override_fonts/font = ExtResource("6_emoji")
 text = "➖"
 
-[node name="SliderScalerSaturation" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation"]
+[node name="SliderScalerSaturation" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation" unique_id=1985874419]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 4
 
-[node name="SliderSaturation" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation/SliderScalerSaturation"]
+[node name="SliderSaturation" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation/SliderScalerSaturation" unique_id=614667565]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 0
@@ -262,14 +289,14 @@ step = 0.05
 value = 1.0
 ticks_on_borders = true
 
-[node name="ButtonSaturationPlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation"]
+[node name="ButtonSaturationPlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation" unique_id=1487138826]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 theme_override_fonts/font = ExtResource("6_emoji")
 text = "➕"
 
-[node name="LabelSaturationValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation"]
+[node name="LabelSaturationValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation" unique_id=1098622956]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(35, 0)
 layout_mode = 2
@@ -277,10 +304,10 @@ theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 text = "1.00"
 horizontal_alignment = 2
 
-[node name="ButtonsHeaderRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay"]
+[node name="ButtonsHeaderRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=2099243280]
 layout_mode = 2
 
-[node name="LabelButtonsHeader" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsHeaderRow"]
+[node name="LabelButtonsHeader" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsHeaderRow" unique_id=2145338725]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -289,18 +316,18 @@ theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 text = "Buttons"
 vertical_alignment = 1
 
-[node name="ButtonsIndentWrapper" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay"]
+[node name="ButtonsIndentWrapper" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=89997623]
 layout_mode = 2
 theme_override_constants/margin_left = 20
 
-[node name="ButtonsContent" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper"]
+[node name="ButtonsContent" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper" unique_id=12764083]
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="ButtonHueRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent"]
+[node name="ButtonHueRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent" unique_id=98409052]
 layout_mode = 2
 
-[node name="LabelButtonHue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow"]
+[node name="LabelButtonHue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow" unique_id=1035473739]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -310,25 +337,25 @@ text = "Hue"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="WrapperButtonHue" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow"]
+[node name="WrapperButtonHue" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow" unique_id=813911234]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
 theme_override_constants/separation = 5
 
-[node name="ButtonHueMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue"]
+[node name="ButtonHueMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue" unique_id=1570748396]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 theme_override_fonts/font = ExtResource("6_emoji")
 text = "➖"
 
-[node name="SliderScalerButtonHue" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue"]
+[node name="SliderScalerButtonHue" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue" unique_id=542465920]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 4
 
-[node name="SliderButtonHue" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue/SliderScalerButtonHue"]
+[node name="SliderButtonHue" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue/SliderScalerButtonHue" unique_id=1088117693]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 0
@@ -338,14 +365,14 @@ step = 0.05
 value = 1.0
 ticks_on_borders = true
 
-[node name="ButtonHuePlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue"]
+[node name="ButtonHuePlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue" unique_id=205515946]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 theme_override_fonts/font = ExtResource("6_emoji")
 text = "➕"
 
-[node name="LabelButtonHueValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue"]
+[node name="LabelButtonHueValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue" unique_id=2081577781]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
@@ -353,10 +380,10 @@ theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 text = "1.00"
 horizontal_alignment = 2
 
-[node name="ButtonSatRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent"]
+[node name="ButtonSatRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent" unique_id=144665626]
 layout_mode = 2
 
-[node name="LabelButtonSat" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow"]
+[node name="LabelButtonSat" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow" unique_id=1258114745]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -366,25 +393,25 @@ text = "Sat."
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="WrapperButtonSat" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow"]
+[node name="WrapperButtonSat" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow" unique_id=776166620]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
 theme_override_constants/separation = 5
 
-[node name="ButtonSatMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat"]
+[node name="ButtonSatMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat" unique_id=1820870226]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 theme_override_fonts/font = ExtResource("6_emoji")
 text = "➖"
 
-[node name="SliderScalerButtonSat" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat"]
+[node name="SliderScalerButtonSat" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat" unique_id=2105680300]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 4
 
-[node name="SliderButtonSat" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat/SliderScalerButtonSat"]
+[node name="SliderButtonSat" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat/SliderScalerButtonSat" unique_id=1565851324]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 0
@@ -394,14 +421,14 @@ step = 0.05
 value = 1.0
 ticks_on_borders = true
 
-[node name="ButtonSatPlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat"]
+[node name="ButtonSatPlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat" unique_id=1176299733]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 theme_override_fonts/font = ExtResource("6_emoji")
 text = "➕"
 
-[node name="LabelButtonSatValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat"]
+[node name="LabelButtonSatValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat" unique_id=1439119065]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
@@ -409,10 +436,10 @@ theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 text = "1.00"
 horizontal_alignment = 2
 
-[node name="ButtonLightRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent"]
+[node name="ButtonLightRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent" unique_id=1844467607]
 layout_mode = 2
 
-[node name="LabelButtonLight" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow"]
+[node name="LabelButtonLight" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow" unique_id=2034572478]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -422,25 +449,25 @@ text = "Light"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="WrapperButtonLight" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow"]
+[node name="WrapperButtonLight" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow" unique_id=1287752239]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
 theme_override_constants/separation = 5
 
-[node name="ButtonLightMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight"]
+[node name="ButtonLightMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight" unique_id=1922481314]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 theme_override_fonts/font = ExtResource("6_emoji")
 text = "➖"
 
-[node name="SliderScalerButtonLight" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight"]
+[node name="SliderScalerButtonLight" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight" unique_id=263837940]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 4
 
-[node name="SliderButtonLight" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight/SliderScalerButtonLight"]
+[node name="SliderButtonLight" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight/SliderScalerButtonLight" unique_id=1923237882]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 0
@@ -450,14 +477,14 @@ step = 0.05
 value = 1.0
 ticks_on_borders = true
 
-[node name="ButtonLightPlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight"]
+[node name="ButtonLightPlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight" unique_id=374702544]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 theme_override_fonts/font = ExtResource("6_emoji")
 text = "➕"
 
-[node name="LabelButtonLightValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight"]
+[node name="LabelButtonLightValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight" unique_id=750196387]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
@@ -465,11 +492,11 @@ theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 text = "1.00"
 horizontal_alignment = 2
 
-[node name="SectionControls" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer"]
+[node name="SectionControls" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=1781006713]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="BtnControlsToggle" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls"]
+[node name="BtnControlsToggle" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls" unique_id=1095379473]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
@@ -480,19 +507,19 @@ text = "🔽 🎮 CONTROLS"
 flat = true
 alignment = 0
 
-[node name="ContainerControls" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls"]
+[node name="ContainerControls" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls" unique_id=976083476]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/margin_left = 30
 
-[node name="ContentControls" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls"]
+[node name="ContentControls" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls" unique_id=1963445949]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="HapticRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls"]
+[node name="HapticRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls" unique_id=42559437]
 layout_mode = 2
 
-[node name="ButtonHaptic" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/HapticRow"]
+[node name="ButtonHaptic" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/HapticRow" unique_id=1370748185]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -505,20 +532,20 @@ text = "Haptic Feedback"
 flat = true
 alignment = 0
 
-[node name="WrapperHaptic" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/HapticRow"]
+[node name="WrapperHaptic" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/HapticRow" unique_id=1911422753]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleHaptic" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/HapticRow/WrapperHaptic"]
+[node name="ToggleHaptic" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/HapticRow/WrapperHaptic" unique_id=988094012]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 
-[node name="SwapZXRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls"]
+[node name="SwapZXRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls" unique_id=1763238448]
 layout_mode = 2
 
-[node name="ButtonSwapZX" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SwapZXRow"]
+[node name="ButtonSwapZX" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SwapZXRow" unique_id=131462698]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -531,20 +558,20 @@ text = "Swap O/X on gamepads"
 flat = true
 alignment = 0
 
-[node name="WrapperSwapZX" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SwapZXRow"]
+[node name="WrapperSwapZX" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SwapZXRow" unique_id=819930883]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleSwapZX" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SwapZXRow/WrapperSwapZX"]
+[node name="ToggleSwapZX" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SwapZXRow/WrapperSwapZX" unique_id=613917564]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 
-[node name="KeyboardRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls"]
+[node name="KeyboardRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls" unique_id=1539211572]
 layout_mode = 2
 
-[node name="ButtonKeyboard" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/KeyboardRow"]
+[node name="ButtonKeyboard" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/KeyboardRow" unique_id=620871326]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -557,20 +584,20 @@ text = "Full Keyboard"
 flat = true
 alignment = 0
 
-[node name="WrapperKeyboard" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/KeyboardRow"]
+[node name="WrapperKeyboard" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/KeyboardRow" unique_id=1195682443]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleKeyboard" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/KeyboardRow/WrapperKeyboard"]
+[node name="ToggleKeyboard" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/KeyboardRow/WrapperKeyboard" unique_id=1562700651]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 
-[node name="ShowControlsRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls"]
+[node name="ShowControlsRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls" unique_id=1255228225]
 layout_mode = 2
 
-[node name="ButtonShowControls" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow"]
+[node name="ButtonShowControls" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow" unique_id=1766108506]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -583,20 +610,20 @@ text = "Always Show Controls"
 flat = true
 alignment = 0
 
-[node name="WrapperShowControls" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow"]
+[node name="WrapperShowControls" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow" unique_id=238735389]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleShowControls" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow/WrapperShowControls"]
+[node name="ToggleShowControls" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow/WrapperShowControls" unique_id=665675022]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 
-[node name="ConnectedControllersRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls"]
+[node name="ConnectedControllersRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls" unique_id=185596872]
 layout_mode = 2
 
-[node name="ButtonConnectedControllers" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ConnectedControllersRow"]
+[node name="ButtonConnectedControllers" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ConnectedControllersRow" unique_id=1094190660]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -609,12 +636,12 @@ text = "Connected Controllers"
 flat = true
 alignment = 0
 
-[node name="WrapperConnectedControllers" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ConnectedControllersRow"]
+[node name="WrapperConnectedControllers" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ConnectedControllersRow" unique_id=1809106837]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ArrowConnectedControllers" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ConnectedControllersRow/WrapperConnectedControllers"]
+[node name="ArrowConnectedControllers" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ConnectedControllersRow/WrapperConnectedControllers" unique_id=353996292]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
@@ -633,10 +660,10 @@ text = ">"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="InputModeRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls"]
+[node name="InputModeRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls" unique_id=170817514]
 layout_mode = 2
 
-[node name="ButtonInputMode" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/InputModeRow"]
+[node name="ButtonInputMode" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/InputModeRow" unique_id=442577844]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -649,20 +676,20 @@ text = "Input: Mouse"
 flat = true
 alignment = 0
 
-[node name="WrapperInputMode" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/InputModeRow"]
+[node name="WrapperInputMode" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/InputModeRow" unique_id=1976405999]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleInputMode" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/InputModeRow/WrapperInputMode"]
+[node name="ToggleInputMode" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/InputModeRow/WrapperInputMode" unique_id=1524300107]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 
-[node name="SensitivityRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls"]
+[node name="SensitivityRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls" unique_id=673398038]
 layout_mode = 2
 
-[node name="LabelSensitivity" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow"]
+[node name="LabelSensitivity" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow" unique_id=1010063662]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -672,18 +699,18 @@ text = "T.Sensitivity"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="WrapperSensitivity" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow"]
+[node name="WrapperSensitivity" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow" unique_id=628240027]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
 theme_override_constants/separation = 10
 
-[node name="SliderScaler" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow/WrapperSensitivity"]
+[node name="SliderScaler" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow/WrapperSensitivity" unique_id=1790105598]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 4
 
-[node name="SliderSensitivity" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow/WrapperSensitivity/SliderScaler"]
+[node name="SliderSensitivity" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow/WrapperSensitivity/SliderScaler" unique_id=1991719571]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 0
@@ -693,22 +720,22 @@ max_value = 2.0
 step = 0.1
 value = 0.30000000000000004
 
-[node name="LabelSensitivityValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow/WrapperSensitivity"]
+[node name="LabelSensitivityValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow/WrapperSensitivity" unique_id=1596855679]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 text = "0.5"
 
-[node name="empty" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow/WrapperSensitivity"]
+[node name="empty" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow/WrapperSensitivity" unique_id=1588187357]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 text = "            "
 
-[node name="SectionAudio" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer"]
+[node name="SectionAudio" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=297193862]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="BtnAudioToggle" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio"]
+[node name="BtnAudioToggle" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio" unique_id=765707669]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
@@ -719,19 +746,19 @@ text = "🔽 🔊 AUDIO"
 flat = true
 alignment = 0
 
-[node name="ContainerAudio" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio"]
+[node name="ContainerAudio" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio" unique_id=1394884789]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/margin_left = 30
 
-[node name="ContentAudio" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio/ContainerAudio"]
+[node name="ContentAudio" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio/ContainerAudio" unique_id=323922004]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="AudioRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio/ContainerAudio/ContentAudio"]
+[node name="AudioRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio/ContainerAudio/ContentAudio" unique_id=2074319650]
 layout_mode = 2
 
-[node name="ButtonAudioBackendLabel" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio/ContainerAudio/ContentAudio/AudioRow"]
+[node name="ButtonAudioBackendLabel" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio/ContainerAudio/ContentAudio/AudioRow" unique_id=965000525]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -744,29 +771,29 @@ text = "Backend (SLES/AAudio)"
 flat = true
 alignment = 0
 
-[node name="WrapperAudioBackend" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio/ContainerAudio/ContentAudio/AudioRow"]
+[node name="WrapperAudioBackend" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio/ContainerAudio/ContentAudio/AudioRow" unique_id=1753374029]
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleAudioBackend" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio/ContainerAudio/ContentAudio/AudioRow/WrapperAudioBackend"]
+[node name="ToggleAudioBackend" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio/ContainerAudio/ContentAudio/AudioRow/WrapperAudioBackend" unique_id=175481910]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
 
-[node name="Spacer" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer"]
+[node name="Spacer" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=987985989]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ContainerButtons" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer"]
+[node name="ContainerButtons" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=944071361]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/margin_left = 30
 
-[node name="ButtonsContainer" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/ContainerButtons"]
+[node name="ButtonsContainer" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/ContainerButtons" unique_id=1580658187]
 layout_mode = 2
 
-[node name="ButtonSupport" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/ContainerButtons/ButtonsContainer"]
+[node name="ButtonSupport" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/ContainerButtons/ButtonsContainer" unique_id=1749654714]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
@@ -779,7 +806,7 @@ flat = true
 alignment = 0
 expand_icon = true
 
-[node name="ButtonAppSettings" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/ContainerButtons/ButtonsContainer"]
+[node name="ButtonAppSettings" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/ContainerButtons/ButtonsContainer" unique_id=68917196]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
@@ -792,7 +819,7 @@ flat = true
 alignment = 0
 expand_icon = true
 
-[node name="ButtonSave" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/ContainerButtons/ButtonsContainer"]
+[node name="ButtonSave" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/ContainerButtons/ButtonsContainer" unique_id=862331075]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
@@ -805,7 +832,7 @@ flat = true
 alignment = 0
 expand_icon = true
 
-[node name="EdgeHandler" type="Control" parent="."]
+[node name="EdgeHandler" type="Control" parent="." unique_id=1673758275]
 layout_mode = 3
 anchors_preset = 9
 anchor_bottom = 1.0

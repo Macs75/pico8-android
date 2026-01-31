@@ -33,6 +33,10 @@ var repeat_timer = 0
 const REPEAT_TIME_FIRST = 350
 const REPEAT_TIME_AFTER = 150
 
+var original_position: Vector2
+var drag_offset_start: Vector2
+var is_repositionable: bool = true
+
 func send_ev(down: bool, echo: bool = false):
 	var shifting = "Shift" in PicoVideoStreamer.instance.held_keys
 	var unicode_id = 0
@@ -53,6 +57,28 @@ func send_ev(down: bool, echo: bool = false):
 	#print("sending ", key_id, " as ", down)
 	
 func _gui_input(event: InputEvent) -> void:
+	if PicoVideoStreamer.display_drag_enabled and is_repositionable:
+		if event is InputEventScreenTouch:
+			if event.pressed:
+				drag_offset_start = event.position
+				accept_event()
+			else:
+				# Save position when drag ends
+				_save_position()
+				accept_event()
+		elif event is InputEventScreenDrag:
+			position += event.position - drag_offset_start
+			
+			# Clamp to parent
+			var p = get_parent()
+			if p is Control:
+				var min_pos = Vector2.ZERO
+				var max_pos = p.size - size
+				position = position.clamp(min_pos, max_pos)
+			
+			accept_event()
+		return # Block normal input
+
 	if event is InputEventScreenTouch or event is InputEventMouseButton:
 		# print(event)
 		if event.pressed:
@@ -103,6 +129,39 @@ func _ready() -> void:
 		%Label.visible = false
 	
 	_update_visuals()
+	
+	# --- Drag & Drop Init ---
+	original_position = position
+	PicoVideoStreamer.instance.layout_reset.connect(_on_layout_reset)
+	
+	# Attempt to load saved position
+	var is_landscape = _is_in_landscape_ui()
+	
+	# Restrict repositioning for specific containers (e.g. PocketCHIP layout)
+	var p = get_parent()
+	if p and p.name == "kb_pocketchip":
+		is_repositionable = false
+		
+	if is_repositionable:
+		var saved_pos = PicoVideoStreamer.get_control_pos(name, is_landscape)
+		if saved_pos != null:
+			position = saved_pos
+
+func _is_in_landscape_ui() -> bool:
+	# heuristic: check if we are inside LandscapeUI node path
+	var p = get_parent()
+	while p:
+		if p.name == "LandscapeUI":
+			return true
+		p = p.get_parent()
+	return false
+
+func _save_position():
+	PicoVideoStreamer.set_control_pos(name, position, _is_in_landscape_ui())
+
+func _on_layout_reset(target_is_landscape: bool):
+	if target_is_landscape == _is_in_landscape_ui():
+		position = original_position
 
 func set_textures(new_normal: Texture2D, new_pressed: Texture2D):
 	texture_normal = new_normal

@@ -1,6 +1,8 @@
 extends Node2D
 class_name PicoVideoStreamer
 
+signal layout_reset(is_landscape: bool)
+
 @export var loading: AnimatedSprite2D
 @export var display: Sprite2D
 @export var displayContainer: Sprite2D
@@ -47,8 +49,11 @@ func hard_reset_connection():
 		_mutex.unlock()
 
 static var instance: PicoVideoStreamer
-func _ready() -> void:
+
+func _enter_tree() -> void:
 	instance = self
+
+func _ready() -> void:
 	set_process_input(true)
 	
 	# Apply shader if it was set before instance was ready
@@ -93,7 +98,7 @@ func _ready() -> void:
 	_thread.start(_thread_function)
 	
 	# Connect the single keyboard toggle button
-	var keyboard_btn = get_node("Arranger/kbanchor/HBoxContainer/Keyboard Btn")
+	var keyboard_btn = get_node("Arranger/kbanchor/Keyboard Btn")
 	if keyboard_btn:
 		keyboard_btn.pressed.connect(_on_keyboard_toggle_pressed)
 		# Set initial button label based on current state
@@ -977,14 +982,14 @@ static func _apply_button_hue():
 	
 	var portrait_buttons = [
 		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/X"),
-		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/Z"),
-		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/esc"),
-		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/P"),
+		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/O"),
+		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/Escape"),
+		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/Pause"),
 	]
 	
 	var landscape_buttons = [
 		root.get_node_or_null("Main/LandscapeUI/Control/RightPad/X"),
-		root.get_node_or_null("Main/LandscapeUI/Control/RightPad/Z"),
+		root.get_node_or_null("Main/LandscapeUI/Control/RightPad/O"),
 		root.get_node_or_null("Main/LandscapeUI/Control/SystemButtons/Escape"),
 		root.get_node_or_null("Main/LandscapeUI/Control/SystemButtons/Pause"),
 	]
@@ -1299,7 +1304,7 @@ func _on_external_keyboard_change(_enabled: bool):
 	_update_keyboard_button_label()
 
 func _update_keyboard_button_label():
-	var keyboard_btn = get_node("Arranger/kbanchor/HBoxContainer/Keyboard Btn")
+	var keyboard_btn = get_node("Arranger/kbanchor/Keyboard Btn")
 	if not keyboard_btn:
 		return
 	var current_type = KBMan.get_current_keyboard_type()
@@ -1665,24 +1670,70 @@ func get_display_rect() -> Rect2:
 	else:
 		pos_top_left = displayContainer.global_position
 		
-	# Since BezelOverlay is a child of this node (which might be the root or not), 
-	# and this node might be scaled? 
-	# Actually BezelOverlay is a child of PicoVideoStreamer (this script).
-	# If PicoVideoStreamer is at (0,0) scale (1,1), global rect is fine.
-	# But BezelOverlay is a Control node (TextureRect). Control nodes use position relative to parent.
-	# Ideally we want the rect in the coordinate space of BezelOverlay's parent (this node).
-	# So we should convert global_position to local_position of 'this' node.
-	
+
 	var local_pos = to_local(pos_top_left)
 	
-	# BezelOverlay will set its position to this local_pos.
-	# BezelOverlay is a TextureRect, so its 'scale' propery does not affect 'size'.
-	# But we are manually setting 'size' in bezel_overlay.gd.
-	# Control nodes don't inherit Node2D scale in the same simple way? 
-	# Assuming this node is the scene root and unscaled.
 	
 	return Rect2(local_pos, size_screen)
 
-# We need to trigger layout update when scaling changes (e.g. Integer Scale toggle)
-# Hook into _process or key events?
-# Better: Whenever we change scale, call _update_bezel_layout.
+# Display Repositioning
+static var display_drag_enabled: bool = false
+static var display_drag_offset_portrait: Vector2 = Vector2.ZERO
+static var display_drag_offset_landscape: Vector2 = Vector2.ZERO
+
+static var control_layout_portrait: Dictionary = {}
+static var control_layout_landscape: Dictionary = {}
+
+static func set_display_drag_enabled(enabled: bool):
+	display_drag_enabled = enabled
+	# Force Arranger update if instance exists
+	if instance:
+		var arranger = instance.get_node_or_null("/root/Main/Arranger")
+		if arranger:
+			arranger.dirty = true
+			if arranger.has_method("_update_reset_button_visibility"):
+				arranger._update_reset_button_visibility()
+
+static func set_display_drag_offset(offset: Vector2, is_landscape: bool):
+	if is_landscape:
+		display_drag_offset_landscape = offset
+	else:
+		display_drag_offset_portrait = offset
+		
+	if instance:
+		var arranger = instance.get_node_or_null("Arranger")
+		if arranger:
+			arranger.dirty = true
+		
+static func get_display_drag_offset(is_landscape: bool) -> Vector2:
+	return display_drag_offset_landscape if is_landscape else display_drag_offset_portrait
+
+static func set_control_pos(control_name: String, pos: Vector2, is_landscape: bool):
+	if is_landscape:
+		control_layout_landscape[control_name] = pos
+	else:
+		control_layout_portrait[control_name] = pos
+
+static func get_control_pos(control_name: String, is_landscape: bool) -> Variant:
+	if is_landscape:
+		return control_layout_landscape.get(control_name, null)
+	else:
+		return control_layout_portrait.get(control_name, null)
+
+static func reset_display_layout(is_landscape: bool):
+	print("Resetting Display Layout for: ", "Landscape" if is_landscape else "Portrait")
+	if is_landscape:
+		display_drag_offset_landscape = Vector2.ZERO
+		control_layout_landscape.clear()
+	else:
+		display_drag_offset_portrait = Vector2.ZERO
+		control_layout_portrait.clear()
+
+	# Force Arranger update
+	if instance:
+		var arranger = instance.get_node_or_null("/root/Main/Arranger")
+		if arranger:
+			arranger.dirty = true
+			if arranger.has_method("_update_reset_button_visibility"):
+				arranger._update_reset_button_visibility()
+			arranger.dirty = true

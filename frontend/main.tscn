@@ -1,4 +1,4 @@
-[gd_scene load_steps=40 format=3 uid="uid://crejfo36g5bip"]
+[gd_scene format=3 uid="uid://crejfo36g5bip"]
 
 [ext_resource type="Script" uid="uid://6wbbc364xejy" path="res://video_streamer.gd" id="1_ig7tw"]
 [ext_resource type="Texture2D" uid="uid://n7xqvr4frt03" path="res://assets/cartdl/cartdl_01.png" id="5_b1qrp"]
@@ -34,6 +34,7 @@
 [ext_resource type="Texture2D" uid="uid://dlu77ynuh6dl1" path="res://assets/btn_menu_normal.png" id="49_menu_norm"]
 [ext_resource type="Texture2D" uid="uid://cts6512y2afit" path="res://assets/btn_menu_pressed.png" id="50_menu_press"]
 [ext_resource type="PackedScene" uid="uid://b6p2v8g5q4x7y" path="res://options_menu.tscn" id="170_options"]
+[ext_resource type="Script" uid="uid://b8wgg60ombjh" path="res://repositionable_control.gd" id="171_repo"]
 
 [sub_resource type="Gradient" id="Gradient_ig7tw"]
 offsets = PackedFloat32Array(0)
@@ -159,28 +160,39 @@ viewport_path = NodePath("Display")
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_d13ii"]
 
-[node name="Main" type="Node2D" node_paths=PackedStringArray("loading", "display", "displayContainer")]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_reset"]
+content_margin_left = 10.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+content_margin_bottom = 5.0
+bg_color = Color(0.8, 0, 0, 0.8)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="Main" type="Node2D" unique_id=689770846 node_paths=PackedStringArray("loading", "display", "displayContainer")]
 script = ExtResource("1_ig7tw")
 loading = NodePath("Display/loading")
 display = NodePath("Display/Display")
 displayContainer = NodePath("Arranger/displayContainer")
 
-[node name="runcmd" type="Node" parent="."]
+[node name="runcmd" type="Node" parent="." unique_id=1759796283]
 script = ExtResource("41_4lmeg")
 
-[node name="OptionsMenu" parent="." instance=ExtResource("170_options")]
+[node name="OptionsMenu" parent="." unique_id=2098910583 instance=ExtResource("170_options")]
 
-[node name="Display" type="SubViewport" parent="."]
+[node name="Display" type="SubViewport" parent="." unique_id=1020317140]
 handle_input_locally = false
 size = Vector2i(128, 128)
 render_target_update_mode = 3
 
-[node name="Display" type="Sprite2D" parent="Display"]
+[node name="Display" type="Sprite2D" parent="Display" unique_id=855966821]
 texture_filter = 1
 position = Vector2(64, 64)
 texture = SubResource("GradientTexture2D_0xm2m")
 
-[node name="loading" type="AnimatedSprite2D" parent="Display"]
+[node name="loading" type="AnimatedSprite2D" parent="Display" unique_id=741339067]
 texture_filter = 1
 position = Vector2(64, 64)
 scale = Vector2(2, 2)
@@ -188,52 +200,47 @@ sprite_frames = SubResource("SpriteFrames_0odxb")
 animation = &"dl"
 autoplay = "dl_1"
 
-[node name="Arranger" type="Control" parent="." node_paths=PackedStringArray("rect")]
+[node name="Arranger" type="Control" parent="." unique_id=1758787716 node_paths=PackedStringArray("active_area", "reset_button")]
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("16_2cqfq")
-rect = NodePath("ActiveArea")
+active_area = NodePath("ActiveArea")
+reset_button = NodePath("../OverlayUI/ResetDisplayBtn")
 
-[node name="ActiveArea" type="ReferenceRect" parent="Arranger"]
+[node name="ActiveArea" type="ReferenceRect" parent="Arranger" unique_id=148468915]
 layout_mode = 0
 offset_right = 128.0
 offset_bottom = 300.0
 mouse_filter = 2
 border_color = Color(0.195284, 0.551135, 0.869855, 1)
 
-[node name="displayContainer" type="Sprite2D" parent="Arranger"]
+[node name="displayContainer" type="Sprite2D" parent="Arranger" unique_id=699366111]
 texture_filter = 1
 position = Vector2(0, 12)
 texture = SubResource("ViewportTexture_7dm0k")
 centered = false
 
-[node name="Camera2D" type="Camera2D" parent="Arranger"]
-offset = Vector2(256, 256)
-enabled = false
-
-[node name="kbanchor" type="Node2D" parent="Arranger"]
+[node name="kbanchor" type="Node2D" parent="Arranger" unique_id=2040893376]
 position = Vector2(0, 300)
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Arranger/kbanchor"]
+[node name="Keyboard Btn" type="Button" parent="Arranger/kbanchor" unique_id=585888594]
+layout_mode = 0
 offset_top = -150.0
-offset_right = 128.0
+offset_right = 50.0
 offset_bottom = -137.0
-
-[node name="Keyboard Btn" type="Button" parent="Arranger/kbanchor/HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 2
 focus_mode = 0
 theme_override_fonts/font = ExtResource("20_d13ii")
 theme_override_font_sizes/font_size = 5
 theme_override_styles/focus = SubResource("StyleBoxEmpty_d13ii")
 text = "fULL kEYBOARD"
+script = ExtResource("171_repo")
 
-[node name="kb_pocketchip" type="Node2D" parent="Arranger/kbanchor"]
+[node name="kb_pocketchip" type="Node2D" parent="Arranger/kbanchor" unique_id=521324979]
 visible = false
 position = Vector2(0, -125)
 script = ExtResource("37_come4")
 
-[node name="Key" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1785778886 instance=ExtResource("20_82xsv")]
 offset_top = 44.0
 offset_right = 5.5
 offset_bottom = 53.0
@@ -243,7 +250,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key37" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key37" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1690140182 instance=ExtResource("20_82xsv")]
 offset_top = 2.0
 offset_right = 5.5
 offset_bottom = 11.0
@@ -253,7 +260,7 @@ font_type = 3
 unicode = false
 metadata/_edit_use_anchors_ = true
 
-[node name="Key2" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key2" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1923395999 instance=ExtResource("20_82xsv")]
 offset_left = 13.0
 offset_top = 44.0
 offset_right = 18.5
@@ -264,7 +271,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key50" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key50" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1440343591 instance=ExtResource("20_82xsv")]
 offset_left = 23.0
 offset_top = 28.0
 offset_right = 29.0
@@ -276,7 +283,7 @@ font_type = 4
 unicode = false
 metadata/_edit_use_anchors_ = true
 
-[node name="Key52" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key52" parent="Arranger/kbanchor/kb_pocketchip" unique_id=120242106 instance=ExtResource("20_82xsv")]
 offset_left = 13.0
 offset_top = 15.0
 offset_right = 19.0
@@ -287,7 +294,7 @@ font_type = 4
 unicode = false
 metadata/_edit_use_anchors_ = true
 
-[node name="Key53" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key53" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1886112621 instance=ExtResource("20_82xsv")]
 offset_left = 23.0
 offset_top = 2.0
 offset_right = 29.0
@@ -298,7 +305,7 @@ font_type = 4
 unicode = false
 metadata/_edit_use_anchors_ = true
 
-[node name="Key51" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key51" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1354759766 instance=ExtResource("20_82xsv")]
 offset_left = 33.0
 offset_top = 15.0
 offset_right = 39.0
@@ -310,7 +317,7 @@ font_type = 4
 unicode = false
 metadata/_edit_use_anchors_ = true
 
-[node name="Key3" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key3" parent="Arranger/kbanchor/kb_pocketchip" unique_id=178255220 instance=ExtResource("20_82xsv")]
 offset_left = 26.0
 offset_top = 44.0
 offset_right = 31.5
@@ -321,7 +328,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key4" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key4" parent="Arranger/kbanchor/kb_pocketchip" unique_id=534576176 instance=ExtResource("20_82xsv")]
 offset_left = 39.0
 offset_top = 44.0
 offset_right = 44.5
@@ -332,7 +339,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key5" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key5" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1215865022 instance=ExtResource("20_82xsv")]
 offset_left = 52.0
 offset_top = 44.0
 offset_right = 57.5
@@ -343,7 +350,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key6" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key6" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1204841487 instance=ExtResource("20_82xsv")]
 offset_left = 65.0
 offset_top = 44.0
 offset_right = 70.5
@@ -354,7 +361,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key7" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key7" parent="Arranger/kbanchor/kb_pocketchip" unique_id=155265572 instance=ExtResource("20_82xsv")]
 offset_left = 78.0
 offset_top = 44.0
 offset_right = 83.5
@@ -365,7 +372,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key8" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key8" parent="Arranger/kbanchor/kb_pocketchip" unique_id=151651340 instance=ExtResource("20_82xsv")]
 offset_left = 91.0
 offset_top = 44.0
 offset_right = 96.5
@@ -376,7 +383,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key9" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key9" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1155798871 instance=ExtResource("20_82xsv")]
 offset_left = 104.0
 offset_top = 44.0
 offset_right = 109.5
@@ -387,7 +394,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key10" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key10" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1447123635 instance=ExtResource("20_82xsv")]
 offset_left = 117.0
 offset_top = 44.0
 offset_right = 122.5
@@ -398,7 +405,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key12" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key12" parent="Arranger/kbanchor/kb_pocketchip" unique_id=52582595 instance=ExtResource("20_82xsv")]
 offset_top = 64.0
 offset_right = 5.5
 offset_bottom = 73.0
@@ -407,7 +414,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key13" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key13" parent="Arranger/kbanchor/kb_pocketchip" unique_id=803389355 instance=ExtResource("20_82xsv")]
 offset_left = 13.0
 offset_top = 64.0
 offset_right = 18.5
@@ -418,7 +425,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key14" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key14" parent="Arranger/kbanchor/kb_pocketchip" unique_id=524635344 instance=ExtResource("20_82xsv")]
 offset_left = 26.0
 offset_top = 64.0
 offset_right = 31.5
@@ -429,7 +436,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key15" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key15" parent="Arranger/kbanchor/kb_pocketchip" unique_id=286844365 instance=ExtResource("20_82xsv")]
 offset_left = 39.0
 offset_top = 64.0
 offset_right = 44.5
@@ -440,7 +447,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key16" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key16" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1808677909 instance=ExtResource("20_82xsv")]
 offset_left = 52.0
 offset_top = 64.0
 offset_right = 57.5
@@ -451,7 +458,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key17" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key17" parent="Arranger/kbanchor/kb_pocketchip" unique_id=177449874 instance=ExtResource("20_82xsv")]
 offset_left = 65.0
 offset_top = 64.0
 offset_right = 70.5
@@ -462,7 +469,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key18" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key18" parent="Arranger/kbanchor/kb_pocketchip" unique_id=710742142 instance=ExtResource("20_82xsv")]
 offset_left = 78.0
 offset_top = 64.0
 offset_right = 83.5
@@ -473,7 +480,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key19" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key19" parent="Arranger/kbanchor/kb_pocketchip" unique_id=786070233 instance=ExtResource("20_82xsv")]
 offset_left = 91.0
 offset_top = 64.0
 offset_right = 96.5
@@ -484,7 +491,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key20" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key20" parent="Arranger/kbanchor/kb_pocketchip" unique_id=634768688 instance=ExtResource("20_82xsv")]
 offset_left = 104.0
 offset_top = 64.0
 offset_right = 109.5
@@ -495,7 +502,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key38" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key38" parent="Arranger/kbanchor/kb_pocketchip" unique_id=52699292 instance=ExtResource("20_82xsv")]
 offset_left = 46.0
 offset_top = 2.0
 offset_right = 51.5
@@ -507,7 +514,7 @@ cap_text_shift = "!"
 shift_unicode_override = "!"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key39" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key39" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1620518947 instance=ExtResource("20_82xsv")]
 offset_left = 59.0
 offset_top = 2.0
 offset_right = 64.5
@@ -519,7 +526,7 @@ cap_text_shift = "#"
 shift_unicode_override = "#"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key40" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key40" parent="Arranger/kbanchor/kb_pocketchip" unique_id=2049869537 instance=ExtResource("20_82xsv")]
 offset_left = 72.0
 offset_top = 2.0
 offset_right = 77.5
@@ -531,7 +538,7 @@ cap_text_shift = "%"
 shift_unicode_override = "%"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key41" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key41" parent="Arranger/kbanchor/kb_pocketchip" unique_id=117655230 instance=ExtResource("20_82xsv")]
 offset_left = 85.0
 offset_top = 2.0
 offset_right = 90.5
@@ -543,7 +550,7 @@ cap_text_shift = "&"
 shift_unicode_override = "&"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key42" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key42" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1150718353 instance=ExtResource("20_82xsv")]
 offset_left = 98.0
 offset_top = 2.0
 offset_right = 103.5
@@ -555,7 +562,7 @@ cap_text_shift = "("
 shift_unicode_override = "("
 metadata/_edit_use_anchors_ = true
 
-[node name="Key43" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key43" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1867299538 instance=ExtResource("20_82xsv")]
 offset_left = 111.0
 offset_top = 2.0
 offset_right = 116.5
@@ -567,7 +574,7 @@ cap_text_shift = "_"
 shift_unicode_override = "_"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key49" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key49" parent="Arranger/kbanchor/kb_pocketchip" unique_id=559665423 instance=ExtResource("20_82xsv")]
 offset_left = 117.0
 offset_top = 22.0
 offset_right = 122.5
@@ -579,7 +586,7 @@ cap_text_shift = "+"
 shift_unicode_override = "+"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key44" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key44" parent="Arranger/kbanchor/kb_pocketchip" unique_id=158705450 instance=ExtResource("20_82xsv")]
 offset_left = 52.0
 offset_top = 22.0
 offset_right = 57.5
@@ -591,7 +598,7 @@ cap_text_shift = "@"
 shift_unicode_override = "@"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key45" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key45" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1380667480 instance=ExtResource("20_82xsv")]
 offset_left = 65.0
 offset_top = 22.0
 offset_right = 70.5
@@ -603,7 +610,7 @@ cap_text_shift = "$"
 shift_unicode_override = "$"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key46" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key46" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1621537370 instance=ExtResource("20_82xsv")]
 offset_left = 78.0
 offset_top = 22.0
 offset_right = 83.5
@@ -615,7 +622,7 @@ cap_text_shift = "^"
 shift_unicode_override = "^"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key47" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key47" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1594545544 instance=ExtResource("20_82xsv")]
 offset_left = 91.0
 offset_top = 22.0
 offset_right = 96.5
@@ -627,7 +634,7 @@ cap_text_shift = "*"
 shift_unicode_override = "*"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key48" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key48" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1361653530 instance=ExtResource("20_82xsv")]
 offset_left = 104.0
 offset_top = 22.0
 offset_right = 109.5
@@ -639,7 +646,7 @@ cap_text_shift = ")"
 shift_unicode_override = ")"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key11" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key11" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1953660663 instance=ExtResource("20_82xsv")]
 offset_left = 13.0
 offset_top = 104.0
 offset_right = 18.5
@@ -652,7 +659,7 @@ can_lock = true
 unicode = false
 metadata/_edit_use_anchors_ = true
 
-[node name="Key32" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key32" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1336458809 instance=ExtResource("20_82xsv")]
 offset_left = 26.0
 offset_top = 104.0
 offset_right = 31.5
@@ -664,7 +671,7 @@ can_lock = true
 unicode = false
 metadata/_edit_use_anchors_ = true
 
-[node name="Key33" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key33" parent="Arranger/kbanchor/kb_pocketchip" unique_id=633970276 instance=ExtResource("20_82xsv")]
 offset_left = 39.0
 offset_top = 104.0
 offset_right = 57.5
@@ -674,7 +681,7 @@ cap_text = " "
 font_type = 3
 metadata/_edit_use_anchors_ = true
 
-[node name="Key31" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key31" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1246462200 instance=ExtResource("20_82xsv")]
 offset_top = 104.0
 offset_right = 5.5
 offset_bottom = 113.0
@@ -686,7 +693,7 @@ can_lock = true
 unicode = false
 metadata/_edit_use_anchors_ = true
 
-[node name="Key21" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key21" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1048305194 instance=ExtResource("20_82xsv")]
 offset_top = 84.0
 offset_right = 5.5
 offset_bottom = 93.0
@@ -696,7 +703,7 @@ font_type = 3
 unicode = false
 metadata/_edit_use_anchors_ = true
 
-[node name="Key22" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key22" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1133177524 instance=ExtResource("20_82xsv")]
 offset_left = 13.0
 offset_top = 84.0
 offset_right = 18.5
@@ -707,7 +714,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key23" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key23" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1713966697 instance=ExtResource("20_82xsv")]
 offset_left = 26.0
 offset_top = 84.0
 offset_right = 31.5
@@ -718,7 +725,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key24" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key24" parent="Arranger/kbanchor/kb_pocketchip" unique_id=656931569 instance=ExtResource("20_82xsv")]
 offset_left = 39.0
 offset_top = 84.0
 offset_right = 44.5
@@ -729,7 +736,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key25" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key25" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1175923147 instance=ExtResource("20_82xsv")]
 offset_left = 52.0
 offset_top = 84.0
 offset_right = 57.5
@@ -740,7 +747,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key26" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key26" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1558498830 instance=ExtResource("20_82xsv")]
 offset_left = 65.0
 offset_top = 84.0
 offset_right = 70.5
@@ -751,7 +758,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key27" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key27" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1101648280 instance=ExtResource("20_82xsv")]
 offset_left = 78.0
 offset_top = 84.0
 offset_right = 83.5
@@ -762,7 +769,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key28" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key28" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1707711206 instance=ExtResource("20_82xsv")]
 offset_left = 91.0
 offset_top = 84.0
 offset_right = 96.5
@@ -773,7 +780,7 @@ font_type = 2
 special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Key29" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key29" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1810632880 instance=ExtResource("20_82xsv")]
 offset_left = 104.0
 offset_top = 84.0
 offset_right = 109.5
@@ -785,7 +792,7 @@ cap_text_shift = ":"
 shift_unicode_override = ":"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key54" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key54" parent="Arranger/kbanchor/kb_pocketchip" unique_id=204761682 instance=ExtResource("20_82xsv")]
 offset_left = 117.0
 offset_top = 84.0
 offset_right = 122.5
@@ -796,7 +803,7 @@ font_type = 3
 unicode = false
 metadata/_edit_use_anchors_ = true
 
-[node name="Key55" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key55" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1871265940 instance=ExtResource("20_82xsv")]
 offset_left = 117.0
 offset_top = 64.0
 offset_right = 122.5
@@ -811,7 +818,7 @@ font_type = 3
 unicode = false
 metadata/_edit_use_anchors_ = true
 
-[node name="Key34" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key34" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1343007684 instance=ExtResource("20_82xsv")]
 offset_left = 78.0
 offset_top = 104.0
 offset_right = 83.5
@@ -823,7 +830,7 @@ cap_text_shift = "<"
 shift_unicode_override = "<"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key35" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key35" parent="Arranger/kbanchor/kb_pocketchip" unique_id=518483315 instance=ExtResource("20_82xsv")]
 offset_left = 91.0
 offset_top = 104.0
 offset_right = 96.5
@@ -835,7 +842,7 @@ cap_text_shift = ">"
 shift_unicode_override = ">"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key36" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key36" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1060517370 instance=ExtResource("20_82xsv")]
 offset_left = 104.0
 offset_top = 104.0
 offset_right = 109.5
@@ -847,7 +854,7 @@ cap_text_shift = "?"
 shift_unicode_override = "?"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key56" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key56" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1338261211 instance=ExtResource("20_82xsv")]
 offset_left = 117.0
 offset_top = 104.0
 offset_right = 122.5
@@ -859,7 +866,7 @@ cap_text_shift = "\""
 shift_unicode_override = "?"
 metadata/_edit_use_anchors_ = true
 
-[node name="Key30" parent="Arranger/kbanchor/kb_pocketchip" instance=ExtResource("20_82xsv")]
+[node name="Key30" parent="Arranger/kbanchor/kb_pocketchip" unique_id=715938769 instance=ExtResource("20_82xsv")]
 offset_top = 22.0
 offset_right = 5.5
 offset_bottom = 31.0
@@ -870,17 +877,17 @@ cap_text_shift = "~"
 shift_unicode_override = "~"
 metadata/_edit_use_anchors_ = true
 
-[node name="kb_gaming" type="Node2D" parent="Arranger/kbanchor"]
+[node name="kb_gaming" type="Node2D" parent="Arranger/kbanchor" unique_id=1882534109]
 position = Vector2(0, -126)
 script = ExtResource("37_come4")
 type = 0
 
-[node name="Pico8LogoVector" type="Sprite2D" parent="Arranger/kbanchor/kb_gaming"]
+[node name="Pico8LogoVector" type="Sprite2D" parent="Arranger/kbanchor/kb_gaming" unique_id=185300059]
 position = Vector2(65, 110)
 scale = Vector2(0.21, 0.21)
 texture = ExtResource("23_1u8w0")
 
-[node name="esc" parent="Arranger/kbanchor/kb_gaming" instance=ExtResource("20_82xsv")]
+[node name="Escape" parent="Arranger/kbanchor/kb_gaming" unique_id=767368110 instance=ExtResource("20_82xsv")]
 offset_left = 77.0
 offset_top = 4.0
 offset_right = 88.0
@@ -897,7 +904,7 @@ texture_normal = ExtResource("47_esc_norm")
 texture_pressed = ExtResource("48_esc_press")
 metadata/_edit_use_anchors_ = true
 
-[node name="P" parent="Arranger/kbanchor/kb_gaming" instance=ExtResource("20_82xsv")]
+[node name="Pause" parent="Arranger/kbanchor/kb_gaming" unique_id=491652354 instance=ExtResource("20_82xsv")]
 offset_left = 103.0
 offset_top = 4.0
 offset_right = 114.0
@@ -914,10 +921,10 @@ texture_normal = ExtResource("49_menu_norm")
 texture_pressed = ExtResource("50_menu_press")
 metadata/_edit_use_anchors_ = true
 
-[node name="Z" parent="Arranger/kbanchor/kb_gaming" instance=ExtResource("20_82xsv")]
-offset_left = 102.0
+[node name="O" parent="Arranger/kbanchor/kb_gaming" unique_id=2134662063 instance=ExtResource("20_82xsv")]
+offset_left = 103.0
 offset_top = 24.0
-offset_right = 113.0
+offset_right = 114.0
 offset_bottom = 35.0
 texture = ExtResource("45_o_norm")
 patch_margin_left = 0
@@ -933,7 +940,7 @@ texture_normal = ExtResource("45_o_norm")
 texture_pressed = ExtResource("46_o_press")
 metadata/_edit_use_anchors_ = true
 
-[node name="X" parent="Arranger/kbanchor/kb_gaming" instance=ExtResource("20_82xsv")]
+[node name="X" parent="Arranger/kbanchor/kb_gaming" unique_id=1932826476 instance=ExtResource("20_82xsv")]
 offset_left = 77.0
 offset_top = 39.0
 offset_right = 88.0
@@ -952,7 +959,7 @@ texture_normal = ExtResource("43_x_norm")
 texture_pressed = ExtResource("44_x_press")
 metadata/_edit_use_anchors_ = true
 
-[node name="Onmipad" parent="Arranger/kbanchor/kb_gaming" instance=ExtResource("41_0cp0l")]
+[node name="Onmipad" parent="Arranger/kbanchor/kb_gaming" unique_id=827209010 instance=ExtResource("41_0cp0l")]
 offset_left = 3.0
 offset_top = 4.0
 offset_right = 47.0
@@ -961,5 +968,24 @@ scale = Vector2(0.85, 0.85)
 expand_mode = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="LandscapeUI" parent="." instance=ExtResource("42_land")]
+[node name="LandscapeUI" parent="." unique_id=323140266 instance=ExtResource("42_land")]
 visible = false
+
+[node name="OverlayUI" type="CanvasLayer" parent="." unique_id=61202646]
+
+[node name="ResetDisplayBtn" type="Button" parent="OverlayUI" unique_id=139397799]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 25.0
+offset_top = -172.0
+offset_right = 65.0
+offset_bottom = -157.0
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("20_d13ii")
+theme_override_font_sizes/font_size = 5
+theme_override_styles/normal = SubResource("StyleBoxFlat_reset")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_reset")
+theme_override_styles/hover = SubResource("StyleBoxFlat_reset")
+text = "reset"

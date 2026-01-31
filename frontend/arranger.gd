@@ -1,6 +1,7 @@
 extends Control
 
-@export var rect: Control
+@export var active_area: Control
+@export var reset_button: Button
 @export var center_y: bool = false
 @export var auto_show: bool = true
 @export var kb_anchor: Node2D = null
@@ -14,6 +15,7 @@ var cached_controller_connected: bool = false
 
 var dirty: bool = true
 var last_screensize: Vector2i = Vector2i.ZERO
+var dragging_pointer_index: int = -1
 
 signal layout_updated()
 
@@ -57,6 +59,10 @@ func _ready() -> void:
 	var parent = get_parent()
 	if parent and parent.has_node("LandscapeUI"):
 		landscape_ui = parent.get_node("LandscapeUI")
+		
+	if reset_button:
+		reset_button.pressed.connect(_on_reset_display_pressed)
+		_update_reset_button_visibility()
 	
 	if has_node("kbanchor"):
 		kb_anchor = get_node("kbanchor")
@@ -116,6 +122,40 @@ func _on_resize():
 		last_screensize = screensize
 		_update_layout()
 
+
+func _input(event: InputEvent) -> void:
+	if not PicoVideoStreamer.display_drag_enabled:
+		dragging_pointer_index = -1
+		return
+		
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			if dragging_pointer_index == -1:
+				if display_container and display_container.visible:
+					# Check if touch is inside the display sprite
+					# Transform global event position to local space
+					var local_pos = display_container.to_local(event.position)
+					if display_container.get_rect().has_point(local_pos):
+						dragging_pointer_index = event.index
+		elif event.index == dragging_pointer_index:
+			dragging_pointer_index = -1
+			
+	elif event is InputEventScreenDrag:
+		if event.index == dragging_pointer_index:
+			# Calculate orientation
+			var is_landscape_now = PicoVideoStreamer.is_system_landscape()
+			var current_offset = PicoVideoStreamer.get_display_drag_offset(is_landscape_now)
+			PicoVideoStreamer.set_display_drag_offset(current_offset + event.relative, is_landscape_now)
+
+func _on_reset_display_pressed():
+	# Use new global reset that handles controls too
+	PicoVideoStreamer.reset_display_layout(PicoVideoStreamer.is_system_landscape())
+
+func _update_reset_button_visibility():
+	if reset_button:
+		reset_button.visible = PicoVideoStreamer.display_drag_enabled
+
+
 func _process(_delta: float) -> void:
 	if frames_rendered < 10:
 		frames_rendered += 1
@@ -150,8 +190,18 @@ func _update_layout():
 	var kb_height = 0
 	var is_landscape = PicoVideoStreamer.is_system_landscape()
 
-	var target_size = rect.size
-	var target_pos = rect.position
+	var target_size = Vector2(128, 128)
+	var target_pos = Vector2.ZERO
+	
+	if active_area:
+		target_size = active_area.size
+		target_pos = active_area.position
+	else:
+		# Fallback if unassigned
+		if has_node("ActiveArea"):
+			active_area = get_node("ActiveArea")
+			target_size = active_area.size
+			target_pos = active_area.position
 	
 	# Reserve space for side controls:
 	var available_size = Vector2(screensize)
@@ -198,6 +248,10 @@ func _update_layout():
 			maxScale = max(1.0, raw_scale)
 
 	self.scale = Vector2(maxScale, maxScale)
+	
+	# Apply same scale to Reset Button (OverlayUI) as requested
+	if reset_button:
+		reset_button.scale = Vector2(maxScale, maxScale)
 	
 	# Compensate for Arranger zoom to keep high-res D-pad at constant physical size
 	var dpad = get_node_or_null("kbanchor/kb_gaming/Onmipad")
@@ -263,16 +317,59 @@ func _update_layout():
 	if display_container:
 		display_container.centered = is_landscape
 		
-		var target_y = 0
-		# Base offset for portrait
+		# Ensure reset button visibility is correct
+		_update_reset_button_visibility()
+		
+		# --- Display Drag Logic ---
+		var drag_offset = PicoVideoStreamer.get_display_drag_offset(is_landscape)
+		
+		# 1. Calculate Baseline Position (where the display is with ZERO drag)
+		var target_y_base = 0
 		if not is_landscape:
-			target_y = 12
-			
-		# Keyboard offset (move up to show bottom text)
+			target_y_base = 12
 		if kb_height > 0:
-			target_y -= 64
+			target_y_base -= 64
 			
-		display_container.position = Vector2(0, target_y)
+		var baseline_global: Vector2
+		if is_landscape:
+			# Landscape is centered by default. 
+			# display_container.centered = true, so its local origin (0,0) is center of display.
+			# Its top-left is -(target_size/2).
+			baseline_global = (Vector2(screensize) / 2.0) - (target_size * maxScale / 2.0).floor()
+		else:
+			# Portrait: Arranger.position + (0, target_y_base) * maxScale
+			# display_container.centered = false, so its local origin (0,0) is its top-left.
+			baseline_global = Vector2(self.position) + Vector2(0, target_y_base) * maxScale
+		
+		# 2. Clamping
+		# Use 128x128 as the actual logical screen size for clamping, 
+		# otherwise portrait's ActiveArea (300 height) restricts movement too much.
+		var display_size_global = Vector2(128, 128) * maxScale
+		
+		# We want: 0 <= baseline_global + drag_offset <= screensize - display_size_global
+		var min_offset = - baseline_global
+		var max_offset = Vector2(screensize) - display_size_global - baseline_global
+		
+		# Add a tiny bit of padding if desired, but 0 is strict screen edges
+		var clamped_global_x = clamp(drag_offset.x, min_offset.x, max_offset.x)
+		var clamped_global_y = clamp(drag_offset.y, min_offset.y, max_offset.y)
+		
+		if not is_landscape and PicoVideoStreamer.display_drag_enabled:
+			print("PORTRAIT DRAG DEBUG:")
+			print("  ScreenSize: ", Vector2(screensize))
+			print("  Baseline: ", baseline_global)
+			print("  DisplaySize: ", display_size_global)
+			print("  MinOffset: ", min_offset, " MaxOffset: ", max_offset)
+			print("  CurrentDrag: ", drag_offset, " Clamped: ", Vector2(clamped_global_x, clamped_global_y))
+		
+		# Write back clamped value to global state so it doesn't drift
+		if drag_offset.x != clamped_global_x or drag_offset.y != clamped_global_y:
+			PicoVideoStreamer.set_display_drag_offset(Vector2(clamped_global_x, clamped_global_y), is_landscape)
+			drag_offset = PicoVideoStreamer.get_display_drag_offset(is_landscape)
+		
+		# 3. Apply to Visuals
+		var effective_drag = drag_offset / maxScale
+		display_container.position = Vector2(effective_drag.x, target_y_base + effective_drag.y)
 	
 	layout_updated.emit()
 

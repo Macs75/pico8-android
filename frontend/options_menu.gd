@@ -62,6 +62,11 @@ func _ready() -> void:
 	
 	if not %ToggleInputMode.toggled.is_connected(_on_input_mode_toggled):
 		%ToggleInputMode.toggled.connect(_on_input_mode_toggled)
+		
+	if not %ToggleReposition.toggled.is_connected(_on_reposition_toggled):
+		%ToggleReposition.toggled.connect(_on_reposition_toggled)
+	%ButtonReposition.pressed.connect(_on_label_pressed.bind(%ToggleReposition))
+
 
 	if not %SliderSensitivity.value_changed.is_connected(_on_sensitivity_changed):
 		%SliderSensitivity.value_changed.connect(_on_sensitivity_changed)
@@ -107,6 +112,7 @@ func _ready() -> void:
 		%ButtonSupport.pressed.connect(_on_support_pressed)
 	%ButtonSave.pressed.connect(save_config)
 	
+	%BtnDisplayToggle.pressed.connect(_on_section_toggled.bind(%BtnDisplayToggle, %ContainerDisplay))
 	%BtnControlsToggle.pressed.connect(_on_section_toggled.bind(%BtnControlsToggle, %ContainerControls))
 	%BtnAudioToggle.pressed.connect(_on_section_toggled.bind(%BtnAudioToggle, %ContainerAudio))
 	
@@ -267,7 +273,10 @@ func _update_layout():
 	# 6a. Shader Select Row
 	_style_shader_select_row(%ButtonShaderSelect, %ShaderSelect, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow/WrapperShaderSelect, dynamic_font_size, scale_factor)
 
-	# 6b. Audio Section Styles
+	# 6b. Reposition Row
+	_style_option_row(%ButtonReposition, %ToggleReposition, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/RepositionRow/WrapperReposition, dynamic_font_size, scale_factor)
+
+	# 6c. Audio Section Styles
 	%BtnAudioToggle.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
 	if %ContainerAudio:
 		%ContainerAudio.add_theme_constant_override("margin_left", int(30 * scale_factor))
@@ -733,6 +742,9 @@ func _on_show_controls_toggled(toggled_on: bool):
 func _on_bezel_toggled(toggled_on: bool):
 	PicoVideoStreamer.set_bezel_enabled(toggled_on)
 
+func _on_reposition_toggled(toggled_on: bool):
+	PicoVideoStreamer.set_display_drag_enabled(toggled_on)
+
 func _style_shader_select_row(label_btn: Button, option_btn: OptionButton, wrapper: Control, font_size: int, scale_factor: float):
 	# Style Label Button
 	label_btn.add_theme_font_size_override("font_size", font_size)
@@ -812,7 +824,11 @@ func save_config():
 	config.set_value("settings", "button_saturation", PicoVideoStreamer.get_button_saturation())
 	config.set_value("settings", "button_lightness", PicoVideoStreamer.get_button_lightness())
 	config.set_value("settings", "bg_color", %ColorPickerBG.color)
+	config.set_value("settings", "display_drag_offset_portrait", PicoVideoStreamer.display_drag_offset_portrait)
+	config.set_value("settings", "display_drag_offset_landscape", PicoVideoStreamer.display_drag_offset_landscape)
 	config.set_value("settings", "audio_backend", audio_backend)
+	config.set_value("settings", "control_layout_portrait", PicoVideoStreamer.control_layout_portrait)
+	config.set_value("settings", "control_layout_landscape", PicoVideoStreamer.control_layout_landscape)
 	config.save(CONFIG_PATH)
 	
 	# Visual Feedback
@@ -839,6 +855,11 @@ func load_config():
 	var button_hue = 0.0
 	var button_saturation = 1.0
 	var button_lightness = 1.0
+	var display_drag_enabled = false
+	var display_drag_offset_portrait = Vector2.ZERO
+	var display_drag_offset_landscape = Vector2.ZERO
+	var control_layout_portrait = {}
+	var control_layout_landscape = {}
 	var audio_backend_loaded = "sles"
 	
 	if err == OK:
@@ -869,6 +890,22 @@ func load_config():
 		# Load button saturation and lightness
 		button_saturation = config.get_value("settings", "button_saturation", 1.0)
 		button_lightness = config.get_value("settings", "button_lightness", 1.0)
+		
+		# Load reposition settings
+		display_drag_offset_portrait = config.get_value("settings", "display_drag_offset_portrait", Vector2.ZERO)
+		display_drag_offset_landscape = config.get_value("settings", "display_drag_offset_landscape", Vector2.ZERO)
+		
+		control_layout_portrait = config.get_value("settings", "control_layout_portrait", {})
+		control_layout_landscape = config.get_value("settings", "control_layout_landscape", {})
+		
+		# Legacy migration (if single offset existed, apply to both or just portrait? let's stick to default)
+		if config.has_section_key("settings", "display_drag_offset"):
+			var legacy_offset = config.get_value("settings", "display_drag_offset", Vector2.ZERO)
+			# Only apply if new ones are zero
+			if display_drag_offset_portrait == Vector2.ZERO:
+				display_drag_offset_portrait = legacy_offset
+			if display_drag_offset_landscape == Vector2.ZERO:
+				display_drag_offset_landscape = legacy_offset
 		
 		# Safely load typed array
 		var saved_ignored = config.get_value("settings", "ignored_devices_by_user", [])
@@ -914,12 +951,18 @@ func load_config():
 	PicoVideoStreamer.set_button_hue(button_hue)
 	PicoVideoStreamer.set_button_saturation(button_saturation)
 	PicoVideoStreamer.set_button_lightness(button_lightness)
+	PicoVideoStreamer.set_display_drag_offset(display_drag_offset_portrait, false)
+	PicoVideoStreamer.set_display_drag_offset(display_drag_offset_landscape, true)
+	
+	PicoVideoStreamer.control_layout_portrait = control_layout_portrait
+	PicoVideoStreamer.control_layout_landscape = control_layout_landscape
 	
 	# Update UI
 	if %ToggleHaptic: %ToggleHaptic.set_pressed_no_signal(haptic)
 	if %ToggleSwapZX: %ToggleSwapZX.set_pressed_no_signal(swap_zx)
 	if %ToggleIntegerScaling: %ToggleIntegerScaling.set_pressed_no_signal(integer_scaling)
 	if %ToggleBezel: %ToggleBezel.set_pressed_no_signal(bezel)
+	if %ToggleReposition: %ToggleReposition.set_pressed_no_signal(display_drag_enabled)
 	if %ToggleShowControls: %ToggleShowControls.set_pressed_no_signal(always_show)
 	if %ShaderSelect: %ShaderSelect.select(shader_type)
 	if %SliderSensitivity:

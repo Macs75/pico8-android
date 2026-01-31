@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://dgbacxvbwjfsh"]
+[gd_scene format=3 uid="uid://dgbacxvbwjfsh"]
 
 [ext_resource type="Script" uid="uid://cd42rybf366x2" path="res://landscape_ui.gd" id="1_land"]
 [ext_resource type="PackedScene" uid="uid://bgklhpsaac82q" path="res://omnipad.tscn" id="2_pad"]
@@ -12,7 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://dlu77ynuh6dl1" path="res://assets/btn_menu_normal.png" id="10_menu_norm"]
 [ext_resource type="Texture2D" uid="uid://cts6512y2afit" path="res://assets/btn_menu_pressed.png" id="11_menu_press"]
 
-[node name="LandscapeUI" type="Control"]
+[node name="LandscapeUI" type="Control" unique_id=434712748]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -22,7 +22,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_land")
 
-[node name="Control" type="Control" parent="."]
+[node name="Control" type="Control" parent="." unique_id=1568682054]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -31,14 +31,14 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="LeftPad" type="Control" parent="Control"]
+[node name="LeftPad" type="Control" parent="Control" unique_id=1199169515]
 layout_mode = 1
 anchors_preset = 0
-offset_right = 260.0
-offset_bottom = 400.0
+offset_right = 256.0
+offset_bottom = 256.0
 mouse_filter = 2
 
-[node name="Omnipad" parent="Control/LeftPad" instance=ExtResource("2_pad")]
+[node name="Omnipad" parent="Control/LeftPad" unique_id=514930858 instance=ExtResource("2_pad")]
 layout_mode = 0
 offset_left = 12.0
 offset_top = 12.0
@@ -47,27 +47,27 @@ offset_bottom = 55.0
 scale = Vector2(0.85, 0.85)
 expand_mode = 1
 
-[node name="RightPad" type="Control" parent="Control"]
+[node name="RightPad" type="Control" parent="Control" unique_id=1181419439]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -68.0
-offset_bottom = 120.0
+offset_left = -256.0
+offset_bottom = 256.0
 grow_horizontal = 0
 mouse_filter = 2
 
-[node name="Z" parent="Control/RightPad" instance=ExtResource("3_key")]
+[node name="O" parent="Control/RightPad" unique_id=647045721 instance=ExtResource("3_key")]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -6.5
-offset_top = -21.5
-offset_right = 15.5
-offset_bottom = 0.5
+offset_left = 85.0
+offset_top = -99.5
+offset_right = 107.0
+offset_bottom = -77.5
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(1, 1)
@@ -84,17 +84,17 @@ special_behaviour = 1
 texture_normal = ExtResource("6_o_norm")
 texture_pressed = ExtResource("7_o_press")
 
-[node name="X" parent="Control/RightPad" instance=ExtResource("3_key")]
+[node name="X" parent="Control/RightPad" unique_id=1768558396 instance=ExtResource("3_key")]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -33.0
-offset_top = -6.0
-offset_right = -11.0
-offset_bottom = 16.0
+offset_left = 59.0
+offset_top = -83.0
+offset_right = 81.0
+offset_bottom = -61.0
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(1, 1)
@@ -111,25 +111,27 @@ special_behaviour = 1
 texture_normal = ExtResource("4_x_norm")
 texture_pressed = ExtResource("5_x_press")
 
-[node name="SystemButtons" type="Control" parent="Control"]
+[node name="SystemButtons" type="Control" parent="Control" unique_id=641351792]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -55.0
-offset_right = -5.0
-offset_bottom = 200.0
+offset_left = -256.0
+offset_bottom = 256.0
 grow_horizontal = 0
 mouse_filter = 2
 
-[node name="Escape" parent="Control/SystemButtons" instance=ExtResource("3_key")]
+[node name="Escape" parent="Control/SystemButtons" unique_id=900844589 instance=ExtResource("3_key")]
 layout_mode = 1
 anchors_preset = -1
-anchor_left = -0.28
-anchor_right = -0.28
-offset_top = 8.0
-offset_right = 22.0
-offset_bottom = 18.0
+anchor_left = 0.61
+anchor_top = 0.008130081
+anchor_right = 0.61
+anchor_bottom = 0.008130081
+offset_left = 30.839996
+offset_top = 5.9186993
+offset_right = 52.839996
+offset_bottom = 15.918699
 grow_horizontal = 2
 scale = Vector2(1, 1)
 texture = ExtResource("8_esc_norm")
@@ -144,12 +146,14 @@ texture_normal = ExtResource("8_esc_norm")
 texture_pressed = ExtResource("9_esc_press")
 metadata/_edit_use_anchors_ = true
 
-[node name="Pause" parent="Control/SystemButtons" instance=ExtResource("3_key")]
+[node name="Pause" parent="Control/SystemButtons" unique_id=732461000 instance=ExtResource("3_key")]
 layout_mode = 1
 anchors_preset = -1
-offset_left = 14.333332
+anchor_left = 0.6953125
+anchor_right = 0.6953125
+offset_left = 35.0
 offset_top = 8.0
-offset_right = 36.333332
+offset_right = 57.0
 offset_bottom = 18.0
 scale = Vector2(1, 1)
 texture = ExtResource("10_menu_norm")

@@ -67,7 +67,7 @@ script = ExtResource("1_hjvc4")
 
 [node name="SelectPicoZipNode" type="Node2D" parent="."]
 
-[node name="SelectPicoZip" type="Control" parent="SelectPicoZipNode" node_paths=PackedStringArray("rect")]
+[node name="SelectPicoZip" type="Control" parent="SelectPicoZipNode" node_paths=PackedStringArray("active_area")]
 unique_name_in_owner = true
 visible = false
 layout_mode = 3
@@ -78,7 +78,7 @@ offset_right = 128.0
 offset_bottom = 256.0
 scale = Vector2(2.055, 2.055)
 script = ExtResource("6_xf3if")
-rect = NodePath("StackContainer")
+active_area = NodePath("StackContainer")
 center_y = true
 auto_show = false
 
@@ -126,13 +126,13 @@ layout_mode = 2
 text = "..."
 label_settings = SubResource("LabelSettings_m6jb1")
 
-[node name="UnpackProgressContainer" type="Control" parent="." node_paths=PackedStringArray("rect")]
+[node name="UnpackProgressContainer" type="Control" parent="." node_paths=PackedStringArray("active_area")]
 unique_name_in_owner = true
 visible = false
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("6_xf3if")
-rect = NodePath("UnpackProgress")
+active_area = NodePath("UnpackProgress")
 center_y = true
 auto_show = false
 
@@ -154,13 +154,13 @@ label_settings = SubResource("LabelSettings_m6jb1")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="AllFileAccessContainer" type="Control" parent="." node_paths=PackedStringArray("rect")]
+[node name="AllFileAccessContainer" type="Control" parent="." node_paths=PackedStringArray("active_area")]
 unique_name_in_owner = true
 visible = false
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("6_xf3if")
-rect = NodePath("VBoxContainer")
+active_area = NodePath("VBoxContainer")
 center_y = true
 auto_show = false
 
