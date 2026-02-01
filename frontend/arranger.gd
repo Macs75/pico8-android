@@ -137,25 +137,20 @@ func _setup_intent_listener():
 
 func _on_intent_session_started():
 	# 1. Patch Gaming Keyboard (Node: 'esc')
-	var gaming_esc = get_node_or_null("kbanchor/kb_gaming/esc")
+	var gaming_esc = get_node_or_null("kbanchor/kb_gaming/Escape")
 	if gaming_esc:
 		_patch_exit_button(gaming_esc)
 
 func _patch_exit_button(btn: Control):
 	# Load Power Icon (if not already loaded globally, load locally)
-	var tex_pwr = load("res://assets/btn_power_normal.png")
-	var tex_pwr_press = load("res://assets/btn_power_pressed.png")
+	var tex_pwr = load("res://assets/btn_poweroff_normal.png")
+	var tex_pwr_press = load("res://assets/btn_poweroff_pressed.png")
 	
 	if btn.has_method("set_textures") and tex_pwr and tex_pwr_press:
 		btn.set_textures(tex_pwr, tex_pwr_press)
 		
 	if "key_id" in btn:
 		btn.key_id = "IntentExit"
-	
-	if btn.has_method("set_cap_text"):
-		btn.cap_text = ""
-	elif "text" in btn:
-		btn.text = ""
 
 var frames_rendered = 0
 

@@ -205,6 +205,18 @@ func _thread_function():
 		if do_reset:
 			synched = false
 			buffer.clear()
+			
+			# Force clean reconnection of pipes (fixes Restart with FIFO)
+			if _applinks_plugin:
+				if vid_pipe_id != -1:
+					print("Pipe: Hard Reset - Closing Video Pipe")
+					_applinks_plugin.pipe_close(vid_pipe_id)
+					vid_pipe_id = -1
+				
+				if in_pipe_id != -1:
+					print("Pipe: Hard Reset - Closing Input Pipe")
+					_applinks_plugin.pipe_close(in_pipe_id)
+					in_pipe_id = -1
 		
 		# Connection Management (Open Pipes)
 		if vid_pipe_id == -1 or in_pipe_id == -1:

@@ -259,7 +259,7 @@ func _process(_delta: float) -> void:
 				
 		RestartState.REQUESTED:
 			# Step 1: Send Ctrl Down
-			if PicoVideoStreamer.instance and PicoVideoStreamer.instance.tcp:
+			if PicoVideoStreamer.instance:
 				print("Sending Graceful Quit (Ctrl+Q) Sequence...")
 				# Key 224 (Ctrl), Down=True
 				PicoVideoStreamer.instance.send_key(224, true, false, 0) # No mod needed for mod key itself
@@ -273,7 +273,7 @@ func _process(_delta: float) -> void:
 		RestartState.SENDING_CTRL_DOWN:
 			# Step 2: Wait 50ms, then Q Down
 			if (Time.get_ticks_msec() - state_timer) > 50:
-				if PicoVideoStreamer.instance and PicoVideoStreamer.instance.tcp:
+				if PicoVideoStreamer.instance:
 					# Key 20 (Q), Down=True, Mod=64 (Ctrl)
 					PicoVideoStreamer.instance.send_key(20, true, false, 64)
 				restart_state = RestartState.SENDING_Q_DOWN
@@ -282,7 +282,7 @@ func _process(_delta: float) -> void:
 		RestartState.SENDING_Q_DOWN:
 			# Step 3: Wait 100ms, then Q Up
 			if (Time.get_ticks_msec() - state_timer) > 100:
-				if PicoVideoStreamer.instance and PicoVideoStreamer.instance.tcp:
+				if PicoVideoStreamer.instance:
 					PicoVideoStreamer.instance.send_key(20, false, false, 64)
 				restart_state = RestartState.SENDING_Q_UP
 				state_timer = Time.get_ticks_msec()
@@ -290,7 +290,7 @@ func _process(_delta: float) -> void:
 		RestartState.SENDING_Q_UP:
 			# Step 4: Wait 50ms, then Ctrl Up
 			if (Time.get_ticks_msec() - state_timer) > 50:
-				if PicoVideoStreamer.instance and PicoVideoStreamer.instance.tcp:
+				if PicoVideoStreamer.instance:
 					PicoVideoStreamer.instance.send_key(224, false, false, 0)
 				restart_state = RestartState.WAITING_FOR_EXIT
 				state_timer = Time.get_ticks_msec()
