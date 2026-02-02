@@ -229,7 +229,6 @@ centered = false
 position = Vector2(0, 300)
 
 [node name="Keyboard Btn" type="Button" parent="Arranger/kbanchor" unique_id=585888594]
-layout_mode = 0
 offset_top = -150.0
 offset_right = 50.0
 offset_bottom = -137.0
@@ -946,7 +945,6 @@ texture_pressed = ExtResource("46_o_press")
 metadata/_edit_use_anchors_ = true
 
 [node name="X" parent="Arranger/kbanchor/kb_gaming" unique_id=1932826476 instance=ExtResource("20_82xsv")]
-mouse_filter = 0
 offset_left = 77.0
 offset_top = 39.0
 offset_right = 88.0
@@ -966,7 +964,6 @@ texture_pressed = ExtResource("44_x_press")
 metadata/_edit_use_anchors_ = true
 
 [node name="Onmipad" parent="Arranger/kbanchor/kb_gaming" unique_id=827209010 instance=ExtResource("41_0cp0l")]
-mouse_filter = 0
 offset_left = 3.0
 offset_top = 4.0
 offset_right = 47.0
@@ -981,6 +978,7 @@ visible = false
 [node name="OverlayUI" type="CanvasLayer" parent="." unique_id=61202646]
 
 [node name="LayoutControls" type="VBoxContainer" parent="OverlayUI" unique_id=202401311]
+visible = false
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
@@ -993,6 +991,7 @@ theme_override_constants/separation = 5
 alignment = 2
 
 [node name="ZoomControl" type="HBoxContainer" parent="OverlayUI/LayoutControls" unique_id=202401315]
+visible = false
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 5
