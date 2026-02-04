@@ -867,7 +867,7 @@ key_id = "Apostrophe"
 cap_text = "'"
 cap_type_shift = 0
 cap_text_shift = "\""
-shift_unicode_override = "?"
+shift_unicode_override = "\""
 metadata/_edit_use_anchors_ = true
 
 [node name="Key30" parent="Arranger/kbanchor/kb_pocketchip" unique_id=715938769 instance=ExtResource("20_82xsv")]
