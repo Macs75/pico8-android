@@ -8,6 +8,51 @@ static var BIN_PATH = "/system/bin"
 static var APPDATA_FOLDER = "/data/data/io.wip.pico8/files"
 static var PUBLIC_FOLDER = "/sdcard/Documents/pico8"
 
+static func sanitize_uri(uri: String) -> String:
+	if not uri.begins_with("content://"):
+		return uri
+		
+	var decoded = uri.uri_decode()
+	
+	# Handle specific Android External Storage Provider patterns
+	# primary:FOLDER -> /storage/emulated/0/FOLDER
+	if "primary:" in decoded:
+		# Try to isolate the path part after primary:
+		var parts = decoded.split("primary:")
+		if parts.size() > 1:
+			return "/storage/emulated/0/" + parts[1]
+			
+	# Handle secondary storage volumes (SD Cards)
+	# Pattern: .../tree/VOLUME_ID:PATH -> /storage/VOLUME_ID/PATH
+	# Example: .../tree/55F21F50-17268D46:ROMs/pico8/.multicarts
+	if ":" in decoded and "/tree/" in decoded:
+		# This handles split UUIDs or simple IDs before the colon
+		# We need to extract the ID before the last colon that acts as separator
+		# Typical format: .../tree/<uuid>:<path>
+		var tree_marker = "/tree/"
+		var tree_idx = decoded.find(tree_marker)
+		if tree_idx != -1:
+			var relative_part = decoded.substr(tree_idx + tree_marker.length())
+			# relative_part might be "55F21F50-17268D46:ROMs/pico8/..."
+			# Split by FIRST colon
+			var colon_idx = relative_part.find(":")
+			if colon_idx != -1:
+				var vol_id = relative_part.substr(0, colon_idx)
+				var path = relative_part.substr(colon_idx + 1)
+				return "/storage/" + vol_id + "/" + path
+
+	# Handle general content:// to file:// cloaking (triple encoded sometimes)
+	if "file%3A" in decoded or "http%3A" in decoded:
+		decoded = decoded.uri_decode()
+	
+	decoded = decoded.uri_decode() # One more time to be safe?
+	
+	if "file://" in decoded:
+		var parts = decoded.split("file://")
+		return parts[parts.size() - 1]
+		
+	return decoded
+
 # Centralized permission checking
 func has_storage_access() -> bool:
 	var permissions = OS.get_granted_permissions()
@@ -73,7 +118,7 @@ func _ready() -> void:
 	else:
 		request_storage_permission()
 
-const BOOTSTRAP_PACKAGE_VERSION = "11"
+const BOOTSTRAP_PACKAGE_VERSION = "13"
 
 func setup():
 	set_ui_state(false, false, true) # permission_ui=false, select_zip_ui=false, progress_ui=true
@@ -105,6 +150,15 @@ func setup():
 			need_to_untar = true
 	print("need to untar: ", need_to_untar)
 	if need_to_untar:
+		%UnpackProgress.text += "cleaning up old package...\n"
+		if get_tree():
+			await get_tree().process_frame
+		
+		# Remove old package folder to prevent stale files (like tmp/pulse) from interfering
+		var package_folder = APPDATA_FOLDER + "/package"
+		print("Removing old package folder: ", package_folder)
+		OS.execute(BIN_PATH + "/rm", ["-rf", package_folder])
+		
 		%UnpackProgress.text += "extracting bootstrap package..."
 		if get_tree():
 			await get_tree().process_frame

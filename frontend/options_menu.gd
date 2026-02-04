@@ -10,9 +10,11 @@ var panel_width = 250.0
 
 var is_open: bool = false
 var audio_backend: String = "sles" # Default to sles
+var custom_root_path: String = ""
 var touch_start_x = 0.0
 var is_dragging = false
 var connected_controllers_dialog_scene = preload("res://connected_controllers_dialog.tscn")
+var favourites_editor_scene = preload("res://favourites_editor.tscn")
 
 # Swipe to Open Variables
 var edge_drag_start = Vector2.ZERO
@@ -58,6 +60,14 @@ func _ready() -> void:
 	%ButtonShaderSelect.pressed.connect(_on_shader_button_pressed)
 	%ButtonConnectedControllers.pressed.connect(_on_connected_controllers_pressed)
 	%ButtonBgColor.pressed.connect(func(): %ColorPickerBG.get_popup().popup_centered())
+	
+
+	%ButtonSelectRoot.pressed.connect(_on_select_root_pressed)
+	%ButtonClearRoot.pressed.connect(_on_clear_root_pressed)
+	
+	if %ButtonFavourites:
+		%ButtonFavourites.pressed.connect(_on_favourites_pressed)
+	
 	%ButtonInputMode.pressed.connect(_on_label_pressed.bind(%ToggleInputMode))
 	
 	if not %ToggleInputMode.toggled.is_connected(_on_input_mode_toggled):
@@ -115,7 +125,10 @@ func _ready() -> void:
 	%BtnDisplayToggle.pressed.connect(_on_section_toggled.bind(%BtnDisplayToggle, %ContainerDisplay))
 	%BtnControlsToggle.pressed.connect(_on_section_toggled.bind(%BtnControlsToggle, %ContainerControls))
 	%BtnAudioToggle.pressed.connect(_on_section_toggled.bind(%BtnAudioToggle, %ContainerAudio))
-	
+	%BtnOfflineToggle.pressed.connect(_on_section_toggled.bind(%BtnOfflineToggle, %ContainerOffline))
+	%BtnToolsToggle.pressed.connect(_on_section_toggled.bind(%BtnToolsToggle, %ContainerTools))
+
+
 	# Connect Audio Backend Label
 	%ButtonAudioBackendLabel.pressed.connect(_on_label_pressed.bind(%ToggleAudioBackend))
 	if not %ToggleAudioBackend.toggled.is_connected(_on_audio_backend_toggled):
@@ -162,6 +175,11 @@ func _ready() -> void:
 	# Trigger layout update again
 	_update_layout()
 	panel.position.x = - panel.size.x
+	
+	# Default sections to collapsed
+	_on_section_toggled(%BtnControlsToggle, %ContainerControls)
+	_on_section_toggled(%BtnAudioToggle, %ContainerAudio)
+	_on_section_toggled(%BtnOfflineToggle, %ContainerOffline)
 
 func _update_layout_deferred():
 	call_deferred("_update_layout")
@@ -355,7 +373,25 @@ func _update_layout():
 	var scaled_size_light = slider_light.size * scale_factor
 	slider_scaler_light.custom_minimum_size = scaled_size_light
 
+	# 7e. Offline Section Styles
+	%BtnOfflineToggle.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
+	if %ContainerOffline:
+		%ContainerOffline.add_theme_constant_override("margin_left", int(30 * scale_factor))
+		
+	%ButtonSelectRoot.add_theme_font_size_override("font_size", dynamic_font_size)
+	%ButtonClearRoot.add_theme_font_size_override("font_size", dynamic_font_size)
+	%LabelRootPath.add_theme_font_size_override("font_size", int(dynamic_font_size * 0.7)) # Smaller font for path
+	_update_root_path_label() # Ensure label color/visible is correct
 	
+	if %ButtonFavourites:
+		%ButtonFavourites.add_theme_font_size_override("font_size", dynamic_font_size)
+
+	# 7f. Tools Section Styles
+	%BtnToolsToggle.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
+	if %ContainerTools:
+		%ContainerTools.add_theme_constant_override("margin_left", int(30 * scale_factor))
+
+
 	# 4. Save Buttons
 	%ButtonAppSettings.add_theme_font_size_override("font_size", dynamic_font_size)
 	if %ButtonSupport:
@@ -373,6 +409,9 @@ func _update_layout():
 	var header_font_size = int(dynamic_font_size * 1.1)
 	%BtnDisplayToggle.add_theme_font_size_override("font_size", header_font_size)
 	%BtnControlsToggle.add_theme_font_size_override("font_size", header_font_size)
+	%BtnOfflineToggle.add_theme_font_size_override("font_size", header_font_size)
+	%BtnToolsToggle.add_theme_font_size_override("font_size", header_font_size)
+
 
 	# --- Resize Panel ---
 	# Wait for layout to process to get correct width
@@ -483,7 +522,7 @@ func open_menu():
 	tween.tween_property(panel, "position:x", 0.0, ANIM_DURATION).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	
 	# Set focus to first item for controller navigation
-	%ButtonHaptic.grab_focus()
+	%ButtonFavourites.grab_focus()
 	
 	# Disable game input via streamer
 	if PicoVideoStreamer.instance:
@@ -509,6 +548,10 @@ func close_menu():
 		PicoVideoStreamer.instance.set_process_input(true)
 
 func _on_edge_handler_input(event: InputEvent):
+	# Disable slide if Favourites Editor is open
+	if get_tree().root.has_node("FavouritesEditor"):
+		return
+		
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			edge_drag_start = event.position
@@ -589,6 +632,42 @@ func _input(event: InputEvent) -> void:
 				_navigate_focus(SIDE_BOTTOM)
 				get_viewport().set_input_as_handled()
 
+func _on_select_root_pressed():
+	if OS.get_name() == "Android":
+		pass
+	
+	var current_dir = custom_root_path if not custom_root_path.is_empty() else "/sdcard"
+	DisplayServer.file_dialog_show("Select Root Folder", current_dir, "", false, DisplayServer.FILE_DIALOG_MODE_OPEN_DIR, [], _on_root_dir_selected)
+
+func _on_root_dir_selected(status: bool, selected_paths: PackedStringArray, _filter_index: int):
+	if status and not selected_paths.is_empty():
+		var raw_path = selected_paths[0]
+		# Sanitize path using BootManager logic
+		custom_root_path = PicoBootManager.sanitize_uri(raw_path)
+		
+		# Extra cleanup for redundancy
+		if custom_root_path.begins_with("file://"):
+			custom_root_path = custom_root_path.replace("file://", "")
+			
+		_update_root_path_label()
+		save_config() # Auto-save
+
+func _on_clear_root_pressed():
+	custom_root_path = ""
+	_update_root_path_label()
+	save_config()
+
+func _update_root_path_label():
+	if %LabelRootPath:
+		if custom_root_path.is_empty():
+			%LabelRootPath.text = "No custom root path set"
+			%LabelRootPath.modulate = Color(0.5, 0.5, 0.5)
+			%ButtonClearRoot.visible = false
+		else:
+			%LabelRootPath.text = custom_root_path
+			%LabelRootPath.modulate = Color(0.7, 1.0, 0.7)
+			%ButtonClearRoot.visible = true
+
 func _adjust_focused_slider(direction: int):
 	var focus_owner = get_viewport().gui_get_focus_owner()
 	if focus_owner and focus_owner is HSlider:
@@ -623,7 +702,7 @@ func _save_audio_setting_only():
 func _navigate_focus(side: Side):
 	var current_focus = get_viewport().gui_get_focus_owner()
 	if not current_focus:
-		%ButtonHaptic.grab_focus()
+		%ButtonFavourites.grab_focus()
 		return
 		
 	var neighbor = current_focus.find_valid_focus_neighbor(side)
@@ -829,6 +908,7 @@ func save_config():
 	config.set_value("settings", "display_scale_portrait", PicoVideoStreamer.display_scale_portrait)
 	config.set_value("settings", "display_scale_landscape", PicoVideoStreamer.display_scale_landscape)
 	config.set_value("settings", "audio_backend", audio_backend)
+	config.set_value("settings", "custom_root_path", custom_root_path)
 	config.set_value("settings", "control_layout_portrait", PicoVideoStreamer.control_layout_portrait)
 	config.set_value("settings", "control_layout_landscape", PicoVideoStreamer.control_layout_landscape)
 	config.save(CONFIG_PATH)
@@ -865,6 +945,7 @@ func load_config():
 	var control_layout_portrait = {}
 	var control_layout_landscape = {}
 	var audio_backend_loaded = "sles"
+	var custom_root_path_loaded = ""
 	
 	if err == OK:
 		haptic = config.get_value("settings", "haptic_enabled", false)
@@ -938,8 +1019,12 @@ func load_config():
 			
 		# Load Audio Backend
 		audio_backend_loaded = config.get_value("settings", "audio_backend", "sles")
+		custom_root_path_loaded = config.get_value("settings", "custom_root_path", "")
 	
 	# Apply Settings
+	custom_root_path = custom_root_path_loaded
+	_update_root_path_label()
+	
 	audio_backend = audio_backend_loaded
 	if %ToggleAudioBackend:
 		var is_stream = (audio_backend == "stream")
@@ -1015,3 +1100,14 @@ func _on_section_toggled(btn: Button, container: Control):
 	
 	# Animate? Simple toggle is robust for now.
 	# If invisible, it shrinks automatically due to VBoxContainer.
+
+func _on_favourites_pressed():
+	# Check if already open
+	if has_node("/root/FavouritesEditor"):
+		return
+		
+	var editor = favourites_editor_scene.instantiate()
+	get_tree().root.add_child(editor)
+	
+	# Close options menu to give space
+	close_menu()

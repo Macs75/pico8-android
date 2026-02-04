@@ -228,7 +228,16 @@ func _thread_function():
 				if in_pipe_id == -1:
 					# Try Open (Blocking likely short if Shim opened it eager)
 					print("Pipe: Attempting to connect to Input Pipe...")
-					var pid = _applinks_plugin.pipe_open(PIPE_IN, 1) # Mode 1 = WRITE
+					
+					var pid = -1
+					# Double check validity inside thread loop
+					if is_instance_valid(_applinks_plugin) and _applinks_plugin:
+						pid = _applinks_plugin.pipe_open(PIPE_IN, 1) # Mode 1 = WRITE
+					else:
+						# Plugin lost?
+						_thread_active = false
+						break
+						
 					if pid != -1:
 						in_pipe_id = pid
 						print("Pipe: Connected to Input Pipe (ID: ", pid, ")")
@@ -240,7 +249,13 @@ func _thread_function():
 				# Video Pipe
 				if vid_pipe_id == -1:
 					print("Pipe: Attempting to connect to Video Pipe...")
-					var pid = _applinks_plugin.pipe_open(PIPE_VID, 0) # Mode 0 = READ
+					var pid = -1
+					if is_instance_valid(_applinks_plugin) and _applinks_plugin:
+						pid = _applinks_plugin.pipe_open(PIPE_VID, 0) # Mode 0 = READ
+					else:
+						_thread_active = false
+						break
+					
 					if pid != -1:
 						vid_pipe_id = pid
 						print("Pipe: Connected to Video Pipe (ID: ", pid, ")")

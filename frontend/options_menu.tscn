@@ -50,7 +50,7 @@ stretch_mode = 5
 
 [node name="Label" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/Header" unique_id=1562203676]
 layout_mode = 2
-text = "OPTIONS"
+text = "SETTINGS"
 horizontal_alignment = 1
 
 [node name="empty" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/Header" unique_id=1129018599]
@@ -66,6 +66,47 @@ horizontal_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=663862221]
 layout_mode = 2
+
+[node name="SectionTools" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=1122334455]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BtnToolsToggle" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools" unique_id=556677889]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("6_emoji")
+text = "🔽 🛠️ TOOLS"
+flat = true
+alignment = 0
+
+[node name="ContainerTools" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools" unique_id=998877665]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/margin_left = 30
+
+[node name="ContentTools" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools" unique_id=443322111]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="FavouritesRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools/ContentTools" unique_id=1234567890]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ButtonFavourites" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools/ContentTools/FavouritesRow" unique_id=1286608618]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+text = "❤︎ FAVOURITES"
+flat = true
+alignment = 0
 
 [node name="SectionDisplay" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=1606340608]
 layout_mode = 2
@@ -780,6 +821,65 @@ size_flags_vertical = 4
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
+
+[node name="SectionOffline" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=987654322]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BtnOfflineToggle" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline" unique_id=876543211]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("6_emoji")
+text = "🔽 📁 OFFLINE SUPPORT"
+flat = true
+alignment = 0
+
+[node name="ContainerOffline" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline" unique_id=765432112]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/margin_left = 30
+
+[node name="ContentOffline" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline" unique_id=654321113]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="RootPathRow" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline/ContentOffline" unique_id=987654321]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="RootPathHeader" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline/ContentOffline/RootPathRow" unique_id=876543210]
+layout_mode = 2
+
+[node name="ButtonSelectRoot" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline/ContentOffline/RootPathRow/RootPathHeader" unique_id=765432109]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+text = "Path to multipart carts"
+flat = true
+alignment = 0
+
+[node name="ButtonClearRoot" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline/ContentOffline/RootPathRow/RootPathHeader" unique_id=654321098]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+text = "❌"
+flat = true
+
+[node name="LabelRootPath" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline/ContentOffline/RootPathRow" unique_id=543210987]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+autowrap_mode = 1
 
 [node name="Spacer" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=987985989]
 layout_mode = 2

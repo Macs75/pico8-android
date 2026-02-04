@@ -58,6 +58,15 @@ func _ready() -> void:
 			["-c", 'cd ' + PicoBootManager.APPDATA_FOLDER + '/package; ln -s busybox ash; LD_LIBRARY_PATH=. ./busybox telnetd -l ./ash -F -p 2323']
 		)
 
+func restart_pico8() -> void:
+	if restart_state != RestartState.IDLE:
+		print("Restart already via generic input in progress.")
+		return
+
+	print("Restarting PICO-8 (Triggering State Machine)...")
+	pending_restart_path = "" # Empty path means reload default/Splore
+	restart_state = RestartState.REQUESTED
+
 func _on_applinks_data_received(data: String) -> void:
 	print("Runtime AppLink received: ", data)
 	
@@ -100,8 +109,13 @@ func _launch_pico8(target_path: String) -> void:
 	var env_setup = "export HOME=" + pkg_path + "; "
 	var run_arg = " -splore"
 	var extra_bind_export = ""
-	
-	if not target_path.is_empty():
+	var root_bind_export = ""
+	var bbs_bind_export = ""
+
+
+	if target_path.is_empty():
+		run_arg += " -root_path /home/public/data/carts"
+	else:
 		var fname_lower = target_path.get_file().to_lower()
 		if fname_lower == "splore.p8" or fname_lower == "splore.p8.png":
 			run_arg = " -splore"
@@ -124,8 +138,47 @@ func _launch_pico8(target_path: String) -> void:
 				print("External bind directory validated: ", parent_dir)
 			
 			var filename = _escape_filename_for_shell(target_path.get_file())
-			extra_bind_export = "export PROOT_EXTRA_BIND='--bind=" + parent_dir + ":/home/custom_mount'; "
+			# We will construct extra_bind_export later to allow multiple binds
+			extra_bind_export = "--bind=" + parent_dir + ":/home/custom_mount"
 			run_arg = " -run /home/custom_mount/" + filename
+	
+		# --- Custom Root Path Logic ---
+		var config = ConfigFile.new()
+		var err = config.load("user://settings.cfg")
+		if err == OK:
+			var custom_root = config.get_value("settings", "custom_root_path", "")
+			if not custom_root.is_empty():
+				# Robustness: Sanitize just in case config has raw URI
+				var clean_root = PicoBootManager.sanitize_uri(custom_root)
+				
+				var root_access = DirAccess.open(clean_root)
+				if root_access:
+					print("Applying custom root path: ", clean_root)
+					var base_name = fname_lower.get_basename()
+
+					# to support offline multicarts: default is to use /bbs/carts else if the name is numeric we bind the relative path from pico8 folder
+					# this may break in the future if the bbs folder structure changes
+					var subfolder = "carts"
+					if base_name.is_valid_int():
+						if base_name.length() >= 5:
+							subfolder = base_name[0]
+						else:
+							subfolder = "0"
+						
+					var folder_name = clean_root.trim_suffix("/").get_file()
+					root_bind_export = "export PROOT_ROOT_BIND='--bind=" + clean_root.replace("'", "'\\''") + ":/home/custom_mount/" + folder_name + "'; "
+					bbs_bind_export = "export PROOT_BBS_BIND='--bind=" + clean_root.replace("'", "'\\''") + ":/home/public/data/bbs/" + subfolder + "'; "
+					
+					# 2. Add -root_path arg to PICO-8
+					run_arg += " -root_path /home/custom_mount/" + folder_name
+				else:
+					print("Custom root path invalid or inaccessible: ", clean_root, " (Raw: ", custom_root, ")")
+			else:
+				run_arg += " -root_path /home/public/data/carts"
+
+	# Finalize export string
+	if not extra_bind_export.is_empty():
+		extra_bind_export = "export PROOT_EXTRA_BIND='" + extra_bind_export + "'; "
 	
 	# 3. Ensure pipes exist before launching to avoid race conditions
 	var fifo_vid = pkg_path + "/tmp/pico8.vid"
@@ -135,7 +188,7 @@ func _launch_pico8(target_path: String) -> void:
 		var mkfifo_cmd = "cd " + pkg_path + "; ./busybox mkdir -p tmp; ./busybox mkfifo tmp/pico8.vid tmp/pico8.in; chmod 666 tmp/pico8.vid tmp/pico8.in"
 		OS.execute(PicoBootManager.BIN_PATH + "/sh", ["-c", mkfifo_cmd])
 
-	var cmdline = env_setup + extra_bind_export + 'cd ' + pkg_path + '; LD_LIBRARY_PATH=. ./busybox ash start_pico_proot.sh' + run_arg + ' >' + PicoBootManager.PUBLIC_FOLDER + '/logs/pico_out.txt 2>' + PicoBootManager.PUBLIC_FOLDER + "/logs/pico_err.txt"
+	var cmdline = env_setup + extra_bind_export + root_bind_export + bbs_bind_export + 'cd ' + pkg_path + '; LD_LIBRARY_PATH=. ./busybox ash start_pico_proot.sh' + run_arg + ' >' + PicoBootManager.PUBLIC_FOLDER + '/logs/pico_out.txt 2>' + PicoBootManager.PUBLIC_FOLDER + "/logs/pico_err.txt"
 	
 	pico_pid = OS.create_process(
 		PicoBootManager.BIN_PATH + "/sh",
@@ -266,7 +319,7 @@ func _process(_delta: float) -> void:
 				restart_state = RestartState.SENDING_CTRL_DOWN
 				state_timer = Time.get_ticks_msec()
 			else:
-				print("No TCP connection. Skipping graceful quit.")
+				print("Skipping graceful quit.")
 				restart_state = RestartState.WAITING_FOR_EXIT
 				state_timer = Time.get_ticks_msec() - 5000 # Skip wait
 		
