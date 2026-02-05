@@ -3,6 +3,8 @@ class_name BezelOverlay
 
 # Constants
 const BEZEL_FILENAME = "bezel.png"
+const BEZEL_LANDSCAPE_FILENAME = "bezel_landscape.png"
+const BEZEL_PORTRAIT_FILENAME = "bezel_portrait.png"
 const HOLE_ALPHA_THRESHOLD = 0.1 # Alpha value below which a pixel is considered transparent
 
 # State
@@ -11,6 +13,7 @@ var is_bezel_loaded: bool = false
 var original_texture_size: Vector2 = Vector2.ZERO
 var original_image: Image = null
 var original_texture: Texture2D = null
+var current_bezel_path: String = ""
 
 var _resize_timer: Timer = null
 
@@ -28,13 +31,32 @@ func _ready():
 	_resize_timer.timeout.connect(_perform_high_quality_resize)
 	add_child(_resize_timer)
 	
-	# Attempt to load bezel
-	print("BezelOverlay: _ready called. Waiting for scene tree before loading...")
-	# Defer loading to ensure parent is ready for layout updates
-	call_deferred("load_external_bezel")
+	# Initial load attempt (deferred to allow window size init)
+	call_deferred("_initial_load")
 
-func load_external_bezel():
-	var bezel_path = PicoBootManager.PUBLIC_FOLDER + "/" + BEZEL_FILENAME
+func _initial_load():
+	# Force initial check based on current size
+	var screensize = DisplayServer.window_get_size()
+	var is_landscape = screensize.x > screensize.y
+	_ensure_bezel_loaded(is_landscape)
+
+func _get_bezel_path_for_orientation(is_landscape: bool) -> String:
+	var target_file = BEZEL_LANDSCAPE_FILENAME if is_landscape else BEZEL_PORTRAIT_FILENAME
+	var full_path = PicoBootManager.PUBLIC_FOLDER + "/" + target_file
+	
+	if FileAccess.file_exists(full_path):
+		return full_path
+		
+	# Fallback
+	return PicoBootManager.PUBLIC_FOLDER + "/" + BEZEL_FILENAME
+
+func _ensure_bezel_loaded(is_landscape: bool):
+	var needed_path = _get_bezel_path_for_orientation(is_landscape)
+	
+	if needed_path != current_bezel_path:
+		_load_bezel_from_path(needed_path)
+
+func _load_bezel_from_path(bezel_path: String):
 	print("BezelOverlay: Attempting to load bezel from: ", bezel_path)
 	
 	if FileAccess.file_exists(bezel_path):
@@ -50,32 +72,20 @@ func load_external_bezel():
 			# Detect the transparent hole
 			detect_hole(image)
 			is_bezel_loaded = true
+			current_bezel_path = bezel_path
 			
-			# Initial layout update
+			# Trigger immediate update if possible
 			if get_parent() and get_parent().has_method("get_display_rect"):
 				var rect = get_parent().get_display_rect()
-				print("BezelOverlay: Initial Game Rect: ", rect)
 				update_layout(rect)
-			else:
-				print("BezelOverlay: Parent missing or invalid, cannot position bezel yet. Parent: ", get_parent())
 		else:
 			print("BezelOverlay: Failed to load image data from file")
+			is_bezel_loaded = false
 	else:
 		print("BezelOverlay: No custom bezel found at ", bezel_path)
 		is_bezel_loaded = false
 		self.texture = null
-		
-		# List files in the directory for debugging
-		var dir = DirAccess.open(PicoBootManager.PUBLIC_FOLDER)
-		if dir:
-			dir.list_dir_begin()
-			var file_name = dir.get_next()
-			print("BezelOverlay: Listing files in ", PicoBootManager.PUBLIC_FOLDER, ":")
-			while file_name != "":
-				print(" - ", file_name)
-				file_name = dir.get_next()
-		else:
-			print("BezelOverlay: Could not access PUBLIC_FOLDER to list files")
+		current_bezel_path = "" # Reset so we retry if needed
 
 func detect_hole(img: Image):
 	var w = img.get_width()
@@ -133,6 +143,11 @@ func detect_hole(img: Image):
 	print("BezelOverlay: Detected hole rect: ", detected_hole_rect)
 
 func update_layout(game_display_rect: Rect2):
+	# Check orientation and ensure correct bezel is loaded
+	var screensize = DisplayServer.window_get_size()
+	var is_landscape = screensize.x > screensize.y
+	_ensure_bezel_loaded(is_landscape)
+
 	if not is_bezel_loaded or original_image == null:
 		return
 		

@@ -166,6 +166,7 @@ func _input(event: InputEvent) -> void:
 	if not visible or not PicoVideoStreamer.display_drag_enabled:
 		active_touches.clear()
 		dragging_pointer_index = -1
+		_update_bezel_opacity()
 		return
 		
 	var event_index = event.index if "index" in event else 0
@@ -228,6 +229,8 @@ func _input(event: InputEvent) -> void:
 			var is_landscape_now = PicoVideoStreamer.is_system_landscape()
 			var current_offset = PicoVideoStreamer.get_display_drag_offset(is_landscape_now)
 			PicoVideoStreamer.set_display_drag_offset(current_offset + event.relative, is_landscape_now)
+
+	_update_bezel_opacity()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible or not PicoVideoStreamer.display_drag_enabled:
@@ -644,3 +647,10 @@ func _update_zoom_label():
 			cur_scale = sel.scale.x
 			
 	zoom_label.text = "%.2fx" % cur_scale
+
+func _update_bezel_opacity():
+	if PicoVideoStreamer.instance and PicoVideoStreamer.instance.bezel_overlay:
+		var dragging = active_touches.size() > 0 and PicoVideoStreamer.display_drag_enabled
+		var target_alpha = 0.4 if dragging else 1.0
+		if PicoVideoStreamer.instance.bezel_overlay.modulate.a != target_alpha:
+			PicoVideoStreamer.instance.bezel_overlay.modulate.a = target_alpha
