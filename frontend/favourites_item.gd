@@ -34,17 +34,23 @@ func _notification(what):
 			_grabbed_by_controller = false
 			_update_style(has_focus())
 
-func _process(_delta):
+
+# Input Repeat Logic
+var _repeat_timer: float = 0.0
+var _repeat_interval: float = 0.1
+var _repeat_delay: float = 0.4
+var _last_input_dir: int = 0
+
+func _process(delta):
 	# If a native drag is in progress (e.g. Touch/Mouse), let Godot handle signals.
 	# Don't let the controller poller reset the state.
 	if get_viewport().gui_is_dragging():
-		_long_press_checking = false # Ensure we don't trigger long press separately
+		_long_press_checking = false
 		return
 		
 	# Long Press Checker
 	if _long_press_checking:
 		# Check if the Item itself has moved (indicates Scrolling)
-		# If the list scrolls, this item will move on screen.
 		if global_position.distance_to(_item_start_global_pos) > 10.0:
 			_long_press_checking = false
 			
@@ -60,22 +66,47 @@ func _process(_delta):
 			else:
 				print("FavouritesItem: force_drag not available")
 	
-	# Poll for controller Grab state (Hold A)
+	# Controller Input Processing
 	if has_focus():
-		var holding = _is_action_held()
+		var holding_a = _is_action_held()
 		
-		if holding and not is_grabbed:
-			# Start Control Grab
-			is_grabbed = true
-			_grabbed_by_controller = true
-			_update_style(true)
-			
-		elif not holding and is_grabbed and _grabbed_by_controller:
-			# End Control Grab (Only if WE started it)
-			is_grabbed = false
-			_grabbed_by_controller = false
-			_update_style(true)
-			
+		# --- 1. Visual Grip State ---
+		if holding_a:
+			if not is_grabbed:
+				is_grabbed = true
+				_grabbed_by_controller = true
+				_update_style(true)
+		else:
+			if is_grabbed and _grabbed_by_controller:
+				is_grabbed = false
+				_grabbed_by_controller = false
+				_update_style(true)
+				
+		# --- 2. Repeat Move Logic ---
+		# Only move if holding A (Reorder Mode)
+		if holding_a:
+			var input_dir = 0
+			if Input.is_action_pressed("ui_up"):
+				input_dir = -1
+			elif Input.is_action_pressed("ui_down"):
+				input_dir = 1
+				
+			if input_dir != 0:
+				if input_dir != _last_input_dir:
+					# New press: Immediate action + Reset Timer
+					request_move_step.emit(input_dir)
+					_repeat_timer = _repeat_delay
+					_last_input_dir = input_dir
+				else:
+					# Holding same dir: Decrement timer
+					_repeat_timer -= delta
+					if _repeat_timer <= 0:
+						request_move_step.emit(input_dir)
+						_repeat_timer = _repeat_interval
+			else:
+				_last_input_dir = 0
+				_repeat_timer = 0
+				
 	elif is_grabbed and _grabbed_by_controller:
 		# Lost focus while holding?
 		is_grabbed = false
@@ -301,10 +332,8 @@ func _gui_input(event: InputEvent):
 		# Reorder Logic: Hold A + Up/Down
 		if _is_action_held():
 			if event.is_action_pressed("ui_up"):
-				request_move_step.emit(-1)
 				accept_event()
 			elif event.is_action_pressed("ui_down"):
-				request_move_step.emit(1)
 				accept_event()
 
 func _is_action_held() -> bool:

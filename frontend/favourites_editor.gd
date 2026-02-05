@@ -74,8 +74,8 @@ func _update_layout():
 	var dynamic_font_size = int(max(24, min_dim * 0.05))
 	current_font_size = dynamic_font_size
 	
-	# Ensure scroll follows focus
-	%ListContainer.get_parent().follow_focus = true
+	# Ensure scroll follows focus -> DISABLE to allow manual smooth scroll
+	%ListContainer.get_parent().follow_focus = false
 	
 	# Apply dynamic margins
 	var v_margin = int(viewport_size.y * 0.08)
@@ -143,9 +143,9 @@ func _refresh_list():
 		if item_node.has_signal("request_move_step"):
 			item_node.request_move_step.connect(_on_item_request_move_step.bind(item_node))
 			
-		# Connect focus signal for background art
+		# Connect focus signal for background art and smooth scroll
 		if not item_node.focus_entered.is_connected(_on_item_focused):
-			item_node.focus_entered.connect(_on_item_focused.bind(item_data))
+			item_node.focus_entered.connect(_on_item_focused.bind(item_data, item_node))
 			
 		# Apply current font size if available
 		if current_font_size > 0:
@@ -153,7 +153,10 @@ func _refresh_list():
 			
 	_setup_focus_chain()
 
-func _on_item_focused(item_data):
+func _on_item_focused(item_data, item_node):
+	# Trigger smooth scroll to ensure visibility (immediate, no layout wait)
+	_ensure_node_visible(item_node, false)
+	
 	var path = ""
 	var base_path = FavouritesManagerScript.PICO8_DATA_PATH
 	
@@ -269,8 +272,44 @@ func _on_item_request_move_step(direction: int, item_node):
 	# Re-setup neighbors because tree order changed
 	_setup_focus_chain()
 	
-	# Ensure focus stays
-	item_node.grab_focus()
+	# Manually ensure visibility after layout update
+	_ensure_node_visible(item_node)
+
+var _scroll_tween: Tween
+
+func _ensure_node_visible(node: Control, wait_for_layout: bool = true):
+	# Wait for VBox to rearrange (next frame) if requested
+	if wait_for_layout:
+		await get_tree().process_frame
+	
+	if not is_instance_valid(node): return
+	
+	node.grab_focus()
+	
+	var scroll: ScrollContainer = %ListContainer.get_parent()
+	var top = node.position.y
+	var bottom = top + node.size.y
+	var scroll_pos = scroll.scroll_vertical
+	var view_height = scroll.size.y
+	
+	# Add a small margin
+	var margin = node.size.y * 0.5
+	var target_pos = scroll_pos
+	
+	if top < scroll_pos:
+		target_pos = int(max(0, top - margin))
+	elif bottom > scroll_pos + view_height:
+		target_pos = int(bottom - view_height + margin)
+		
+	if target_pos != scroll_pos:
+		if _scroll_tween:
+			_scroll_tween.kill()
+		
+		# Smooth scroll
+		_scroll_tween = create_tween()
+		_scroll_tween.tween_property(scroll, "scroll_vertical", target_pos, 0.2) \
+			.set_trans(Tween.TRANS_CUBIC) \
+			.set_ease(Tween.EASE_OUT)
 
 func _on_item_dropped_reorder(source_idx: int, target_idx: int):
 	if source_idx == target_idx:
@@ -374,6 +413,61 @@ func _process(delta):
 		was_joy_b_pressed = joy_b
 		
 	popup_was_visible = is_popup_visible
+	
+	# 3. Focus Navigation Repeat Logic (When NOT holding A)
+	# Check if focus is on a List Item
+	var focus_owner = get_viewport().gui_get_focus_owner()
+	var focus_item = focus_owner if (focus_owner and focus_owner.has_method("setup")) else null
+	
+	if focus_item:
+		var holding_a = _get_polling_action_held()
+		
+		if not holding_a: # Only repeat focus if NOT doing reorder
+			var input_dir = 0
+			if Input.is_action_pressed("ui_up"):
+				input_dir = -1
+			elif Input.is_action_pressed("ui_down"):
+				input_dir = 1
+				
+			if input_dir != 0:
+				if input_dir != _last_nav_dir:
+					# New press: Reset timer (Action handled by Godot's default "press")
+					_nav_repeat_timer = _nav_repeat_delay
+					_last_nav_dir = input_dir
+				else:
+					# Holding same dir
+					_nav_repeat_timer -= delta
+					if _nav_repeat_timer <= 0:
+						_nav_repeat_timer = _nav_repeat_interval
+						_manual_focus_step(focus_item, input_dir)
+			else:
+				_last_nav_dir = 0
+				_nav_repeat_timer = 0
+	else:
+		_last_nav_dir = 0
+
+var _nav_repeat_timer: float = 0.0
+var _nav_repeat_interval: float = 0.1
+var _nav_repeat_delay: float = 0.4
+var _last_nav_dir: int = 0
+
+func _get_polling_action_held() -> bool:
+	if Input.get_connected_joypads().size() > 0:
+		return Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_A)
+	return false
+
+func _manual_focus_step(current_node: Control, direction: int):
+	# direction -1 = Up, 1 = Down
+	var next_path = NodePath()
+	if direction == -1:
+		next_path = current_node.focus_neighbor_top
+	elif direction == 1:
+		next_path = current_node.focus_neighbor_bottom
+		
+	if not next_path.is_empty():
+		var next_node = current_node.get_node_or_null(next_path)
+		if next_node:
+			next_node.grab_focus()
 
 func _input(event: InputEvent) -> void:
 	# Keep input if a popup is open (let the popup handle it via polling/internal)

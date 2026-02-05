@@ -78,6 +78,15 @@ static func load_favourites() -> Array[FavouriteItem]:
 
 static func save_favourites(items: Array[FavouriteItem]) -> bool:
 	var path = get_favourites_file_path()
+	
+	# Create Backup
+	if FileAccess.file_exists(path):
+		var err = DirAccess.copy_absolute(path, path + ".bak")
+		if err != OK:
+			print("FavouritesManager: Warning - Failed to create backup: ", err)
+			# We proceed anyway? Or stop? Usually better to warn but proceed, or explicit error.
+			# Given user concern, maybe print error but proceed.
+	
 	var file = FileAccess.open(path, FileAccess.WRITE)
 	if not file:
 		print("FavouritesManager: Failed to write file: ", FileAccess.get_open_error())
