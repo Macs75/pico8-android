@@ -1106,6 +1106,12 @@ func _on_favourites_pressed():
 	if has_node("/root/FavouritesEditor"):
 		return
 		
+	# Disable Layout Customization if active
+	if PicoVideoStreamer.display_drag_enabled:
+		PicoVideoStreamer.set_display_drag_enabled(false)
+		if %ToggleReposition:
+			%ToggleReposition.set_pressed_no_signal(false)
+			
 	var editor = favourites_editor_scene.instantiate()
 	get_tree().root.add_child(editor)
 	

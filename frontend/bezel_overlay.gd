@@ -9,6 +9,10 @@ const HOLE_ALPHA_THRESHOLD = 0.1 # Alpha value below which a pixel is considered
 var detected_hole_rect: Rect2 = Rect2()
 var is_bezel_loaded: bool = false
 var original_texture_size: Vector2 = Vector2.ZERO
+var original_image: Image = null
+var original_texture: Texture2D = null
+
+var _resize_timer: Timer = null
 
 func _ready():
 	# Configure self
@@ -16,6 +20,13 @@ func _ready():
 	stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	z_index = 100 # Ensure it sits above the game display
+	
+	# Setup Debounce Timer
+	_resize_timer = Timer.new()
+	_resize_timer.one_shot = true
+	_resize_timer.wait_time = 0.5 # Wait for rotation/resize to settle
+	_resize_timer.timeout.connect(_perform_high_quality_resize)
+	add_child(_resize_timer)
 	
 	# Attempt to load bezel
 	print("BezelOverlay: _ready called. Waiting for scene tree before loading...")
@@ -30,8 +41,10 @@ func load_external_bezel():
 		var image = Image.load_from_file(bezel_path)
 		if image:
 			print("BezelOverlay: Loaded custom bezel image. Size: ", image.get_size())
-			var tex = ImageTexture.create_from_image(image)
-			self.texture = tex
+			original_image = image # Store original for high-quality resizing
+			
+			original_texture = ImageTexture.create_from_image(image)
+			self.texture = original_texture
 			original_texture_size = Vector2(image.get_width(), image.get_height())
 			
 			# Detect the transparent hole
@@ -120,7 +133,7 @@ func detect_hole(img: Image):
 	print("BezelOverlay: Detected hole rect: ", detected_hole_rect)
 
 func update_layout(game_display_rect: Rect2):
-	if not is_bezel_loaded or texture == null:
+	if not is_bezel_loaded or original_image == null:
 		return
 		
 	if detected_hole_rect.size.x == 0 or detected_hole_rect.size.y == 0:
@@ -134,9 +147,11 @@ func update_layout(game_display_rect: Rect2):
 	# Scale is simple ratio.
 	var final_scale = Vector2(scale_x, scale_y)
 	
-	# Set size of the overlay to the scaled dimension of the full bezel image
-	var bezel_pixel_size = original_texture_size * final_scale
-	self.size = bezel_pixel_size
+	# Calculate new target size (rounded to int pixels)
+	var target_size = (original_texture_size * final_scale).round()
+	
+	# Ensure Control size matches (though texture dictates it mostly)
+	self.size = target_size
 	
 	# Position the bezel so the hole aligns with the game rect
 	# We want position such that: position + (detected_hole_rect.position * final_scale) == game_display_rect.position
@@ -145,3 +160,29 @@ func update_layout(game_display_rect: Rect2):
 	var bezel_pos = game_display_rect.position - hole_offset_scaled
 	
 	self.position = bezel_pos
+	self.size = target_size
+	
+	# Handle Texture Quality
+	var current_tex_size = texture.get_size() if texture else Vector2.ZERO
+	# Use a small tolerance
+	if current_tex_size.distance_to(target_size) > 1.0:
+		# Mismatch!
+	# 1. Reset to standard quality immediately (if timer not running)
+		if _resize_timer.is_stopped() and original_texture:
+			self.texture = original_texture
+		
+		# 2. Schedule High-Res
+		_resize_timer.start()
+
+func _perform_high_quality_resize():
+	# Perform High-Quality Resize based on current layout
+	if not original_image: return
+	
+	# Use our own current size as the target, assuming update_layout set it correctly
+	var target_size = self.size
+	if target_size == Vector2.ZERO: return
+
+	# print("BezelOverlay: Performing High-Quality Resize to ", target_size)
+	var resized_img = original_image.duplicate()
+	resized_img.resize(int(target_size.x), int(target_size.y), Image.INTERPOLATE_CUBIC)
+	self.texture = ImageTexture.create_from_image(resized_img)
