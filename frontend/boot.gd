@@ -209,16 +209,12 @@ func setup():
 		%UnpackProgress.text += "done\n"
 		if get_tree():
 			await get_tree().process_frame
-	if %UnpackProgress.text == "":
-		%UnpackProgress.text = "no setup needed"
-		if get_tree():
-			await get_tree().process_frame
 	
-	# Copy shaders to public folder
-	copy_shaders_to_public_folder()
+		# Copy shaders to public folder
+		copy_shaders_to_public_folder()
 	
-	# Copy other assets (bezel, etc)
-	copy_assets_to_public_folder()
+		# Copy other assets (bezel, etc)
+		copy_assets_to_public_folder()
 	
 	# Enforce Audio Backend Selection
 	# Copy the correct pulse.pa based on settings
