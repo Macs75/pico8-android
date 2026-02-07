@@ -1,32 +1,48 @@
 extends Control
 
+enum EditorMode {FAVORITES, STATS}
+var current_mode: EditorMode = EditorMode.FAVORITES
+
 var item_scene = preload("res://favourites_item.tscn")
 const FavouritesManagerScript = preload("res://favourites_manager.gd")
+const ActivityLogAnalyzerScript = preload("res://activity_log_analyzer.gd")
 var current_items: Array = []
+var _all_items: Array = [] # Full list before pagination
+var _items_per_page: int = 25
+var _loaded_count: int = 0
 var is_ascending: bool = true
 var current_font_size: int = 0
+var _cached_metadata: Dictionary = {}
 
 func _ready():
+	_configure_ui_for_mode()
+	
 	%BtnCancel.pressed.connect(_on_cancel)
-	%BtnSave.pressed.connect(_on_save)
+	# Only connect Save if in Favorites mode
+	if current_mode == EditorMode.FAVORITES:
+		%BtnSave.pressed.connect(_on_save)
 	
 	%OptionSort.item_selected.connect(_on_sort_criteria_changed)
 	%OptionSort.gui_input.connect(_on_explicit_gui_input.bind(%OptionSort))
+	
+	# configure sort options
+	_setup_sort_options()
 	
 	%BtnAscDesc.pressed.connect(_on_asc_desc_toggled)
 	%BtnAscDesc.gui_input.connect(_on_explicit_gui_input.bind(%BtnAscDesc))
 	
 	# Footer Connections (Controller Support)
 	%BtnCancel.gui_input.connect(_on_explicit_gui_input.bind(%BtnCancel))
-	%BtnSave.gui_input.connect(_on_explicit_gui_input.bind(%BtnSave))
+	if current_mode == EditorMode.FAVORITES:
+		%BtnSave.gui_input.connect(_on_explicit_gui_input.bind(%BtnSave))
 	
-	# Connect to resize
-	get_tree().root.size_changed.connect(_update_layout)
+	# Initial layout
+	_update_layout()
 	
 	_load_data()
 	
-	# Initial layout
-	call_deferred("_update_layout")
+	# Connect to resize after initial load
+	get_tree().root.size_changed.connect(_update_layout)
 	
 	# Disable game input
 	if PicoVideoStreamer.instance:
@@ -102,15 +118,116 @@ func _update_layout():
 	for item in %ListContainer.get_children():
 		if item.has_method("set_font_size"):
 			item.set_font_size(dynamic_font_size)
+		elif item is Button:
+			item.add_theme_font_size_override("font_size", dynamic_font_size)
+			item.custom_minimum_size.y = dynamic_font_size * 2.0
+
+func _configure_ui_for_mode():
+	if current_mode == EditorMode.STATS:
+		$Panel/MarginContainer/VBox/Header/LabelTitle.text = "📶Play Stats"
+		%BtnSave.visible = false
+		%BtnCancel.text = "Close"
+	else:
+		$Panel/MarginContainer/VBox/Header/LabelTitle.text = "💟Favorites"
+		%BtnSave.visible = true
+		%BtnCancel.text = "Cancel"
+
+func _setup_sort_options():
+	%OptionSort.clear()
+	if current_mode == EditorMode.FAVORITES:
+		%OptionSort.add_item("Manual", 0)
+		%OptionSort.add_item("Name", 1)
+		%OptionSort.add_item("Author", 2)
+		%OptionSort.add_item("Launches", 3)
+		%OptionSort.add_item("Play Time", 4)
+	else:
+		# Stats Mode: No Manual, No Author (unless we repurpose)
+		# We'll map IDs to keep logic similar: 1=Name, 3=Launches, 4=Time
+		%OptionSort.add_item("Name", 1)
+		%OptionSort.add_item("Launches", 3)
+		%OptionSort.add_item("Play Time", 4)
+		# Default to Play Time
+		%OptionSort.selected = 2 # Index 2 is "Play Time" (ID 4)
+		
+		# set descending by default for stats
+		is_ascending = false
+		%BtnAscDesc.text = "⬇️"
+
 
 func _load_data():
-	# Load raw items
-	current_items = FavouritesManagerScript.load_favourites()
-	_refresh_list()
+	if current_mode == EditorMode.FAVORITES:
+		# Load raw items
+		current_items = FavouritesManagerScript.load_favourites()
+	else:
+		# Load Stats
+		current_items = []
+		var data = ActivityLogAnalyzer.cached_data
+		
+		# Load Metadata Cache from static reference (populated by worker thread)
+		_cached_metadata = MetadataCache.cached_metadata
+		
+		if data.has("carts"):
+			for key in data.carts:
+				var entry = data.carts[key]
+				# Create a pseudo-object similar to FavouriteItem for compatibility
+				# Repurposing 'author' field for stats display
+				# Key is already the base name (no extension)
+				var name_clean = key
+				var author_str = ""
+				
+				# Enrich from Metadata
+				if _cached_metadata.has(key):
+					var meta = _cached_metadata[key]
+					if meta.get("title") != null and not meta.title.is_empty():
+						name_clean = meta.title
+
+				var time_fmt = activity_time_fmt(entry.seconds)
+				var stats_str = "%s|%3d" % [time_fmt, entry.launches]
+				
+				# Determine correct filename for image loading and stat lookup
+				var is_bbs = key.is_valid_int()
+				
+				# Handle Dictionary sub_carts (new format) vs Array (old format, though reset is forced)
+				# Safety: find first sub-cart filename if available
+				var rep_filename = entry.sub_carts.keys()[0]
+				var item_cart_id = key if is_bbs else rep_filename.get_basename().get_basename()
+				
+				current_items.append({
+					"name": name_clean,
+					"author": stats_str,
+					"cart_id": item_cart_id,
+					"filename": rep_filename,
+					"is_stat_item": true, # Marker
+					"_sort_seconds": entry.seconds,
+					"_sort_launches": entry.launches
+				})
+
+	# Apply initial sort if we are in Stats mode (or if generally desired)
+	if current_mode == EditorMode.STATS:
+		# Store full list and prepare pagination (no duplication needed)
+		_all_items = current_items # Move reference, don't duplicate
+		
+		# Now that _all_items is set, apply the initial sort (Play Time by default)
+		_apply_sort()
+		
+		current_items = [] # Will be filled by _load_next_page
+		_loaded_count = 0
+		_load_next_page()
+	else:
+		_refresh_list()
 	
 	# Initial focus on first item if available
 	if current_items.size() > 0:
 		call_deferred("_grab_initial_focus")
+
+# Helper for formatting
+func activity_time_fmt(total_seconds: int) -> String:
+	var h = total_seconds / 3600
+	var m = (total_seconds % 3600) / 60
+	var s = total_seconds % 60
+	if h > 0:
+		return "%dh:%02dm" % [h, m]
+	return "%02dm:%02ds" % [m, s]
 
 func _grab_initial_focus():
 	if %ListContainer.get_child_count() > 0:
@@ -122,36 +239,155 @@ func _refresh_list():
 	for child in %ListContainer.get_children():
 		%ListContainer.remove_child(child)
 		child.queue_free()
-		
-	# Populate new list
+	
+	
+	# OPTIMIZATION: Hide container while populating to prevent layout recalculation on each add_child
+	%ListContainer.visible = false
+	
+	# Batch arrays for deferred operations
+	var items_to_setup = []
+	
+	# Populate new list - MINIMAL operations per item
 	for i in range(current_items.size()):
 		var item_data = current_items[i]
 		var item_node = item_scene.instantiate()
 		%ListContainer.add_child(item_node)
 		
-		# Set data and index
+		# Just set data - defer everything else
 		item_node.setup(item_data, i)
-		# Connect drag drop signal
-		if not item_node.item_dropped.is_connected(_on_item_dropped_reorder):
-			item_node.item_dropped.connect(_on_item_dropped_reorder)
+		items_to_setup.append(item_node)
+	
+	# Batch signal connections and configuration
+	for item_node in items_to_setup:
+		var item_data = item_node.item_data
+		
+		# Connect signals
+		if current_mode == EditorMode.FAVORITES:
+			if not item_node.item_dropped.is_connected(_on_item_dropped_reorder):
+				item_node.item_dropped.connect(_on_item_dropped_reorder)
 			
-		# Connect live reorder signal
 		if not item_node.item_reorder_requested.is_connected(_on_item_reorder_requested):
 			item_node.item_reorder_requested.connect(_on_item_reorder_requested)
 			
-		# Connect controller reorder step signal
 		if item_node.has_signal("request_move_step"):
 			item_node.request_move_step.connect(_on_item_request_move_step.bind(item_node))
 			
-		# Connect focus signal for background art and smooth scroll
 		if not item_node.focus_entered.is_connected(_on_item_focused):
 			item_node.focus_entered.connect(_on_item_focused.bind(item_data, item_node))
 			
-		# Apply current font size if available
-		if current_font_size > 0:
-			item_node.set_font_size(current_font_size)
+		# Stats Mode Specifics
+		if current_mode == EditorMode.STATS:
+			# Hide Drag Handle
+			if item_node.has_node("Content/DragHandle"):
+				item_node.get_node("Content/DragHandle").visible = false
 			
+			# Disable Drag Logic
+			item_node.drag_enabled = false
+			
+			# Connect Long Press for Details
+			if not item_node.item_long_pressed.is_connected(_on_item_long_pressed):
+				item_node.item_long_pressed.connect(_on_item_long_pressed)
+	
+	# Apply font sizes in batch BEFORE showing
+	if current_font_size > 0:
+		for item_node in items_to_setup:
+			item_node.set_font_size(current_font_size)
+	
+	# Show container - this triggers a single layout recalculation for all items
+	%ListContainer.visible = true
+	
 	_setup_focus_chain()
+
+func _load_next_page():
+	# Load next batch of items
+	var start_idx = _loaded_count
+	var end_idx = mini(start_idx + _items_per_page, _all_items.size())
+	
+	# If this is the first load, use full refresh
+	if start_idx == 0:
+		for i in range(start_idx, end_idx):
+			current_items.append(_all_items[i])
+		_loaded_count = end_idx
+		_refresh_list()
+	else:
+		# Incremental load - just add new items without re-rendering existing
+		# Remove Load More button first
+		for child in %ListContainer.get_children():
+			if child is Button:
+				child.queue_free()
+				break
+		
+		# Add only the new items
+		for i in range(start_idx, end_idx):
+			var item_data = _all_items[i]
+			current_items.append(item_data)
+			
+			# Instantiate and setup new item
+			var item_node = item_scene.instantiate()
+			%ListContainer.add_child(item_node)
+			item_node.setup(item_data, current_items.size() - 1)
+			
+			# Connect signals
+			if current_mode == EditorMode.FAVORITES:
+				if not item_node.item_dropped.is_connected(_on_item_dropped_reorder):
+					item_node.item_dropped.connect(_on_item_dropped_reorder)
+			
+			if not item_node.item_reorder_requested.is_connected(_on_item_reorder_requested):
+				item_node.item_reorder_requested.connect(_on_item_reorder_requested)
+			
+			if item_node.has_signal("request_move_step"):
+				item_node.request_move_step.connect(_on_item_request_move_step.bind(item_node))
+			
+			if not item_node.focus_entered.is_connected(_on_item_focused):
+				item_node.focus_entered.connect(_on_item_focused.bind(item_data, item_node))
+			
+			# Stats Mode specifics
+			if current_mode == EditorMode.STATS:
+				if item_node.has_node("Content/DragHandle"):
+					item_node.get_node("Content/DragHandle").visible = false
+				item_node.drag_enabled = false
+				if not item_node.item_long_pressed.is_connected(_on_item_long_pressed):
+					item_node.item_long_pressed.connect(_on_item_long_pressed)
+			
+			# Apply font size
+			if current_font_size > 0:
+				item_node.set_font_size(current_font_size)
+		
+		_loaded_count = end_idx
+		_setup_focus_chain()
+	
+	# 1. Trigger automatic background loading if we haven't reached the 100-item limit
+	if _loaded_count < 100 and _loaded_count < _all_items.size():
+		# Wait a small delay to keep UI responsive between batches
+		await get_tree().create_timer(1.0).timeout
+		_load_next_page()
+	# 2. Add manual "Load More" button if we reached the limit but more items remain
+	elif _loaded_count < _all_items.size():
+		_add_load_more_button()
+
+func _add_load_more_button():
+	var load_more_btn = Button.new()
+	load_more_btn.text = "⬇ Load More (%d remaining)" % (_all_items.size() - _loaded_count)
+	
+	# Use current font size if available
+	if current_font_size > 0:
+		load_more_btn.add_theme_font_size_override("font_size", current_font_size)
+		load_more_btn.custom_minimum_size.y = current_font_size * 2.0
+	else:
+		load_more_btn.custom_minimum_size.y = 60
+	
+	load_more_btn.pressed.connect(_on_load_more_pressed)
+	%ListContainer.add_child(load_more_btn)
+
+func _on_load_more_pressed():
+	# Remove the Load More button
+	for child in %ListContainer.get_children():
+		if child is Button:
+			child.queue_free()
+			break
+	
+	# Load next page
+	_load_next_page()
 
 func _on_item_focused(item_data, item_node):
 	# Trigger smooth scroll to ensure visibility (immediate, no layout wait)
@@ -515,35 +751,97 @@ func _regain_focus():
 		%BtnCancel.grab_focus()
 
 func _on_sort_criteria_changed(index: int):
-	# 0=Manual, 1=Name, 2=Author
-	if index != 0:
+	# index 0 is "Manual" only in Favorites mode. 
+	# In Stats mode, index 0 is "Name", so we must allow it.
+	var criteria = %OptionSort.get_item_id(index)
+	
+	# Default to Descending for stat-based sorts 
+	# so most played games appear at the top immediately.
+	if current_mode == EditorMode.FAVORITES and (criteria == 3 or criteria == 4):
+		is_ascending = false
+		%BtnAscDesc.text = "⬇️"
+
+	if criteria != 0 or current_mode == EditorMode.STATS:
 		_apply_sort()
+		_reset_pagination_and_refresh()
 
 func _on_asc_desc_toggled():
 	is_ascending = not is_ascending
 	%BtnAscDesc.text = "⬇️" if not is_ascending else "⬆️"
 	_apply_sort()
+	_reset_pagination_and_refresh()
+
+func _reset_pagination_and_refresh():
+	if current_mode == EditorMode.STATS:
+		# Clear existing items
+		for child in %ListContainer.get_children():
+			child.queue_free()
+		current_items = []
+		_loaded_count = 0
+		_load_next_page()
+	else:
+		_refresh_list()
 
 func _apply_sort():
-	var criteria = %OptionSort.selected
+	var idx = %OptionSort.selected
+	var criteria = %OptionSort.get_item_id(idx)
+	
 	if criteria == 0: return
 	
-	current_items.sort_custom(func(a, b):
-		var a_val = a.name if criteria == 1 else a.author
-		var b_val = b.name if criteria == 1 else b.author
-		
-		# Handle nulls
-		if a_val == null: a_val = ""
-		if b_val == null: b_val = ""
-		
-		if is_ascending:
-			return a_val.nocasecmp_to(b_val) < 0
-		else:
-			return a_val.nocasecmp_to(b_val) > 0
-	)
+	# Determine source array (Stats mode uses _all_items for pagination)
+	var sort_target = _all_items if current_mode == EditorMode.STATS else current_items
 	
-	_refresh_list()
-
+	sort_target.sort_custom(func(a, b):
+		if criteria == 3 or criteria == 4:
+			# Stats Sorting - use pre-stored values
+			var val_a = 0
+			var val_b = 0
+			
+			if current_mode == EditorMode.STATS:
+				# In Stats mode, we pre-stored the values
+				val_a = a.get("_sort_launches", 0) if criteria == 3 else a.get("_sort_seconds", 0)
+				val_b = b.get("_sort_launches", 0) if criteria == 3 else b.get("_sort_seconds", 0)
+			else:
+				# Favorites Mode - lookup using base key (Col 2) for robustness
+				var stats_a = ActivityLogAnalyzer.get_cart_stats(a.cart_id, a.filename, a.key)
+				var stats_b = ActivityLogAnalyzer.get_cart_stats(b.cart_id, b.filename, b.key)
+				val_a = stats_a.launches if criteria == 3 else stats_a.seconds
+				val_b = stats_b.launches if criteria == 3 else stats_b.seconds
+			
+			if val_a != val_b:
+				if is_ascending:
+					return val_a < val_b
+				else:
+					return val_a > val_b
+			
+			# Secondary Sort by Name (determinism)
+			# FIX: Respect is_ascending for the tie-break so the entire list reverses
+			var a_name = a.get("name", "") if a is Dictionary else a.name
+			var b_name = b.get("name", "") if b is Dictionary else b.name
+			
+			if is_ascending:
+				return a_name.nocasecmp_to(b_name) < 0
+			else:
+				return a_name.nocasecmp_to(b_name) > 0
+		else:
+			# String Sorting
+			var a_val = a.get("name") if criteria == 1 else a.get("author")
+			if a is not Dictionary:
+				a_val = a.name if criteria == 1 else a.author
+				
+			var b_val = b.get("name") if criteria == 1 else b.author
+			if b is not Dictionary:
+				b_val = b.name if criteria == 1 else b.author
+			
+			# Handle nulls
+			if a_val == null: a_val = ""
+			if b_val == null: b_val = ""
+			
+			if is_ascending:
+				return a_val.nocasecmp_to(b_val) < 0
+			else:
+				return a_val.nocasecmp_to(b_val) > 0
+	)
 func _on_save():
 	var success = FavouritesManagerScript.save_favourites(current_items)
 	if success:
@@ -580,3 +878,60 @@ func _is_action_held(event: InputEvent) -> bool:
 			return true
 			
 	return false
+
+func _on_item_long_pressed(item_node):
+	if current_mode != EditorMode.STATS:
+		return
+		
+	var item_data = item_node.item_data
+	var key = item_data.cart_id
+	var filename = item_data.filename
+	
+	# Lookup Full Stats
+	# Use global class name to ensure we access the populated static var
+	var raw_stats = ActivityLogAnalyzer.cached_data.carts.get(key, {})
+	
+	# Fallback: Try Normalized Key (e.g. "bas-9" -> "bas")
+	if raw_stats.is_empty():
+		var normalized_key = ActivityLogAnalyzer._get_base_cart_name(key)
+		raw_stats = ActivityLogAnalyzer.cached_data.carts.get(normalized_key, {})
+		
+		# Fallback 2: Try filename if ID failed
+		if raw_stats.is_empty() and not filename.is_empty():
+			var norm_file = ActivityLogAnalyzer._get_base_cart_name(filename)
+			raw_stats = ActivityLogAnalyzer.cached_data.carts.get(norm_file, {})
+			
+			if not raw_stats.is_empty():
+				key = norm_file # Update key for metadata lookup
+		elif not raw_stats.is_empty():
+			key = normalized_key # Update key for metadata lookup
+
+	if not raw_stats.is_empty():
+		pass # No debug print needed here
+	
+	# Lookup Metadata
+	var meta = _cached_metadata.get(key, {})
+	
+	# Build Detail Data - Ensure we have valid strings (Dictionary.get returns null if key exists with null value)
+	var title_val = meta.get("title")
+	if title_val == null: title_val = item_data.name
+	
+	var author_val = meta.get("author")
+	if author_val == null: author_val = "Unknown"
+	
+	var detail_data = {
+		"title": str(title_val),
+		"author": str(author_val),
+		"sub_carts": raw_stats.get("sub_carts", {}),
+		"font_size": current_font_size
+	}
+	
+	# Open Window
+	var win_scene = load("res://stats_detail_window.tscn")
+	
+	if win_scene:
+		var win = win_scene.instantiate()
+		add_child(win)
+		win.setup(detail_data)
+	else:
+		print("Alert: ALL load attempts failed for StatsWindow")

@@ -142,6 +142,13 @@ func _ready() -> void:
 			var audio_streamer = audio_streamer_script.new()
 			add_child(audio_streamer)
 
+	# Run Activity Log Analyzer
+	# We run this deferred to not block startup if the log is huge
+	print("Video Streamer: Queuing Activity Log Analysis...")
+	var analyzer = load("res://activity_log_analyzer.gd")
+	if analyzer:
+		analyzer.call_deferred("perform_analysis")
+
 func _exit_tree():
 	_thread_active = false
 	if _thread and _thread.is_started():

@@ -1,0 +1,8 @@
+[gd_resource type="SystemFont" load_steps=2 format=3]
+
+[ext_resource type="FontFile" uid="uid://5m1nwexhtvjo" path="res://assets/font/NotoColorEmoji-Regular.ttf" id="1_emoji"]
+
+[resource]
+font_names = PackedStringArray("Sans-Serif")
+subpixel_positioning = 0
+fallbacks = Array[Font]([ExtResource("1_emoji")])

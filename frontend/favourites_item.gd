@@ -10,6 +10,7 @@ signal item_dropped(source_idx: int, target_idx: int)
 signal item_reorder_requested(source_item, target_item)
 # Signal to request auto-scroll
 signal scroll_request(direction: float)
+signal item_long_pressed(item_node)
 
 func setup(data, idx: int):
 	item_data = data
@@ -17,6 +18,14 @@ func setup(data, idx: int):
 	
 	%LabelName.text = data.name.capitalize()
 	%LabelAuthor.text = data.author
+	
+	# Use monospace font for stats to ensure vertical alignment
+	if data is Dictionary and data.get("is_stat_item", false):
+		var mono_font = SystemFont.new()
+		mono_font.font_names = PackedStringArray(["Monospace", "Courier New", "Consolas"])
+		%LabelAuthor.add_theme_font_override("font", mono_font)
+	else:
+		%LabelAuthor.remove_theme_font_override("font")
 	
 	if not has_node("Content/DragHandle"):
 		return
@@ -26,6 +35,7 @@ func setup(data, idx: int):
 
 var is_grabbed: bool = false
 var _grabbed_by_controller: bool = false
+var drag_enabled: bool = true
 
 func _notification(what):
 	if what == NOTIFICATION_DRAG_END:
@@ -56,6 +66,11 @@ func _process(delta):
 			
 		elif (Time.get_ticks_msec() - _long_press_start_time) > LONG_PRESS_DURATION_MS:
 			_long_press_checking = false
+			
+			if not drag_enabled:
+				item_long_pressed.emit(self)
+				return
+				
 			# Trigger Drag!
 			var result = _create_drag_data()
 			var data = result[0]
@@ -69,6 +84,10 @@ func _process(delta):
 	# Controller Input Processing
 	if has_focus():
 		var holding_a = _is_action_held()
+		
+		# Disable controller drag if drag_enabled is false
+		if not drag_enabled:
+			holding_a = false
 		
 		# --- 1. Visual Grip State ---
 		if holding_a:
@@ -114,6 +133,9 @@ func _process(delta):
 		_update_style(false)
 
 func _get_drag_data(at_position: Vector2):
+	if not drag_enabled:
+		return null
+		
 	# only allow drag if touching the handle
 	var handle = $Content/DragHandle
 	var global_touch_pos = get_global_transform() * at_position
@@ -276,8 +298,10 @@ func _update_style(focused: bool):
 		style.border_width_right = 2
 		style.border_color = border_color
 		
-		%LabelName.add_theme_color_override("font_color", name_color)
-		%LabelAuthor.add_theme_color_override("font_color", text_color)
+		if has_node("%LabelName"):
+			%LabelName.add_theme_color_override("font_color", name_color)
+		if has_node("%LabelAuthor"):
+			%LabelAuthor.add_theme_color_override("font_color", text_color)
 		if has_node("Content/DragHandle"):
 			$Content/DragHandle.add_theme_color_override("font_color", handle_color)
 			# Change Icon based on state
@@ -294,8 +318,10 @@ func _update_style(focused: bool):
 		style.border_width_left = 0
 		style.border_width_right = 0
 		
-		%LabelName.remove_theme_color_override("font_color")
-		%LabelAuthor.add_theme_color_override("font_color", text_color)
+		if has_node("%LabelName"):
+			%LabelName.remove_theme_color_override("font_color")
+		if has_node("%LabelAuthor"):
+			%LabelAuthor.add_theme_color_override("font_color", text_color)
 		if has_node("Content/DragHandle"):
 			$Content/DragHandle.remove_theme_color_override("font_color")
 			$Content/DragHandle.text = " ☰ "

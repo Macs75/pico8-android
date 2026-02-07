@@ -127,6 +127,9 @@ func _ready() -> void:
 	%BtnAudioToggle.pressed.connect(_on_section_toggled.bind(%BtnAudioToggle, %ContainerAudio))
 	%BtnOfflineToggle.pressed.connect(_on_section_toggled.bind(%BtnOfflineToggle, %ContainerOffline))
 	%BtnToolsToggle.pressed.connect(_on_section_toggled.bind(%BtnToolsToggle, %ContainerTools))
+	
+	if %ButtonPlayStats:
+		%ButtonPlayStats.pressed.connect(_on_play_stats_pressed)
 
 
 	# Connect Audio Backend Label
@@ -385,6 +388,9 @@ func _update_layout():
 	
 	if %ButtonFavourites:
 		%ButtonFavourites.add_theme_font_size_override("font_size", dynamic_font_size)
+	
+	if %ButtonPlayStats:
+		%ButtonPlayStats.add_theme_font_size_override("font_size", dynamic_font_size)
 
 	# 7f. Tools Section Styles
 	%BtnToolsToggle.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
@@ -404,6 +410,35 @@ func _update_layout():
 	
 	# 5. Version Label (slightly smaller)
 	%VersionLabel.add_theme_font_size_override("font_size", max(10, int(dynamic_font_size * 0.8)))
+
+	# --- Tooltip Scaling ---
+	# Ensure tooltips are readable on high-DPI screens
+	var tooltip_font_size = int(dynamic_font_size * 0.9)
+	
+	# Create or get theme for the SlidePanel so all children inherit these tooltip settings
+	var menu_theme = panel.theme
+	if not menu_theme:
+		menu_theme = Theme.new()
+		panel.theme = menu_theme
+	
+	# Set font size for TooltipLabel type
+	menu_theme.set_font_size("font_size", "TooltipLabel", tooltip_font_size)
+	
+	# Add some padding to the tooltip panel for better readability
+	var tooltip_style = StyleBoxFlat.new()
+	tooltip_style.bg_color = Color(0.15, 0.15, 0.15, 0.9) # Dark grey semi-transparent
+	tooltip_style.border_width_left = 2
+	tooltip_style.border_width_top = 2
+	tooltip_style.border_width_right = 2
+	tooltip_style.border_width_bottom = 2
+	tooltip_style.border_color = Color(0.3, 0.3, 0.3, 1.0) # Lighter grey border
+	tooltip_style.set_content_margin_all(int(10 * scale_factor))
+	tooltip_style.corner_radius_top_left = 4
+	tooltip_style.corner_radius_top_right = 4
+	tooltip_style.corner_radius_bottom_left = 4
+	tooltip_style.corner_radius_bottom_right = 4
+	
+	menu_theme.set_stylebox("panel", "TooltipPanel", tooltip_style)
 
 	# --- Style Accordion Headers ---
 	var header_font_size = int(dynamic_font_size * 1.1)
@@ -1116,4 +1151,12 @@ func _on_favourites_pressed():
 	get_tree().root.add_child(editor)
 	
 	# Close options menu to give space
+	close_menu()
+
+func _on_play_stats_pressed():
+	var editor = favourites_editor_scene.instantiate()
+	# Set mode to STATS (Enum value 1)
+	editor.current_mode = 1 # EditorMode.STATS
+	get_tree().root.add_child(editor)
+	
 	close_menu()
