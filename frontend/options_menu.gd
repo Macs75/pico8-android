@@ -116,6 +116,15 @@ func _ready() -> void:
 	
 	if not %ButtonLightPlus.pressed.is_connected(_on_button_light_plus):
 		%ButtonLightPlus.pressed.connect(_on_button_light_plus)
+		
+	if not %SliderButtonOpacity.value_changed.is_connected(_on_button_opacity_changed):
+		%SliderButtonOpacity.value_changed.connect(_on_button_opacity_changed)
+	
+	if not %ButtonOpacityMinus.pressed.is_connected(_on_button_opacity_minus):
+		%ButtonOpacityMinus.pressed.connect(_on_button_opacity_minus)
+	
+	if not %ButtonOpacityPlus.pressed.is_connected(_on_button_opacity_plus):
+		%ButtonOpacityPlus.pressed.connect(_on_button_opacity_plus)
 
 	%ButtonAppSettings.pressed.connect(_on_app_settings_pressed)
 	if %ButtonSupport:
@@ -375,6 +384,19 @@ func _update_layout():
 	slider_light.scale = Vector2(scale_factor, scale_factor)
 	var scaled_size_light = slider_light.size * scale_factor
 	slider_scaler_light.custom_minimum_size = scaled_size_light
+	
+	# 7c. Button Opacity Row
+	%LabelButtonOpacity.add_theme_font_size_override("font_size", dynamic_font_size)
+	%LabelButtonOpacityValue.add_theme_font_size_override("font_size", int(dynamic_font_size * 0.85))
+	%ButtonOpacityMinus.add_theme_font_size_override("font_size", dynamic_font_size)
+	%ButtonOpacityPlus.add_theme_font_size_override("font_size", dynamic_font_size)
+	
+	var slider_opacity = %SliderButtonOpacity
+	var slider_scaler_opacity = %SliderScalerButtonOpacity
+	
+	slider_opacity.scale = Vector2(scale_factor, scale_factor)
+	var scaled_size_opacity = slider_opacity.size * scale_factor
+	slider_scaler_opacity.custom_minimum_size = scaled_size_opacity
 
 	# 7e. Offline Section Styles
 	%BtnOfflineToggle.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
@@ -838,6 +860,18 @@ func _on_button_light_minus():
 func _on_button_light_plus():
 	var new_val = %SliderButtonLight.value + %SliderButtonLight.step
 	%SliderButtonLight.value = clamp(new_val, %SliderButtonLight.min_value, %SliderButtonLight.max_value)
+	
+func _on_button_opacity_changed(val: float):
+	PicoVideoStreamer.set_button_opacity(val)
+	%LabelButtonOpacityValue.text = "%.2f" % val
+
+func _on_button_opacity_minus():
+	var new_val = %SliderButtonOpacity.value - %SliderButtonOpacity.step
+	%SliderButtonOpacity.value = clamp(new_val, %SliderButtonOpacity.min_value, %SliderButtonOpacity.max_value)
+
+func _on_button_opacity_plus():
+	var new_val = %SliderButtonOpacity.value + %SliderButtonOpacity.step
+	%SliderButtonOpacity.value = clamp(new_val, %SliderButtonOpacity.min_value, %SliderButtonOpacity.max_value)
 
 func _on_integer_scaling_toggled(toggled_on: bool):
 	PicoVideoStreamer.set_integer_scaling_enabled(toggled_on)
@@ -937,6 +971,7 @@ func save_config():
 	config.set_value("settings", "button_hue", PicoVideoStreamer.get_button_hue())
 	config.set_value("settings", "button_saturation", PicoVideoStreamer.get_button_saturation())
 	config.set_value("settings", "button_lightness", PicoVideoStreamer.get_button_lightness())
+	config.set_value("settings", "button_opacity", PicoVideoStreamer.get_button_opacity())
 	config.set_value("settings", "bg_color", %ColorPickerBG.color)
 	config.set_value("settings", "display_drag_offset_portrait", PicoVideoStreamer.display_drag_offset_portrait)
 	config.set_value("settings", "display_drag_offset_landscape", PicoVideoStreamer.display_drag_offset_landscape)
@@ -972,6 +1007,7 @@ func load_config():
 	var button_hue = 0.0
 	var button_saturation = 1.0
 	var button_lightness = 1.0
+	var button_opacity = 1.0
 	var display_drag_enabled = false
 	var display_drag_offset_portrait = Vector2.ZERO
 	var display_drag_offset_landscape = Vector2.ZERO
@@ -1010,6 +1046,7 @@ func load_config():
 		# Load button saturation and lightness
 		button_saturation = config.get_value("settings", "button_saturation", 1.0)
 		button_lightness = config.get_value("settings", "button_lightness", 1.0)
+		button_opacity = config.get_value("settings", "button_opacity", 1.0)
 		
 		# Load reposition settings
 		display_drag_offset_portrait = config.get_value("settings", "display_drag_offset_portrait", Vector2.ZERO)
@@ -1077,6 +1114,7 @@ func load_config():
 	PicoVideoStreamer.set_button_hue(button_hue)
 	PicoVideoStreamer.set_button_saturation(button_saturation)
 	PicoVideoStreamer.set_button_lightness(button_lightness)
+	PicoVideoStreamer.set_button_opacity(button_opacity)
 	PicoVideoStreamer.set_display_drag_offset(display_drag_offset_portrait, false)
 	PicoVideoStreamer.set_display_drag_offset(display_drag_offset_landscape, true)
 	PicoVideoStreamer.set_display_scale_modifier(display_scale_portrait, false)
@@ -1110,6 +1148,9 @@ func load_config():
 	if %SliderButtonLight:
 		%SliderButtonLight.set_value_no_signal(button_lightness)
 		%LabelButtonLightValue.text = "%.2f" % button_lightness
+	if %SliderButtonOpacity:
+		%SliderButtonOpacity.set_value_no_signal(button_opacity)
+		%LabelButtonOpacityValue.text = "%.2f" % button_opacity
 		
 	# Sync other non-saved states usually comes from default checks
 	if %ToggleInputMode:
