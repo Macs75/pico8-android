@@ -58,13 +58,13 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	set_process_input(true)
-	
+
 	# Apply shader if it was set before instance was ready
 	if current_shader_type != ShaderType.NONE:
 		set_shader_type(current_shader_type)
-	
+
 	_setup_quit_overlay()
-	
+
 	if Engine.has_singleton("applinks"):
 		_applinks_plugin = Engine.get_singleton("applinks")
 		print("Video Streamer: Applinks Plugin Found")
@@ -73,16 +73,16 @@ func _ready() -> void:
 
 	# Pre-calculate PackedByteArray for fast sync check
 	SYNC_SEQ_PBA = PackedByteArray(SYNC_SEQ)
-	
+
 	# Pre-allocate texture for performance (Triple Buffering)
 	for i in range(3):
 		var img = Image.create(128, 128, false, Image.FORMAT_RGBA8)
 		_buffer_images.append(img)
-		
+
 	stream_texture = ImageTexture.create_from_image(_buffer_images[0])
 	display.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	display.texture = stream_texture
-	
+
 	# Initialize Bezel Overlay (Custom)
 	# Defer this to ensure scene tree is fully ready or call directly
 	print("Video Streamer: Setting up Bezel Overlay...")
@@ -94,16 +94,16 @@ func _ready() -> void:
 	_thread = Thread.new()
 	_thread_active = true
 	_thread.start(_thread_function)
-	
+
 	# Connect the single keyboard toggle button
 	var keyboard_btn = get_node("Arranger/kbanchor/Keyboard Btn")
 	if keyboard_btn:
 		keyboard_btn.pressed.connect(_on_keyboard_toggle_pressed)
 		# Set initial button label based on current state
 		_update_keyboard_button_label()
-		
+
 	KBMan.subscribe(_on_external_keyboard_change)
-	
+
 
 	# Connect to RunCmd for Intent Session updates
 	var runcmd = get_node_or_null("runcmd")
@@ -123,7 +123,7 @@ func _ready() -> void:
 
 	if OS.is_debug_build():
 		_setup_debug_fps()
-	
+
 	# Start Update Checker
 	_check_for_updates()
 
@@ -153,7 +153,7 @@ func _exit_tree():
 	_thread_active = false
 	if _thread and _thread.is_started():
 		_thread.wait_to_finish()
-	
+
 	if metrics_logging_enabled:
 		_flush_logs()
 		if metrics_file:
@@ -163,28 +163,28 @@ func _exit_tree():
 func load_external_shader(shader_name: String) -> Shader:
 	var shader_dir = PicoBootManager.PUBLIC_FOLDER + "/shaders/"
 	var builtin_path = "res://shaders/" + shader_name
-	
+
 	# Priority order:
 	# 1. shader_name.custom.gdshader (user's custom version)
 	# 2. shader_name.gdshader (base version in public folder)
 	# 3. res://shaders/shader_name.gdshader (builtin fallback)
-	
+
 	var custom_name = shader_name.replace(".gdshader", ".custom.gdshader")
 	var paths_to_try = [
 		shader_dir + custom_name, # User custom version
 		shader_dir + shader_name # Base external version
 	]
-	
+
 	for external_path in paths_to_try:
 		if FileAccess.file_exists(external_path):
 			var shader_file = FileAccess.open(external_path, FileAccess.READ)
 			if shader_file:
 				var shader_code = shader_file.get_as_text()
 				shader_file.close()
-				
+
 				var shader = Shader.new()
 				shader.code = shader_code
-				
+
 				var is_custom = external_path.ends_with(".custom.gdshader")
 				print("✓ Loaded ", "custom" if is_custom else "external", " shader: ", external_path.get_file())
 				return shader
@@ -196,9 +196,9 @@ func _thread_function():
 	print("Video Streamer: Pipe Thread Initiated")
 	# Small initial delay to let shell script finish mkfifo
 	OS.delay_msec(100)
-		
+
 	var buffer: PackedByteArray = PackedByteArray()
-	
+
 	while _thread_active:
 		# check for reset request
 		var do_reset = false
@@ -208,34 +208,34 @@ func _thread_function():
 			if do_reset:
 				_reset_requested = false
 			_mutex.unlock()
-		
+
 		if do_reset:
 			synched = false
 			buffer.clear()
-			
+
 			# Force clean reconnection of pipes (fixes Restart with FIFO)
 			if _applinks_plugin:
 				if vid_pipe_id != -1:
 					print("Pipe: Hard Reset - Closing Video Pipe")
 					_applinks_plugin.pipe_close(vid_pipe_id)
 					vid_pipe_id = -1
-				
+
 				if in_pipe_id != -1:
 					print("Pipe: Hard Reset - Closing Input Pipe")
 					_applinks_plugin.pipe_close(in_pipe_id)
 					in_pipe_id = -1
-		
+
 		# Connection Management (Open Pipes)
 		if vid_pipe_id == -1 or in_pipe_id == -1:
 			loading.call_deferred("set_visible", true)
-			
+
 			if _applinks_plugin:
 				# PLUGIN MODE (Native Blocking I/O)
 				# Input Pipe
 				if in_pipe_id == -1:
 					# Try Open (Blocking likely short if Shim opened it eager)
 					print("Pipe: Attempting to connect to Input Pipe...")
-					
+
 					var pid = -1
 					# Double check validity inside thread loop
 					if is_instance_valid(_applinks_plugin) and _applinks_plugin:
@@ -244,7 +244,7 @@ func _thread_function():
 						# Plugin lost?
 						_thread_active = false
 						break
-						
+
 					if pid != -1:
 						in_pipe_id = pid
 						print("Pipe: Connected to Input Pipe (ID: ", pid, ")")
@@ -262,7 +262,7 @@ func _thread_function():
 					else:
 						_thread_active = false
 						break
-					
+
 					if pid != -1:
 						vid_pipe_id = pid
 						print("Pipe: Connected to Video Pipe (ID: ", pid, ")")
@@ -270,28 +270,28 @@ func _thread_function():
 						# Open failed
 						print("Pipe: Video Pipe connection failed/blocked, retrying...")
 						OS.delay_msec(500)
-			
+
 			# Check connection status
 			var pipes_connected = (vid_pipe_id != -1 and in_pipe_id != -1)
-			
+
 			if not pipes_connected:
 				continue
-		
+
 		# Connected
 		loading.call_deferred("set_visible", false)
-		
+
 		# 1. Send Inputs
 		_mutex.lock()
 		var inputs = _input_queue.duplicate()
 		_input_queue.clear()
 		_mutex.unlock()
-		
+
 		if inputs.size() > 0:
 			for packet in inputs:
 				var pba = PackedByteArray(packet)
 				if _applinks_plugin:
 					_applinks_plugin.pipe_write(in_pipe_id, pba)
-			
+
 		# 2. Read Video
 		var chunk: PackedByteArray
 		if _applinks_plugin:
@@ -299,7 +299,7 @@ func _thread_function():
 
 		if chunk.size() > 0:
 			buffer.append_array(chunk)
-			
+
 			# Header Sync Check
 			if not synched:
 				var syncpoint = find_seq_pba(buffer, SYNC_SEQ_PBA)
@@ -327,7 +327,7 @@ func _thread_function():
 						if buffer[i] != SYNC_SEQ_PBA[i]:
 							header_valid = false
 							break
-					
+
 					if header_valid:
 						var packet = buffer.slice(0, TOTAL_PACKET_SIZE)
 						_process_packet_thread(packet)
@@ -346,15 +346,15 @@ func _setup_debug_fps():
 	debug_fps_label = Label.new()
 	debug_fps_label.text = "FPS: WAIT"
 	debug_fps_label.position = Vector2(40, 40)
-	
+
 	# High Visibility Overrides
 	debug_fps_label.add_theme_color_override("font_color", Color(0, 1, 0, 1)) # Bright Green
 	debug_fps_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	debug_fps_label.add_theme_constant_override("outline_size", 8)
 	debug_fps_label.add_theme_font_size_override("font_size", 48) # Large text
-	
+
 	debug_fps_label.z_index = 4096
-	
+
 	# Add a canvas layer to ensure it stays on screen regardless of camera/zoom
 	var cl = CanvasLayer.new()
 	cl.layer = 128
@@ -368,7 +368,7 @@ func _on_joy_connection_changed(device: int, connected: bool):
 		DisplayServer.virtual_keyboard_hide()
 		# Release any UI focus (like invisible text fields)
 		get_viewport().gui_release_focus()
-		
+
 		var arranger = get_tree().root.get_node_or_null("Main/Arranger")
 		if arranger:
 			arranger.set_keyboard_active(false)
@@ -405,10 +405,10 @@ func set_im_from_data_threaded(rgba: PackedByteArray):
 	# Select buffer to write to
 	var write_idx = _write_head
 	var img = _buffer_images[write_idx]
-	
+
 	# Write data to it
 	img.set_data(128, 128, false, Image.FORMAT_RGBA8, rgba)
-	
+
 	# Metrics: Calculate Jitter (Frame-to-Frame Arrival Time)
 	if metrics_visible:
 		var now = Time.get_ticks_usec()
@@ -419,27 +419,27 @@ func set_im_from_data_threaded(rgba: PackedByteArray):
 				metrics_pipe_interval = delta_ms
 				_mutex.unlock()
 		metrics_last_packet_time = now
-	
+
 	# Mark as ready
 	if _mutex:
 		_mutex.lock()
 		_ready_index = write_idx
 		fps_frame_count += 1
 		_mutex.unlock()
-	
+
 	# Advance head (Ring Buffer 0 -> 1 -> 2 -> 0)
 	_write_head = (_write_head + 1) % 3
 
 func find_seq_pba(host: PackedByteArray, sub: PackedByteArray) -> int:
 	var host_len = host.size()
 	var sub_len = sub.size()
-	
+
 	if host_len < sub_len or sub_len == 0:
 		return -1
-	
+
 	var first = sub[0]
 	var limit = host_len - sub_len
-	
+
 	for i in range(limit + 1):
 		# Quick check first byte
 		if host[i] == first:
@@ -463,7 +463,7 @@ func _process(delta: float) -> void:
 		_mutex.lock()
 		latest_ready = _ready_index
 		_mutex.unlock()
-	
+
 	var is_new_frame = false
 	if latest_ready != -1 and latest_ready != _read_index:
 		# We have a new frame ready to show!
@@ -481,16 +481,16 @@ func _process(delta: float) -> void:
 				current_frames = fps_frame_count
 				fps_frame_count = 0
 				_mutex.unlock()
-				
+
 			debug_fps_label.text = "FPS: " + str(current_frames)
 			fps_timer -= 1.0
-			
+
 	# Input polling and queueing
 	var screen_pos: Vector2i = Vector2i.ZERO
-	
+
 	if input_mode == InputMode.MOUSE:
 		screen_pos = current_screen_pos
-		
+
 		# Enforce cursor state
 		if is_processing_input():
 			if is_mouse_inside_display:
@@ -516,7 +516,7 @@ func _process(delta: float) -> void:
 			current_mouse_state[2], 0, 0, 0, 0
 		])
 		last_mouse_state = current_mouse_state
-		
+
 	# Flush Input Buffer (Single Mutex Lock per frame)
 	if _main_thread_input_buffer.size() > 0:
 		if _mutex:
@@ -524,39 +524,39 @@ func _process(delta: float) -> void:
 			_input_queue.append_array(_main_thread_input_buffer)
 			_mutex.unlock()
 		_main_thread_input_buffer.clear()
-	
+
 	# METRICS UPDATE
 	if metrics_visible:
 		var now = Time.get_ticks_usec()
 		var frame_delta_ms = (now - metrics_last_frame_time) / 1000.0
 		metrics_last_frame_time = now
-		
+
 		# Jitter calc (from thread)
 		var jitter_val = 0.0
 		if _mutex:
 			_mutex.lock()
 			jitter_val = metrics_pipe_interval
 			_mutex.unlock()
-		
+
 		var disp_fps = 1000.0 / max(0.1, frame_delta_ms)
 		var pipe_fps = 1000.0 / max(0.1, jitter_val) if jitter_val > 0 else 0.0
 		var fps_diff = pipe_fps - disp_fps
-		
+
 		# Clamp weird spikes
 		if abs(fps_diff) > 200: fps_diff = 0.0
-		
+
 		var is_stutter = 0.0 if is_new_frame else 1.0
-		
+
 		if graph_fps: graph_fps.add_value(disp_fps)
 		if graph_jitter: graph_jitter.add_value(jitter_val)
 		if graph_starvation: graph_starvation.add_value(is_stutter)
 		if graph_fps_diff: graph_fps_diff.add_value(fps_diff)
-		
+
 		# Data Logging
 		if metrics_logging_enabled and metrics_file:
 			# Format: Timestamp, DisplayFPS, NetJitter, IsStutter, FPSDiff
 			var line = "%d,%.2f,%.2f,%d,%.2f" % [now, disp_fps, jitter_val, int(is_stutter), fps_diff]
-			
+
 			metrics_buffer.append(line)
 			if metrics_buffer.size() >= METRICS_BUFFER_SIZE:
 				_flush_logs()
@@ -587,7 +587,7 @@ func _setup_metrics_display():
 	var container = VBoxContainer.new()
 	container.position = Vector2(50, 150)
 	container.size = Vector2(400, 550) # Increased height
-	
+
 	# FPS Graph
 	graph_fps = DebugGraph.new()
 	graph_fps.label_text = "Display FPS"
@@ -596,7 +596,7 @@ func _setup_metrics_display():
 	graph_fps.custom_minimum_size = Vector2(400, 100)
 	graph_fps.graph_color = Color.GREEN
 	container.add_child(graph_fps)
-	
+
 	# Jitter Graph (Network Inter-arrival time)
 	graph_jitter = DebugGraph.new()
 	graph_jitter.label_text = "Pipe Interval (ms)"
@@ -614,7 +614,7 @@ func _setup_metrics_display():
 	graph_starvation.custom_minimum_size = Vector2(400, 100)
 	graph_starvation.graph_color = Color.RED
 	container.add_child(graph_starvation)
-	
+
 	# FPS Diff Graph (Net - Display)
 	graph_fps_diff = DebugGraph.new()
 	graph_fps_diff.label_text = "FPS Diff (Pipe-Disp)"
@@ -623,7 +623,7 @@ func _setup_metrics_display():
 	graph_fps_diff.custom_minimum_size = Vector2(400, 100)
 	graph_fps_diff.graph_color = Color.ORANGE
 	container.add_child(graph_fps_diff)
-	
+
 	var cl = CanvasLayer.new()
 	cl.layer = 129
 	cl.add_child(container)
@@ -635,12 +635,12 @@ func _setup_metrics_display():
 
 func _start_logging():
 	if metrics_logging_enabled: return
-	
+
 	# Ensure logs directory exists
 	var logs_dir = PicoBootManager.PUBLIC_FOLDER + "/logs"
 	if not DirAccess.dir_exists_absolute(logs_dir):
 		DirAccess.make_dir_absolute(logs_dir)
-	
+
 	var path = logs_dir + "/metrics_log_%d.csv" % Time.get_unix_time_from_system()
 	metrics_file = FileAccess.open(path, FileAccess.WRITE)
 	if metrics_file:
@@ -676,11 +676,11 @@ func toggle_metrics():
 		# Toggle Off
 		metrics_visible = false
 		_stop_logging()
-		
+
 		if metrics_layer:
 			metrics_layer.queue_free()
 			metrics_layer = null
-			
+
 		graph_fps = null
 		graph_jitter = null
 		graph_starvation = null
@@ -695,7 +695,7 @@ func send_key(id: int, down: bool, repeat: bool, mod: int):
 		id, int(down), int(repeat),
 		mod & 0xff, (mod >> 8) & 0xff, 0, 0
 	])
-			
+
 func send_input(char: int):
 	# Add to local buffer (Batching)
 	_main_thread_input_buffer.append([
@@ -778,7 +778,7 @@ func vkb_setstate(id: String, down: bool, unicode: int = 0, echo = false):
 		return
 	if (id not in held_keys) and not down:
 		return
-		
+
 	if down:
 		# CONTROLLER NAVIGATION for Quit Overlay
 		if quit_overlay and quit_overlay.visible:
@@ -787,34 +787,34 @@ func vkb_setstate(id: String, down: bool, unicode: int = 0, echo = false):
 					quit_focus_yes = false
 					_update_quit_focus_visuals()
 				return
-			
+
 			if id == "Right":
 				if not quit_focus_yes:
 					quit_focus_yes = true
 					_update_quit_focus_visuals()
 				return
-			
+
 			if id == "Z": # JoyButton A (Confirm)
 				if quit_focus_yes:
 					_quit_app()
 				else:
 					quit_overlay.visible = false
 				return
-				
+
 			if id == "X": # JoyButton B (Cancel)
 				quit_overlay.visible = false
 				return
-			
+
 			# Block other inputs while overlay is open
 			return
-		
+
 		# Add haptic feedback for key presses (only on key down, not key up)
 		if not echo and haptic_enabled:
 			Input.vibrate_handheld(35, 1)
 
 		if id not in held_keys:
 			held_keys.append(id)
-			
+
 		if input_mode == InputMode.TRACKPAD:
 			if id == "X":
 				_virtual_mouse_mask |= 1 # Left Click
@@ -828,7 +828,7 @@ func vkb_setstate(id: String, down: bool, unicode: int = 0, echo = false):
 			send_input(unicode)
 	else:
 		held_keys.erase(id)
-		
+
 		if input_mode == InputMode.TRACKPAD:
 			if id == "X":
 				_virtual_mouse_mask &= ~1
@@ -838,11 +838,11 @@ func vkb_setstate(id: String, down: bool, unicode: int = 0, echo = false):
 				return
 
 		send_key(SDL_KEYMAP[id], false, false, keys2sdlmod(held_keys))
-	
+
 	# Hotkey for metrics (M for Metrics)
 	if OS.is_debug_build() and id == "M" and down:
 		toggle_metrics()
-	
+
 
 func keymod2sdl(mod: int, key: int) -> int:
 	var ret = 0
@@ -903,7 +903,7 @@ static func get_bezel_enabled() -> bool:
 static var always_show_controls: bool = false
 static func set_always_show_controls(enabled: bool):
 	always_show_controls = enabled
-	
+
 static func get_always_show_controls() -> bool:
 	return always_show_controls
 
@@ -925,7 +925,7 @@ static var current_shader_type: ShaderType = ShaderType.NONE
 
 static func set_shader_type(shader_type: ShaderType):
 	current_shader_type = shader_type
-	
+
 	if instance:
 		if shader_type == ShaderType.NONE:
 			# Remove shader
@@ -954,15 +954,15 @@ static func set_shader_type(shader_type: ShaderType):
 					shader_path = "crt_aperture.gdshader"
 				ShaderType.CRT_1TAP:
 					shader_path = "crt_1tap.gdshader"
-			
+
 			if shader_path != "":
 				var shader = instance.load_external_shader(shader_path)
 				var mat = ShaderMaterial.new()
 				mat.shader = shader
-				
+
 				# Apply current saturation value
 				mat.set_shader_parameter("SATURATION", current_saturation)
-				
+
 				# Apply to displayContainer (the sprite showing the upscaled viewport texture)
 				instance.displayContainer.material = mat
 
@@ -974,7 +974,7 @@ static var current_saturation: float = 1.0
 
 static func set_saturation(saturation: float):
 	current_saturation = clamp(saturation, 0.0, 2.0)
-	
+
 	# Apply to current shader material if it exists
 	if instance and instance.displayContainer.material:
 		var mat = instance.displayContainer.material as ShaderMaterial
@@ -988,6 +988,7 @@ static func get_saturation() -> float:
 static var current_button_hue: float = 0.0
 static var current_button_saturation: float = 1.0
 static var current_button_lightness: float = 1.0
+static var current_button_opacity: float = 1.0
 
 static func set_button_hue(hue: float):
 	current_button_hue = clamp(hue, -180.0, 180.0)
@@ -1009,46 +1010,53 @@ static func set_button_lightness(lightness: float):
 
 static func get_button_lightness() -> float:
 	return current_button_lightness
+	
+static func set_button_opacity(opacity: float):
+	current_button_opacity = clamp(opacity, 0.0, 1.0)
+	_apply_button_hue()
+	
+static func get_button_opacity() -> float:
+	return current_button_opacity
 
 static func _apply_button_hue():
 	if not instance:
 		print("Button hue: no instance")
 		return
-	
+
 	# Get button nodes
 	var root = instance.get_tree().root
-	
+
 	var portrait_buttons = [
 		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/X"),
 		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/O"),
 		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/Escape"),
 		root.get_node_or_null("Main/Arranger/kbanchor/kb_gaming/Pause"),
 	]
-	
+
 	var landscape_buttons = [
 		root.get_node_or_null("Main/LandscapeUI/Control/RightPad/X"),
 		root.get_node_or_null("Main/LandscapeUI/Control/RightPad/O"),
 		root.get_node_or_null("Main/LandscapeUI/Control/SystemButtons/Escape"),
 		root.get_node_or_null("Main/LandscapeUI/Control/SystemButtons/Pause"),
 	]
-	
+
 	# Load the hue shift shader
 	var hue_shader = instance.load_external_shader("hue_shift.gdshader") if instance else load("res://shaders/hue_shift.gdshader")
 	if not hue_shader:
 		print("Button hue: failed to load shader")
 		return
-	
+
 	var _buttons_found = 0
 	for button in portrait_buttons + landscape_buttons:
 		if not button:
 			continue
-		
+
 		_buttons_found += 1
-		
+
 		# At 0°, remove shader to restore original colors
 		if current_button_hue == 0.0 and current_button_saturation == 1.0 and current_button_lightness == 1.0:
 			button.material = null
-			button.self_modulate = Color.WHITE
+			button.self_modulate = Color(1, 1, 1, current_button_opacity)
 		else:
 			# Create shader material if needed
 			var mat: ShaderMaterial
@@ -1058,13 +1066,14 @@ static func _apply_button_hue():
 				button.material = mat
 			else:
 				mat = button.material as ShaderMaterial
-			
+
 			# Set the shader parameters
 			mat.set_shader_parameter("hue_shift", current_button_hue)
 			mat.set_shader_parameter("saturation_mult", current_button_saturation)
 			mat.set_shader_parameter("lightness_mult", current_button_lightness)
+			button.self_modulate.a = current_button_opacity
 
-	
+
 var current_screen_pos: Vector2i = Vector2i.ZERO
 var current_mouse_mask: int = 0
 var is_mouse_inside_display: bool = false
@@ -1077,7 +1086,7 @@ func _update_mouse_from_event(event_pos: Vector2):
 	if displayContainer.centered:
 		local_pos += Vector2(64, 64)
 	current_screen_pos = local_pos
-	
+
 	# Update inside state for _process to handle
 	is_mouse_inside_display = displayContainer.get_rect().has_point(displayContainer.to_local(event_pos))
 
@@ -1103,7 +1112,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			touch_last_pos = event.position
 			touch_down_time = Time.get_ticks_msec()
 			is_touching = true
-			
+
 			# Tap-to-Dismiss Keyboard
 			var kb_height = DisplayServer.virtual_keyboard_get_height()
 			if kb_height > 0:
@@ -1111,7 +1120,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				# If tap is above the keyboard area
 				if event.position.y < (screen_height - kb_height):
 					DisplayServer.virtual_keyboard_hide()
-			
+
 			if input_mode == InputMode.TRACKPAD:
 				_trackpad_click_pending = true
 				_trackpad_tap_start_time = touch_down_time
@@ -1119,30 +1128,30 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			is_touching = false
 			_check_swipe(event.position)
-			
+
 			# Trackpad Tap Logic
 			if input_mode == InputMode.TRACKPAD and _trackpad_click_pending:
 				var duration = Time.get_ticks_msec() - _trackpad_tap_start_time
 				if duration < TAP_MAX_DURATION:
 					_send_trackpad_click()
 				_trackpad_click_pending = false
-	
+
 	elif event is InputEventScreenDrag:
 		if input_mode == InputMode.TRACKPAD:
 			var delta = event.relative * trackpad_sensitivity
 			# Scale delta if needed, for now 1:1 pixel movement
 			virtual_cursor_pos += delta
 			virtual_cursor_pos = virtual_cursor_pos.clamp(Vector2.ZERO, Vector2(127, 127))
-			
+
 			_trackpad_total_move += delta.length()
 			if _trackpad_total_move > 15.0: # Relaxed from 5.0
 				_trackpad_click_pending = false
-			
+
 	# Also accept Mouse Button for robustness (and Desktop testing)
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if input_mode == InputMode.MOUSE:
 			_update_mouse_from_event(event.position)
-			
+
 		if event.pressed:
 			touch_start_pos = event.position
 			touch_last_pos = event.position
@@ -1151,7 +1160,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			is_touching = false
 			_check_swipe(event.position)
-	
+
 	elif event is InputEventMouseMotion:
 		if input_mode == InputMode.MOUSE:
 			_update_mouse_from_event(event.position)
@@ -1159,7 +1168,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			var delta = event.relative * trackpad_sensitivity
 			virtual_cursor_pos += delta
 			virtual_cursor_pos = virtual_cursor_pos.clamp(Vector2.ZERO, Vector2(127, 127))
-			
+
 			_trackpad_total_move += delta.length()
 			if _trackpad_total_move > 15.0:
 				_trackpad_click_pending = false
@@ -1169,7 +1178,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		# Check Blocked State (e.g. Controller Test Mode)
 		if input_blocked:
 			return
-			
+
 		# because i keep doing this lolol
 		if event.keycode == KEY_ALT:
 			return
@@ -1178,7 +1187,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			send_key(SDL_KEYMAP[id], event.pressed, event.echo, keymod2sdl(event.get_modifiers_mask(), event.keycode if event.pressed else 0) | keys2sdlmod(held_keys))
 		if event.unicode and event.unicode < 256 and event.pressed:
 			send_input(event.unicode)
-			
+
 	elif event is InputEventMouseButton:
 		if input_mode == InputMode.MOUSE:
 			var mask = 0
@@ -1193,13 +1202,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		# Check ignore list (System & User Disabled)
 		if ControllerUtils.is_system_ignored(event.device):
 			return
-		
+
 		var role = ControllerUtils.get_controller_role(event.device)
 		if role == ControllerUtils.ROLE_DISABLED:
 			return
 
 		var is_p2 = false
-		
+
 		if role == ControllerUtils.ROLE_P2:
 			is_p2 = true
 		elif role == ControllerUtils.ROLE_P1:
@@ -1212,7 +1221,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			var idx = real_joypads.find(event.device)
 			if idx == 1:
 				is_p2 = true
-				
+
 		if input_mode == InputMode.TRACKPAD and not is_p2:
 			# Controller Mouse Click Mapping (P1 Only)
 			# Map PICO-8 O (A/Y) -> Right Click (Mask 4)
@@ -1222,7 +1231,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				else:
 					_virtual_mouse_mask &= ~4
 				return # Consume
-				
+
 			# Map PICO-8 X (B/X) -> Left Click (Mask 1)
 			if event.button_index == JoyButton.JOY_BUTTON_B or event.button_index == JoyButton.JOY_BUTTON_X:
 				if event.pressed:
@@ -1230,9 +1239,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				else:
 					_virtual_mouse_mask &= ~1
 				return # Consume
-				
+
 		var key_id = ""
-		
+
 		if is_p2:
 			# Player 2 Mapping (ESDF + Tab/Q)
 			match event.button_index:
@@ -1263,12 +1272,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				JoyButton.JOY_BUTTON_LEFT_SHOULDER:
 					if event.pressed:
 						_toggle_options_menu()
-		
+
 		if key_id != "":
 			# Only send if state actually changed to avoid spam if logic elsewhere was flawed
 			# But JoypadButton events are discreet, so straight pass-through is fine.
 			# We check held_keys to avoid repeat send if Godot sends duplicate events (which it shouldn't for buttons)
-			# but vkb_setstate sends anyway. 
+			# but vkb_setstate sends anyway.
 			# For buttons, we trust the event.pressed state.
 			vkb_setstate(key_id, event.pressed)
 
@@ -1276,13 +1285,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		# Check ignore list (System & User Disabled)
 		if ControllerUtils.is_system_ignored(event.device):
 			return
-		
+
 		var role = ControllerUtils.get_controller_role(event.device)
 		if role == ControllerUtils.ROLE_DISABLED:
 			return
 
 		var is_p2 = false
-		
+
 		if role == ControllerUtils.ROLE_P2:
 			is_p2 = true
 		elif role == ControllerUtils.ROLE_P1:
@@ -1293,7 +1302,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			var idx = real_joypads.find(event.device)
 			if idx == 1:
 				is_p2 = true
-		
+
 		# Map Axes
 		var key_left = "S" if is_p2 else "Left"
 		var key_right = "F" if is_p2 else "Right"
@@ -1312,7 +1321,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				if key_right not in held_keys: vkb_setstate(key_right, true)
 			else:
 				if key_right in held_keys: vkb_setstate(key_right, false)
-		
+
 		# Handle Left Stick Y (Up/Down)
 		elif event.axis == JoyAxis.JOY_AXIS_LEFT_Y:
 			if event.axis_value < -axis_threshold:
@@ -1324,7 +1333,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				if key_down not in held_keys: vkb_setstate(key_down, true)
 			else:
 				if key_down in held_keys: vkb_setstate(key_down, false)
-		
+
 
 	#if not (tcp and tcp.get_status() == StreamPeerTCP.STATUS_CONNECTED):
 		#return;
@@ -1356,9 +1365,9 @@ func _check_swipe(end_pos: Vector2):
 		return
 
 	var direction = touch_start_pos - end_pos
-	
+
 	var threshold_pixels = screen_height * SWIPE_DISTANCE_RATIO
-	
+
 	# Up means start.y > end.y (screen coords, y increases downwards) -> direction.y > 0
 	if direction.y > threshold_pixels:
 		# Ensure it's mostly vertical (horizontal movement is less than vertical movement)
@@ -1368,14 +1377,14 @@ func _check_swipe(end_pos: Vector2):
 func _trigger_keyboard():
 	# Show Android Keyboard
 	DisplayServer.virtual_keyboard_show('')
-	
+
 # Update Checker
 func _check_for_updates():
 	var config = ConfigFile.new()
 	var err = config.load("user://settings.cfg")
-	
+
 	var current_time = Time.get_unix_time_from_system()
-	
+
 	# 1. First Run Check
 	# If the "updates" section doesn't exist, this is likely the first run (or first run with this feature).
 	# We skip the check to not annoy the user immediately after install.
@@ -1384,17 +1393,17 @@ func _check_for_updates():
 		config.set_value("updates", "last_check", current_time)
 		config.save("user://settings.cfg")
 		return
-		
+
 	var last_check = config.get_value("updates", "last_check", 0)
-	
+
 	# 2. Daily Frequency Check (86400 seconds)
 	if (current_time - last_check) < 86400:
 		print("Skipping update check (checked recently)")
 		return
-	
+
 	# 3. Internet Connectivity Check (Simple)
-	# IP.resolve_hostname returns an empty string/IP if failed? 
-	# Actually blocking resolve might freeze main thread. 
+	# IP.resolve_hostname returns an empty string/IP if failed?
+	# Actually blocking resolve might freeze main thread.
 	# Best way is to rely on HTTPRequest failure, but request "no check if no internet".
 	# We can check if we have a valid IP interface.
 	var has_network = false
@@ -1403,17 +1412,17 @@ func _check_for_updates():
 		if iface.friendly != "lo" and iface.addresses.size() > 0:
 			has_network = true
 			break
-			
+
 	if not has_network:
 		print("No active network interface. Skipping update check.")
 		return
-		
+
 	print("Checking for updates...")
-	
+
 	# Update check time immediately
 	config.set_value("updates", "last_check", current_time)
 	config.save("user://settings.cfg")
-	
+
 	var http = HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_update_request_completed.bind(http))
@@ -1421,73 +1430,73 @@ func _check_for_updates():
 
 func _on_update_request_completed(result, response_code, headers, body, http_node):
 	http_node.queue_free()
-	
+
 	if response_code != 200:
 		print("Update check failed. Response code: ", response_code)
 		return
-		
+
 	var json = JSON.new()
 	var error = json.parse(body.get_string_from_utf8())
 	if error != OK:
 		print("JSON Parse Error: ", json.get_error_message())
 		return
-		
+
 	var data = json.data
 	if not data.has("tag_name"):
 		print("Invalid JSON response (no tag_name)")
 		return
-		
+
 	var remote_tag = data["tag_name"] # e.g. "v0.0.8"
 	var current_version = ProjectSettings.get_setting("application/config/version")
 	if not current_version:
 		current_version = "0.0.0"
-	
+
 	print("Update Check: Local v", current_version, " vs Remote ", remote_tag)
-	
+
 	# Compare versions (Simple string compare or more complex semantic check)
 	# Assuming remote_tag starts with "v", strip it
 	var remote_ver_str = remote_tag.replace("v", "")
-	
+
 	if _is_version_newer(current_version, remote_ver_str):
 		# Check ignore list
 		var config = ConfigFile.new()
 		config.load("user://settings.cfg")
 		var ignored = config.get_value("updates", "ignored_tag", "")
-		
+
 		# Reset ignore if a NEWER update comes out (different tag)
 		if ignored != "" and ignored != remote_tag:
 			config.set_value("updates", "ignored_tag", "")
 			config.save("user://settings.cfg")
 			ignored = ""
-		
+
 		if ignored == remote_tag:
 			print("Update ", remote_tag, " is ignored by user.")
 			return
-			
+
 		print("New update found!")
 		call_deferred("_show_update_dialog", remote_tag, data.get("html_url", ""))
 
 func _is_version_newer(current: String, remote: String) -> bool:
 	var v_curr = current.split(".")
 	var v_remote = remote.split(".")
-	
+
 	for i in range(min(v_curr.size(), v_remote.size())):
 		if int(v_remote[i]) > int(v_curr[i]):
 			return true
 		if int(v_remote[i]) < int(v_curr[i]):
 			return false
-			
+
 	# If equal so far, longer one is newer? (e.g. 1.0.1 > 1.0)
 	return v_remote.size() > v_curr.size()
 
 func _show_update_dialog(tag: String, url: String):
 	PicoVideoStreamer.instance.set_process_unhandled_input(false)
 	PicoVideoStreamer.instance.set_process_input(false)
-	
+
 	var dialog = load("res://update_dialog.tscn").instantiate()
 	add_child(dialog)
 	dialog.setup(tag, url)
-	
+
 	dialog.closed.connect(func():
 		PicoVideoStreamer.instance.set_process_unhandled_input(true)
 		PicoVideoStreamer.instance.set_process_input(true)
@@ -1508,7 +1517,7 @@ func _send_trackpad_click():
 		_input_queue.append([PIDOT_EVENT_MOUSEEV, up_state[0], up_state[1], up_state[2], 0, 0, 0, 0])
 		_mutex.unlock()
 		last_mouse_state = up_state
-	
+
 func _quit_app():
 	get_tree().quit()
 
@@ -1516,13 +1525,13 @@ func _setup_quit_overlay():
 	var canvas_layer = CanvasLayer.new()
 	canvas_layer.layer = 100
 	add_child(canvas_layer)
-	
+
 	quit_overlay = Control.new()
 	quit_overlay.name = "QuitOverlay"
 	quit_overlay.visible = false
 	quit_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	canvas_layer.add_child(quit_overlay)
-	
+
 
 	# Dimmer
 	var bg = ColorRect.new()
@@ -1530,12 +1539,12 @@ func _setup_quit_overlay():
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_STOP # Block input
 	quit_overlay.add_child(bg)
-	
+
 	# Robust Centering Container
 	var center_container = CenterContainer.new()
 	center_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	quit_overlay.add_child(center_container)
-	
+
 	# Panel
 	var panel = PanelContainer.new()
 	var style = StyleBoxFlat.new()
@@ -1551,7 +1560,7 @@ func _setup_quit_overlay():
 	style.expand_margin_right = 10
 	panel.add_theme_stylebox_override("panel", style)
 	center_container.add_child(panel)
-	
+
 	var vbox = VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 40)
 	# Add padding around the VBox content
@@ -1562,16 +1571,16 @@ func _setup_quit_overlay():
 	margin_container.add_theme_constant_override("margin_right", 40)
 	margin_container.add_child(vbox)
 	panel.add_child(margin_container)
-	
+
 	# Font setup
 	var font = load("res://assets/font/atlas-0.png")
-	
+
 	# Calculate dynamic font size (5% of screen height, clamped)
 	var screen_size = get_viewport().get_visible_rect().size
 	var dynamic_font_size = 32 # Default fallback
 	if screen_size.y > 0:
 		dynamic_font_size = clamp(int(min(screen_size.x, screen_size.y) * 0.04), 16, 64)
-	
+
 	var label = Label.new()
 	label.text = "RETURN TO LAUNCHER?"
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1580,26 +1589,26 @@ func _setup_quit_overlay():
 		label.add_theme_font_override("font", font)
 		label.add_theme_font_size_override("font_size", dynamic_font_size)
 	vbox.add_child(label)
-	
+
 	# Constraint width to 80% of screen
 	if screen_size.x > 0:
 		panel.custom_minimum_size.x = min(600, screen_size.x * 0.8)
-	
+
 	var hbox = HBoxContainer.new()
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	hbox.add_theme_constant_override("separation", int(dynamic_font_size * 1.25))
 	vbox.add_child(hbox)
-	
+
 	var btn_cancel = _create_pixel_button("NO", font, dynamic_font_size)
 	btn_cancel.pressed.connect(func(): quit_overlay.visible = false)
 	hbox.add_child(btn_cancel)
 	btn_quit_no = btn_cancel
-	
+
 	var btn_quit = _create_pixel_button("YES", font, dynamic_font_size)
 	btn_quit.pressed.connect(_quit_app)
 	hbox.add_child(btn_quit)
 	btn_quit_yes = btn_quit
-	
+
 	_update_quit_focus_visuals()
 
 func _toggle_options_menu():
@@ -1612,16 +1621,16 @@ func _toggle_options_menu():
 
 func _update_quit_focus_visuals():
 	if not btn_quit_yes or not btn_quit_no: return
-	
+
 	# Focus Color (Redish)
 	var col_focus = Color(1, 0.2, 0.4, 1)
 	# Normal Color (Dark Blue)
 	var col_normal = Color(0.2, 0.2, 0.3, 1)
-	
+
 	var style_yes = btn_quit_yes.get_theme_stylebox("normal")
 	if style_yes is StyleBoxFlat:
 		style_yes.bg_color = col_focus if quit_focus_yes else col_normal
-		
+
 	var style_no = btn_quit_no.get_theme_stylebox("normal")
 	if style_no is StyleBoxFlat:
 		style_no.bg_color = col_focus if not quit_focus_yes else col_normal
@@ -1633,32 +1642,32 @@ func _create_pixel_button(text, font, size = 32) -> Button:
 	if font:
 		btn.add_theme_font_override("font", font)
 		btn.add_theme_font_size_override("font_size", size)
-	
+
 	# Minimal style for pixel art look
 	var style_normal = StyleBoxFlat.new()
 	style_normal.bg_color = Color(0.2, 0.2, 0.3, 1)
-	
+
 	# Dynamic Padding: Slim vertical, Wide horizontal
 	var pad_v = int(size * 0.2)
 	var pad_h = int(size * 0.8)
-	
+
 	style_normal.content_margin_top = pad_v
 	style_normal.content_margin_bottom = pad_v
 	style_normal.content_margin_left = pad_h
 	style_normal.content_margin_right = pad_h
-	
+
 	var style_pressed = StyleBoxFlat.new()
 	style_pressed.bg_color = Color(1, 0.2, 0.4, 1) # Pico-8 Redish
 	style_pressed.content_margin_top = pad_v
 	style_pressed.content_margin_bottom = pad_v
 	style_pressed.content_margin_left = pad_h
 	style_pressed.content_margin_right = pad_h
-	
+
 	btn.add_theme_stylebox_override("normal", style_normal)
 	btn.add_theme_stylebox_override("hover", style_normal)
 	btn.add_theme_stylebox_override("pressed", style_pressed)
 	btn.add_theme_stylebox_override("focus", style_normal)
-	
+
 	return btn
 
 # --- Bezel Support ---
@@ -1668,7 +1677,7 @@ func _setup_bezel_overlay():
 	if bezel_overlay:
 		print("Video Streamer: Bezel overlay already exists, skipping setup.")
 		return
-		
+
 	bezel_overlay = BezelOverlay.new()
 	bezel_overlay.name = "BezelOverlay"
 	bezel_overlay.visible = bezel_enabled # Set initial visibility
@@ -1679,7 +1688,7 @@ func _setup_bezel_overlay():
 	# displayContainer is an @export var, likely a child.
 	add_child(bezel_overlay)
 	print("Video Streamer: BezelOverlay added to scene tree.")
-	
+
 	# Connect to resize for layout updates
 	get_tree().root.size_changed.connect(_on_viewport_size_changed)
 
@@ -1695,23 +1704,23 @@ func _update_bezel_layout():
 func get_display_rect() -> Rect2:
 	if not displayContainer:
 		return Rect2()
-		
+
 	# Use GLOBAL scale and position to get the actual on-screen size
 	var size_tex = Vector2(128, 128)
 	var final_scale = displayContainer.global_scale
 	var size_screen = size_tex * final_scale
-	
+
 	var pos_top_left = Vector2.ZERO
-	
+
 	if displayContainer.centered:
 		pos_top_left = displayContainer.global_position - (size_screen / 2.0)
 	else:
 		pos_top_left = displayContainer.global_position
-		
+
 
 	var local_pos = to_local(pos_top_left)
-	
-	
+
+
 	return Rect2(local_pos, size_screen)
 
 # Display Repositioning
@@ -1739,12 +1748,12 @@ static func set_display_drag_offset(offset: Vector2, is_landscape: bool):
 		display_drag_offset_landscape = offset
 	else:
 		display_drag_offset_portrait = offset
-		
+
 	if instance:
 		var arranger = instance.get_node_or_null("Arranger")
 		if arranger:
 			arranger.dirty = true
-		
+
 static func get_display_drag_offset(is_landscape: bool) -> Vector2:
 	return display_drag_offset_landscape if is_landscape else display_drag_offset_portrait
 
@@ -1753,7 +1762,7 @@ static func set_display_scale_modifier(new_scale: float, is_landscape: bool):
 		display_scale_landscape = new_scale
 	else:
 		display_scale_portrait = new_scale
-	
+
 	if instance:
 		var arranger = instance.get_node_or_null("Arranger")
 		if arranger: arranger.dirty = true
@@ -1799,7 +1808,7 @@ static func reset_display_layout(is_landscape: bool):
 	# Force Arranger update
 	if instance:
 		instance.emit_signal("layout_reset", is_landscape)
-		
+
 		var arranger = instance.get_node_or_null("/root/Main/Arranger")
 		if arranger:
 			arranger.dirty = true

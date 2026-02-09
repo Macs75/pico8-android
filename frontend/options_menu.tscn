@@ -241,7 +241,7 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-tooltip_text = "Change background color of the application" 
+tooltip_text = "Change background color of the application"
 mouse_filter = 1
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
@@ -554,6 +554,62 @@ theme_override_fonts/font = ExtResource("6_emoji")
 text = "➕"
 
 [node name="LabelButtonLightValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight" unique_id=750196387]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+text = "1.00"
+horizontal_alignment = 2
+
+[node name="ButtonOpacityRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent" unique_id=1405690042]
+layout_mode = 2
+
+[node name="LabelButtonOpacity" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonOpacityRow" unique_id=1993777302]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "Opacity"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WrapperButtonOpacity" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonOpacityRow" unique_id=1517875418]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+theme_override_constants/separation = 5
+
+[node name="ButtonOpacityMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonOpacityRow/WrapperButtonOpacity" unique_id=1694640772]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_fonts/font = ExtResource("6_emoji")
+text = "➖"
+
+[node name="SliderScalerButtonOpacity" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonOpacityRow/WrapperButtonOpacity" unique_id=165486115]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="SliderButtonOpacity" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonOpacityRow/WrapperButtonOpacity/SliderScalerButtonOpacity" unique_id=1147492900]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 0
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 1.0
+ticks_on_borders = true
+
+[node name="ButtonOpacityPlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonOpacityRow/WrapperButtonOpacity" unique_id=1563639528]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_fonts/font = ExtResource("6_emoji")
+text = "➕"
+
+[node name="LabelButtonOpacityValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonOpacityRow/WrapperButtonOpacity" unique_id=1574179589]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
