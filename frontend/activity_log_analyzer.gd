@@ -11,9 +11,9 @@ static var cached_data: Dictionary = {}
 static var file_lookup: Dictionary = {}
 
 # Static entry point for the Application
-static func perform_analysis():
+static func perform_analysis(force_reset: bool = false):
 	var analyzer = ActivityLogAnalyzer.new()
-	analyzer._run()
+	analyzer._run(force_reset)
 
 static func get_cart_stats(cart_id: String, filename: String, base_key: String = "") -> Dictionary:
 	# Default stats
@@ -54,15 +54,15 @@ static func get_cart_stats(cart_id: String, filename: String, base_key: String =
 		
 	return stats
 
-func _run():
+func _run(force_reset: bool = false):
 	print("ActivityLogAnalyzer: Starting analysis...")
 	
 	# DEBUG: Set to true to force re-analysis from scratch (ignoring saved state)
-	var debug_reset = false
+	var debug_reset = force_reset
 	var data: Dictionary
 	
 	if debug_reset:
-		print("ActivityLogAnalyzer: DEBUG_RESET is ON. Ignoring saved stats.")
+		print("ActivityLogAnalyzer: FORCE RESET is ON. Ignoring saved stats.")
 		data = {"last_analyzed_time": 0, "carts": {}}
 	else:
 		data = _load_stats()

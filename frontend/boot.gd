@@ -2,10 +2,54 @@ extends Node
 class_name PicoBootManager
 
 static var pico_zip_path: String = ""
+static var config_cache: ConfigFile = null
+
+# --- Centralized Configuration ---
+static func load_config() -> void:
+	if config_cache == null:
+		config_cache = ConfigFile.new()
+		var err = config_cache.load("user://settings.cfg")
+		if err != OK:
+			# If file doesn't exist or is corrupt, we start with empty (defaults apply)
+			print("PicoBootManager: settings.cfg not found or invalid, using defaults.")
+
+static func save_config() -> void:
+	if config_cache:
+		config_cache.save("user://settings.cfg")
+
+static func get_setting(section: String, key: String, default: Variant = null) -> Variant:
+	if config_cache == null:
+		load_config()
+	return config_cache.get_value(section, key, default)
+
+static func set_setting(section: String, key: String, value: Variant) -> void:
+	if config_cache == null:
+		load_config()
+	config_cache.set_value(section, key, value)
+	save_config()
+
+# Special Accessor for Audio Backend with Logic Override
+static func get_audio_backend() -> String:
+	# 1. Check for Forced Override (External Storage)
+	if is_audio_backend_forced():
+		print("PicoBootManager: Audio Backend FORCED to 'stream'")
+		return "stream"
+	
+	# 2. Return User Setting (Default to 'sles' if not set)
+	return get_setting("settings", "audio_backend", "sles")
+
+static func is_audio_backend_forced() -> bool:
+	# Check for External Storage path
+	if OS.get_user_data_dir().begins_with("/mnt/expand"):
+		return true
+	return false
+# --------------------------------
 
 # Static constants that can be accessed from other scripts
 static var BIN_PATH = "/system/bin"
-static var APPDATA_FOLDER = "/data/data/io.wip.pico8/files"
+static var APPDATA_FOLDER: String:
+	get:
+		return ProjectSettings.globalize_path("user://").trim_suffix("/")
 static var PUBLIC_FOLDER = "/sdcard/Documents/pico8"
 
 static func sanitize_uri(uri: String) -> String:
@@ -118,7 +162,7 @@ func _ready() -> void:
 	else:
 		request_storage_permission()
 
-const BOOTSTRAP_PACKAGE_VERSION = "14"
+const BOOTSTRAP_PACKAGE_VERSION = "15"
 
 func setup():
 	set_ui_state(false, false, true) # permission_ui=false, select_zip_ui=false, progress_ui=true
@@ -171,6 +215,7 @@ func setup():
 			BIN_PATH + "/sh",
 			["-c", " ".join([
 				BIN_PATH + "/tar",
+				"--no-same-owner",
 				"-xzf", tar_path, "-C", APPDATA_FOLDER + "/",
 				">" + PUBLIC_FOLDER + "/logs/tar_out.txt",
 				"2>" + PUBLIC_FOLDER + "/logs/tar_err.txt"
@@ -218,11 +263,7 @@ func setup():
 	
 	# Enforce Audio Backend Selection
 	# Copy the correct pulse.pa based on settings
-	var config = ConfigFile.new()
-	var err = config.load("user://settings.cfg")
-	var audio_backend = "sles"
-	if err == OK:
-		audio_backend = config.get_value("settings", "audio_backend", "sles")
+	var audio_backend = get_audio_backend()
 	
 	print("Enforcing Audio Backend: ", audio_backend)
 	var g_source = "user://package/pulse.pa." + audio_backend
@@ -236,12 +277,12 @@ func setup():
 	else:
 		print("Audio backend template not found: ", g_source)
 
-	
 	# Load custom SDL mappings
 	load_sdl_mappings()
 
 	# Setup is complete, go to main scene
 	get_tree().change_scene_to_file("res://main.tscn")
+
 
 func load_sdl_mappings():
 	var mapping_file = PUBLIC_FOLDER + "/pico8_sdl_controllers.txt"

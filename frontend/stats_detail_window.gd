@@ -2,7 +2,7 @@ extends ColorRect
 
 func setup(data: Dictionary):
 	# data: { title, author, sub_carts: { filename: { seconds, launches } } }
-	var font_size = data.get("font_size", 24)
+	var font_size = data.get("font_size", 12)
 	var title_val = data.get("title", "Unknown Cart")
 	if title_val == null: title_val = "Unknown Cart"
 	%Title.text = str(title_val)

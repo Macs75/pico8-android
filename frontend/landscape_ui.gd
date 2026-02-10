@@ -55,6 +55,9 @@ func _on_intent_session_started():
 			esc_btn.text = ""
 
 func _on_resize():
+	# Reset anchors to Top-Left so we can manually set size without conflicting with parent anchors
+	set_anchors_preset(Control.PRESET_TOP_LEFT)
+	
 	if arranger:
 		# Always update scale to ensure synchronization with Arranger
 		# Force uniform scaling to prevent distortion (use X scale for both axes)

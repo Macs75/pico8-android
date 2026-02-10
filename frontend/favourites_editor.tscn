@@ -6,6 +6,33 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_opaque"]
 bg_color = Color(0.1, 0.1, 0.1, 1)
 
+[sub_resource type="FontVariation" id="FontVariation_default"]
+
+[sub_resource type="FontVariation" id="FontVariation_emoji_offset"]
+base_font = ExtResource("2_emoji")
+baseline_offset = -0.16
+
+[sub_resource type="FontVariation" id="FontVariation_bqpnx"]
+fallbacks = Array[Font]([SubResource("FontVariation_emoji_offset")])
+base_font = SubResource("FontVariation_default")
+spacing_space = -4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_reset"]
+content_margin_left = 10.0
+content_margin_top = 12.0
+content_margin_right = 10.0
+content_margin_bottom = 5.0
+bg_color = Color(0, 0, 0, 0.5)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3882353, 0, 0, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
 [node name="FavouritesEditor" type="Control" unique_id=1922155292]
 z_index = 200
 layout_mode = 3
@@ -56,9 +83,9 @@ layout_mode = 2
 [node name="LabelTitle" type="Label" parent="Panel/MarginContainer/VBox/Header" unique_id=463415509]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_fonts/font = ExtResource("2_emoji")
-theme_override_font_sizes/font_size = 20
-text = "💟Favourites"
+theme_override_fonts/font = SubResource("FontVariation_bqpnx")
+theme_override_font_sizes/font_size = 16
+text = "💟 Favourites"
 vertical_alignment = 1
 
 [node name="SortButtons" type="HBoxContainer" parent="Panel/MarginContainer/VBox/Header" unique_id=1691524185]
@@ -111,20 +138,32 @@ layout_mode = 2
 layout_mode = 2
 alignment = 1
 
-[node name="BtnCancel" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=314931133]
+[node name="BtnClose" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=314931133]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_emoji")
-text = "✖Cancel"
+theme_override_fonts/font = SubResource("FontVariation_bqpnx")
+text = "✖ Close"
 
 [node name="Control" type="Control" parent="Panel/MarginContainer/VBox/Footer" unique_id=1905794488]
 custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 
+[node name="BtnReset" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=987654321]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3882353, 0, 0, 1)
+theme_override_colors/font_focus_color = Color(0.85490197, 0, 0, 1)
+theme_override_colors/font_hover_color = Color(0.47156096, 9.866804e-07, 3.128499e-07, 1)
+theme_override_fonts/font = SubResource("FontVariation_bqpnx")
+theme_override_styles/normal = SubResource("StyleBoxFlat_reset")
+theme_override_styles/hover = SubResource("StyleBoxFlat_reset")
+text = "🔄 Reset"
+
 [node name="BtnSave" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=57242822]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_emoji")
-text = "💾Save"
+theme_override_fonts/font = SubResource("FontVariation_bqpnx")
+text = "💾 Save"

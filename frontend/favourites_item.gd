@@ -19,13 +19,6 @@ func setup(data, idx: int):
 	%LabelName.text = data.name.capitalize()
 	%LabelAuthor.text = data.author
 	
-	# Use monospace font for stats to ensure vertical alignment
-	if data is Dictionary and data.get("is_stat_item", false):
-		var mono_font = SystemFont.new()
-		mono_font.font_names = PackedStringArray(["Monospace", "Courier New", "Consolas"])
-		%LabelAuthor.add_theme_font_override("font", mono_font)
-	else:
-		%LabelAuthor.remove_theme_font_override("font")
 	
 	if not has_node("Content/DragHandle"):
 		return
@@ -229,7 +222,7 @@ func _drop_data(_at_position: Vector2, data):
 func set_font_size(font_size: int):
 	_current_font_size = font_size
 	%LabelName.add_theme_font_size_override("font_size", font_size)
-	%LabelAuthor.add_theme_font_size_override("font_size", int(font_size * 0.8)) # Slightly smaller for author
+	%LabelAuthor.add_theme_font_size_override("font_size", int(font_size * 0.6)) # Slightly smaller for author
 	$Content/DragHandle.add_theme_font_size_override("font_size", int(font_size * 1.2)) # Larger handle
 	
 	# Increase minimum height for better touch targets

@@ -1,7 +1,7 @@
-[gd_resource type="Theme" load_steps=2 format=3]
+[gd_resource type="Theme" format=3 uid="uid://itjher3gi01s"]
 
 [ext_resource type="SystemFont" path="res://assets/theme/main_font.tres" id="1_main_font"]
 
 [resource]
 default_font = ExtResource("1_main_font")
-default_font_size = 16
+default_font_size = 12

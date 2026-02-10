@@ -5,7 +5,18 @@
 [ext_resource type="Texture2D" uid="uid://y1xbmusqsqd4" path="res://assets/icon_coffee.png" id="3_coffee"]
 [ext_resource type="Texture2D" uid="uid://ctbv6igcjngg4" path="res://assets/icon_floppy.png" id="4_floppy"]
 [ext_resource type="Texture2D" uid="uid://chyjiv8phiah7" path="res://assets/icon_link.png" id="5_link"]
-[ext_resource type="FontFile" uid="uid://btr5i3t6k3xdx" path="res://assets/font/NotoEmoji-Regular.ttf" id="6_emoji"]
+[ext_resource type="FontFile" uid="uid://5m1nwexhtvjo" path="res://assets/font/NotoColorEmoji-Regular.ttf" id="6_emoji"]
+
+[sub_resource type="FontVariation" id="FontVariation_default"]
+
+[sub_resource type="FontVariation" id="FontVariation_emoji_offset"]
+base_font = ExtResource("6_emoji")
+baseline_offset = -0.16
+
+[sub_resource type="FontVariation" id="FontVariation_bqpnx"]
+fallbacks = Array[Font]([SubResource("FontVariation_emoji_offset")])
+base_font = SubResource("FontVariation_default")
+spacing_space = -4
 
 [node name="OptionsMenu" type="CanvasLayer" unique_id=245879019]
 script = ExtResource("1_options")
@@ -77,7 +88,6 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("6_emoji")
 text = "🔽 🛠️ TOOLS"
 flat = true
 alignment = 0
@@ -105,6 +115,7 @@ theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = SubResource("FontVariation_bqpnx")
 text = "❤︎ FAVOURITES"
 flat = true
 alignment = 0
@@ -131,7 +142,7 @@ alignment = 0
 
 [node name="SectionDisplay" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=1606340608]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 5
 
 [node name="BtnDisplayToggle" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay" unique_id=89140026]
 unique_name_in_owner = true
@@ -139,7 +150,6 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("6_emoji")
 text = "🔽 🎨 DISPLAY"
 flat = true
 alignment = 0
@@ -151,7 +161,7 @@ theme_override_constants/margin_left = 30
 
 [node name="ContentDisplay" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay" unique_id=530087331]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 15
 
 [node name="IntegerScalingRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=1485190483]
 layout_mode = 2
@@ -241,7 +251,7 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-tooltip_text = "Change background color of the application" 
+tooltip_text = "Change background color of the application"
 mouse_filter = 1
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
@@ -349,8 +359,10 @@ size_flags_vertical = 4
 
 [node name="SliderSaturation" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation/SliderScalerSaturation" unique_id=614667565]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 0
+offset_right = 8.0
+offset_bottom = 16.0
 size_flags_vertical = 4
 max_value = 2.0
 step = 0.05
@@ -391,7 +403,7 @@ theme_override_constants/margin_left = 20
 
 [node name="ButtonsContent" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper" unique_id=12764083]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 20
 
 [node name="ButtonHueRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent" unique_id=98409052]
 layout_mode = 2
@@ -426,7 +438,7 @@ size_flags_vertical = 4
 
 [node name="SliderButtonHue" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow/WrapperButtonHue/SliderScalerButtonHue" unique_id=1088117693]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 0
 size_flags_vertical = 4
 max_value = 2.0
@@ -447,7 +459,7 @@ custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 text = "1.00"
-horizontal_alignment = 2
+horizontal_alignment = 1
 
 [node name="ButtonSatRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent" unique_id=144665626]
 layout_mode = 2
@@ -482,7 +494,7 @@ size_flags_vertical = 4
 
 [node name="SliderButtonSat" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow/WrapperButtonSat/SliderScalerButtonSat" unique_id=1565851324]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 0
 size_flags_vertical = 4
 max_value = 2.0
@@ -538,7 +550,7 @@ size_flags_vertical = 4
 
 [node name="SliderButtonLight" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow/WrapperButtonLight/SliderScalerButtonLight" unique_id=1923237882]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 0
 size_flags_vertical = 4
 max_value = 2.0
@@ -563,7 +575,7 @@ horizontal_alignment = 2
 
 [node name="SectionControls" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=1781006713]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 15
 
 [node name="BtnControlsToggle" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls" unique_id=1095379473]
 unique_name_in_owner = true
@@ -571,7 +583,6 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("6_emoji")
 text = "🔽 🎮 CONTROLS"
 flat = true
 alignment = 0
@@ -583,7 +594,7 @@ theme_override_constants/margin_left = 30
 
 [node name="ContentControls" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls" unique_id=1963445949]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 5
 
 [node name="HapticRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls" unique_id=42559437]
 layout_mode = 2
@@ -592,7 +603,7 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-tooltip_text = "Enable haptic feedback for the onscreen controls	"
+tooltip_text = "Enable haptic feedback for the onscreen controls"
 mouse_filter = 1
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
@@ -706,33 +717,9 @@ theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-text = "Connected Controllers"
+text = "Manage Controllers"
 flat = true
 alignment = 0
-
-[node name="WrapperConnectedControllers" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ConnectedControllersRow" unique_id=1809106837]
-layout_mode = 2
-size_flags_horizontal = 8
-size_flags_vertical = 4
-
-[node name="ArrowConnectedControllers" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ConnectedControllersRow/WrapperConnectedControllers" unique_id=353996292]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -11.5
-offset_right = 20.0
-offset_bottom = 11.5
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
-text = ">"
-horizontal_alignment = 1
-vertical_alignment = 1
 
 [node name="InputModeRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls" unique_id=170817514]
 layout_mode = 2
@@ -770,7 +757,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 1
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-text = "T.Sensitivity"
+text = "Track. Sens"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -787,8 +774,10 @@ size_flags_vertical = 4
 
 [node name="SliderSensitivity" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow/WrapperSensitivity/SliderScaler" unique_id=1991719571]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(80, 0)
+custom_minimum_size = Vector2(90, 0)
 layout_mode = 0
+offset_right = 90.0
+offset_bottom = 16.0
 size_flags_vertical = 4
 min_value = 0.1
 max_value = 2.0
@@ -797,18 +786,15 @@ value = 0.30000000000000004
 
 [node name="LabelSensitivityValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow/WrapperSensitivity" unique_id=1596855679]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 text = "0.5"
-
-[node name="empty" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/SensitivityRow/WrapperSensitivity" unique_id=1588187357]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
-text = "            "
+horizontal_alignment = 1
 
 [node name="SectionAudio" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=297193862]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 15
 
 [node name="BtnAudioToggle" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio" unique_id=765707669]
 unique_name_in_owner = true
@@ -816,7 +802,6 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("6_emoji")
 text = "🔽 🔊 AUDIO"
 flat = true
 alignment = 0
@@ -859,7 +844,7 @@ focus_mode = 0
 
 [node name="SectionOffline" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=987654322]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 15
 
 [node name="BtnOfflineToggle" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline" unique_id=876543211]
 unique_name_in_owner = true
@@ -867,7 +852,6 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("6_emoji")
 text = "🔽 📁 OFFLINE SUPPORT"
 flat = true
 alignment = 0

@@ -17,7 +17,7 @@ var _cached_metadata: Dictionary = {}
 func _ready():
 	_configure_ui_for_mode()
 	
-	%BtnCancel.pressed.connect(_on_cancel)
+	%BtnClose.pressed.connect(_on_close)
 	# Only connect Save if in Favorites mode
 	if current_mode == EditorMode.FAVORITES:
 		%BtnSave.pressed.connect(_on_save)
@@ -32,7 +32,7 @@ func _ready():
 	%BtnAscDesc.gui_input.connect(_on_explicit_gui_input.bind(%BtnAscDesc))
 	
 	# Footer Connections (Controller Support)
-	%BtnCancel.gui_input.connect(_on_explicit_gui_input.bind(%BtnCancel))
+	%BtnClose.gui_input.connect(_on_explicit_gui_input.bind(%BtnClose))
 	if current_mode == EditorMode.FAVORITES:
 		%BtnSave.gui_input.connect(_on_explicit_gui_input.bind(%BtnSave))
 	
@@ -87,7 +87,7 @@ func _update_layout():
 	var viewport_size = get_viewport_rect().size
 	var min_dim = min(viewport_size.x, viewport_size.y)
 	
-	var dynamic_font_size = int(max(24, min_dim * 0.05))
+	var dynamic_font_size = int(max(12, min_dim * 0.03))
 	current_font_size = dynamic_font_size
 	
 	# Ensure scroll follows focus -> DISABLE to allow manual smooth scroll
@@ -103,16 +103,44 @@ func _update_layout():
 	margin_container.add_theme_constant_override("margin_left", h_margin)
 	margin_container.add_theme_constant_override("margin_right", h_margin)
 	
-	# Apply to Header
+	# Dynamic Spacing for Font
+	# We update the existing Local FontVariation (FontVariation_bqpnx) attached to the title label
+	# This resource is shared by all nodes in the scene that use it, so updating it here updates them all!
+	var spacing_val = int(dynamic_font_size * -0.25)
+	
+	var title_font = $Panel/MarginContainer/VBox/Header/LabelTitle.get_theme_font("font")
+	if title_font is FontVariation:
+		title_font.spacing_space = spacing_val
+	
+	# Apply to Header logic (sizes)
 	$Panel/MarginContainer/VBox/Header/LabelTitle.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
 	$Panel/MarginContainer/VBox/Header/SortButtons/LabelSort.add_theme_font_size_override("font_size", int(dynamic_font_size * 0.9))
 	%OptionSort.add_theme_font_size_override("font_size", int(dynamic_font_size * 0.9))
 	%OptionSort.get_popup().add_theme_font_size_override("font_size", int(dynamic_font_size * 0.9))
 	%BtnAscDesc.add_theme_font_size_override("font_size", dynamic_font_size)
 	
-	# Apply to Footer
-	%BtnCancel.add_theme_font_size_override("font_size", dynamic_font_size)
+	# Apply to Footer sizes
+	%BtnClose.add_theme_font_size_override("font_size", dynamic_font_size)
 	%BtnSave.add_theme_font_size_override("font_size", dynamic_font_size)
+	%BtnReset.add_theme_font_size_override("font_size", dynamic_font_size)
+	
+	# Update items (only size needs to be passed down now, as they share the font resource or rely on theme)
+	# Wait, items are instantiated scenes (favourites_item.tscn). 
+	# They do NOT share the local `FontVariation_bqpnx` from `favourites_editor.tscn` unless we passed it to them.
+	# But `favourites_item.tscn` likely uses the default theme or its own setup.
+	# If we want items to use this spacing, we MUST pass the modified font to them.
+	
+	for item in %ListContainer.get_children():
+		if item.has_method("set_font_size"):
+			item.set_font_size(dynamic_font_size)
+		
+		# Apply the shared font to items if they are labels who need it
+		if title_font is FontVariation:
+			if item.has_node("%LabelName"):
+				item.get_node("%LabelName").add_theme_font_override("font", title_font)
+			if item.has_node("%LabelAuthor"):
+				if not (item.item_data is Dictionary and item.item_data.get("is_stat_item", false)):
+					item.get_node("%LabelAuthor").add_theme_font_override("font", title_font)
 	
 	# Update items
 	for item in %ListContainer.get_children():
@@ -124,13 +152,20 @@ func _update_layout():
 
 func _configure_ui_for_mode():
 	if current_mode == EditorMode.STATS:
-		$Panel/MarginContainer/VBox/Header/LabelTitle.text = "📶Play Stats"
+		$Panel/MarginContainer/VBox/Header/LabelTitle.text = "📶 Play Stats"
 		%BtnSave.visible = false
-		%BtnCancel.text = "Close"
+		%BtnReset.visible = true
+		
+		# Connect if not already connected (check connection to avoid dupes if called multiple times, though usually called once)
+		if not %BtnReset.pressed.is_connected(_on_reset_pressed):
+			%BtnReset.pressed.connect(_on_reset_pressed)
+			%BtnReset.gui_input.connect(_on_explicit_gui_input.bind(%BtnReset))
+		
 	else:
-		$Panel/MarginContainer/VBox/Header/LabelTitle.text = "💟Favorites"
+		$Panel/MarginContainer/VBox/Header/LabelTitle.text = "💟 Favorites"
 		%BtnSave.visible = true
-		%BtnCancel.text = "Cancel"
+		%BtnReset.visible = false
+
 
 func _setup_sort_options():
 	%OptionSort.clear()
@@ -426,15 +461,23 @@ func _on_item_focused(item_data, item_node):
 func _setup_focus_chain():
 	var items = %ListContainer.get_children()
 	var count = items.size()
+	# Button now exists in scene, just check visibility/mode
+	var reset_active = %BtnReset.visible
 	
 	# 1. Header connections
 	# Sort Option
 	%OptionSort.focus_neighbor_right = %BtnAscDesc.get_path()
-	%OptionSort.focus_neighbor_left = %BtnSave.get_path() # From Save (Loop)
+	
+	if current_mode == EditorMode.STATS:
+		# Loop back to Close or Reset
+		%OptionSort.focus_neighbor_left = %BtnClose.get_path()
+	else:
+		%OptionSort.focus_neighbor_left = %BtnSave.get_path() # From Save (Loop)
+		
 	if count > 0:
 		%OptionSort.focus_neighbor_bottom = items[0].get_path()
 	else:
-		%OptionSort.focus_neighbor_bottom = %BtnCancel.get_path()
+		%OptionSort.focus_neighbor_bottom = %BtnReset.get_path() if reset_active else %BtnClose.get_path()
 		
 	# Asc/Desc
 	%BtnAscDesc.focus_neighbor_left = %OptionSort.get_path()
@@ -442,8 +485,8 @@ func _setup_focus_chain():
 		%BtnAscDesc.focus_neighbor_right = items[0].get_path() # Cycle logic: Sort -> Asc/Desc -> List
 		%BtnAscDesc.focus_neighbor_bottom = items[0].get_path()
 	else:
-		%BtnAscDesc.focus_neighbor_right = %BtnCancel.get_path()
-		%BtnAscDesc.focus_neighbor_bottom = %BtnCancel.get_path()
+		%BtnAscDesc.focus_neighbor_right = %BtnClose.get_path()
+		%BtnAscDesc.focus_neighbor_bottom = %BtnClose.get_path()
 
 	# 2. List connections
 	for i in range(count):
@@ -461,27 +504,42 @@ func _setup_focus_chain():
 		if next:
 			item.focus_neighbor_bottom = next.get_path()
 		else:
-			item.focus_neighbor_bottom = %BtnCancel.get_path()
+			# Go to Cancel (Close) as it's the first button (leftmost)
+			item.focus_neighbor_bottom = %BtnClose.get_path()
 			
 		# Left/Right Cycle
 		# List.Left -> Asc/Desc
 		item.focus_neighbor_left = %BtnAscDesc.get_path()
-		# List.Right -> Cancel
-		item.focus_neighbor_right = %BtnCancel.get_path()
+		# List.Right -> Cancel (Close)
+		item.focus_neighbor_right = %BtnClose.get_path()
 		
 	# 3. Footer connections
-	# Cancel
-	%BtnCancel.focus_neighbor_top = items[count - 1].get_path() if count > 0 else %OptionSort.get_path()
-	%BtnCancel.focus_neighbor_bottom = %BtnSave.get_path() # Custom Down behavior
-	
-	# Left/Right Cycle: List -> Cancel -> Save
-	%BtnCancel.focus_neighbor_left = items[count - 1].get_path() if count > 0 else %BtnAscDesc.get_path()
-	%BtnCancel.focus_neighbor_right = %BtnSave.get_path()
-	
-	# Save
-	%BtnSave.focus_neighbor_top = %BtnCancel.get_path() # Up goes back to Cancel? "Pressing down again it should go to Save from there" - implying stacking.
-	%BtnSave.focus_neighbor_left = %BtnCancel.get_path()
-	%BtnSave.focus_neighbor_right = %OptionSort.get_path() # Loop back to start
+	if current_mode == EditorMode.STATS:
+		# Close (Cancel) Button - STATS - Position: [Close] [Reset]
+		%BtnClose.focus_neighbor_top = items[count - 1].get_path() if count > 0 else %OptionSort.get_path()
+		%BtnClose.focus_neighbor_bottom = %OptionSort.get_path() # Loop
+		%BtnClose.focus_neighbor_left = items[count - 1].get_path() if count > 0 else %BtnAscDesc.get_path()
+		%BtnClose.focus_neighbor_right = %BtnReset.get_path()
+		
+		# Reset Button
+		%BtnReset.focus_neighbor_top = items[count - 1].get_path() if count > 0 else %OptionSort.get_path()
+		%BtnReset.focus_neighbor_bottom = %OptionSort.get_path() # Loop
+		%BtnReset.focus_neighbor_left = %BtnClose.get_path()
+		%BtnReset.focus_neighbor_right = %OptionSort.get_path()
+		
+	else:
+		# Cancel
+		%BtnClose.focus_neighbor_top = items[count - 1].get_path() if count > 0 else %OptionSort.get_path()
+		%BtnClose.focus_neighbor_bottom = %BtnSave.get_path() # Custom Down behavior
+		
+		# Left/Right Cycle: List -> Cancel -> Save
+		%BtnClose.focus_neighbor_left = items[count - 1].get_path() if count > 0 else %BtnAscDesc.get_path()
+		%BtnClose.focus_neighbor_right = %BtnSave.get_path()
+		
+		# Save
+		%BtnSave.focus_neighbor_top = %BtnClose.get_path()
+		%BtnSave.focus_neighbor_left = %BtnClose.get_path()
+		%BtnSave.focus_neighbor_right = %OptionSort.get_path() # Loop back to start
 
 func _on_item_request_move_step(direction: int, item_node):
 	var idx = item_node.get_index()
@@ -710,14 +768,18 @@ func _input(event: InputEvent) -> void:
 	if %OptionSort.get_popup().visible:
 		return
 
+	# Block input if a Custom Dialog is open
+	if has_node("CustomConfirmDialog") or has_node("CustomMessageDialog"):
+		return
+
 	if event.is_action_pressed("ui_cancel"):
-		_on_cancel()
+		_on_close()
 		get_viewport().set_input_as_handled()
 		return
 		
 	if event is InputEventJoypadButton:
 		if event.pressed and (event.button_index == JoyButton.JOY_BUTTON_B):
-			_on_cancel()
+			_on_close()
 			get_viewport().set_input_as_handled()
 			return
 
@@ -747,8 +809,8 @@ func _regain_focus():
 	# Fallback if no list items visible or empty list
 	if %OptionSort.is_visible_in_tree():
 		%OptionSort.grab_focus()
-	elif %BtnCancel.is_visible_in_tree():
-		%BtnCancel.grab_focus()
+	elif %BtnClose.is_visible_in_tree():
+		%BtnClose.grab_focus()
 
 func _on_sort_criteria_changed(index: int):
 	# index 0 is "Manual" only in Favorites mode. 
@@ -856,7 +918,7 @@ func _on_save():
 	else:
 		OS.alert("Failed to save favourites!", "Error")
 
-func _on_cancel():
+func _on_close():
 	queue_free()
 
 func _on_explicit_gui_input(event: InputEvent, control: Control):
@@ -935,3 +997,55 @@ func _on_item_long_pressed(item_node):
 		win.setup(detail_data)
 	else:
 		print("Alert: ALL load attempts failed for StatsWindow")
+
+func _on_reset_pressed():
+	# Clean up any existing dialog
+	var existing = get_node_or_null("CustomConfirmDialog")
+	if existing: existing.queue_free()
+
+	# Use new UIUtils for consistent styling
+	var dialog = UIUtils.create_confirm_dialog(
+		self,
+		"Reset Play Stats",
+		"Confirming this action will reset your current play statistics.\n\nYour data will be recalculated from scratch using the Pico-8 activity_log.txt. Please note that the new totals may differ from your current recorded data",
+		"Confirm",
+		"Cancel",
+		false,
+		_on_reset_confirmed_action,
+		_close_reset_dialog
+	)
+	
+	dialog.visible = true
+
+func _close_reset_dialog():
+	var dialog = get_node_or_null("CustomConfirmDialog")
+	if dialog: dialog.queue_free()
+
+func _on_reset_confirmed_action():
+	_close_reset_dialog()
+	
+	# 1. Show Wait Dialog
+	var wait_dialog = UIUtils.create_message_dialog(self, "Please Wait", "Resetting statistics...\nThis may take a moment.", "")
+	wait_dialog.visible = true
+	
+	# Allow UI to update
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	# 2. Perform Action
+	_on_reset_confirmed()
+	
+	# 3. Close Wait Dialog
+	if wait_dialog: wait_dialog.queue_free()
+	
+	# 4. Show Success
+	var success_dialog = UIUtils.create_message_dialog(self, "Success", "Play stats have been reset successfully.", "OK")
+	success_dialog.visible = true
+
+func _on_reset_confirmed():
+	# Run analysis with force_reset = true
+	ActivityLogAnalyzerScript.perform_analysis(true)
+	
+	# Refresh the list
+	_load_data()
+	_reset_pagination_and_refresh()

@@ -33,11 +33,12 @@ func _setup_audio():
 
 func _connect_tcp():
 	tcp = StreamPeerTCP.new()
+	print("AudioStreamer: Attempting connection to ", TCP_HOST, ":", TCP_PORT)
 	var err = tcp.connect_to_host(TCP_HOST, TCP_PORT)
 	if err != OK:
-		print("AudioStreamer: Failed to connect to host.")
+		print("AudioStreamer: Failed to connect to host. Error Code: ", err)
 	else:
-		print("AudioStreamer: Connecting to ", TCP_HOST, ":", TCP_PORT)
+		print("AudioStreamer: Connection initiated...")
 
 var last_connect_attempt_time = 0
 const RECONNECT_DELAY_MS = 50 # Try every 50ms (20 times per second)

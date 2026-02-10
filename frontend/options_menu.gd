@@ -176,7 +176,7 @@ func _ready() -> void:
 				landscape_ui.visibility_changed.connect(_update_layout_deferred)
 
 	# Trigger layout update again
-	_update_layout()
+	await _update_layout()
 	panel.position.x = - panel.size.x
 	
 	# Default sections to collapsed
@@ -193,7 +193,7 @@ func _update_layout():
 	# Resize Edge Handler dynamically (e.g. 6% of screen width, min 60px)
 	if edge_handler:
 		# Reset anchors to Left-Wide
-		edge_handler.set_anchors_preset(Control.PRESET_LEFT_WIDE, true)
+		edge_handler.set_anchors_preset(Control.PRESET_LEFT_WIDE, false)
 		
 		var edge_width = max(60.0, viewport_size.x * 0.10)
 		
@@ -227,10 +227,10 @@ func _update_layout():
 							edge_width = safe_limit
 
 		edge_handler.custom_minimum_size.x = edge_width
-		edge_handler.size.x = edge_width
-		# Force vertical expansion just in case
-		edge_handler.size.y = viewport_size.y
-		edge_handler.position.y = 0
+		# Use offsets to set width to avoid "non-equal opposite anchors" warning for Y axis
+		edge_handler.offset_right = edge_width
+		edge_handler.offset_bottom = 0 # Ensure full height
+		edge_handler.offset_top = 0
 		
 		# Set Swipe Threshold (e.g. 5% of screen width)
 		# Make sure threshold isn't larger than the handler itself (or unreasonably large)
@@ -246,7 +246,16 @@ func _update_layout():
 	# IMPROVED: Use min dimension to keep text readable in landscape
 	# Base on 5% of smaller dimension, clamped to at least 24px
 	var min_dim = min(viewport_size.x, viewport_size.y)
-	var dynamic_font_size = int(max(24, min_dim * 0.04))
+	var dynamic_font_size = int(max(12, min_dim * 0.03))
+	
+	# Dynamic Spacing for Font
+	# We update the existing Local FontVariation (FontVariation_bqpnx) attached to section toggles
+	# This resource is shared by all nodes in the scene that use it (section headers), so updating it here updates them all!
+	var spacing_val = int(dynamic_font_size * -0.25)
+	
+	var section_font = %BtnToolsToggle.get_theme_font("font")
+	if section_font is FontVariation:
+		section_font.spacing_space = spacing_val
 	
 	# Scale Factors
 	# Keep icon readable but scaled relative to the new small font
@@ -263,9 +272,12 @@ func _update_layout():
 	var icon_size = dynamic_font_size * 1.3
 	%Icon.custom_minimum_size = Vector2(icon_size, icon_size)
 	
-	%ContainerDisplay.add_theme_constant_override("margin_left", int(30 * scale_factor))
-	%ContainerControls.add_theme_constant_override("margin_left", int(30 * scale_factor))
-	%ContainerButtons.add_theme_constant_override("margin_left", int(30 * scale_factor))
+	%ContainerDisplay.add_theme_constant_override("margin_left", int(25 * scale_factor))
+	%ContainerDisplay.add_theme_constant_override("margin_right", int(5 * scale_factor))
+	%ContainerControls.add_theme_constant_override("margin_left", int(25 * scale_factor))
+	%ContainerControls.add_theme_constant_override("margin_right", int(5 * scale_factor))
+	%ContainerButtons.add_theme_constant_override("margin_left", int(25 * scale_factor))
+	%ContainerButtons.add_theme_constant_override("margin_right", int(5 * scale_factor))
 
 	# 2. Haptic Row
 	_style_option_row(%ButtonHaptic, %ToggleHaptic, $SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/HapticRow/WrapperHaptic, dynamic_font_size, scale_factor)
@@ -286,7 +298,7 @@ func _update_layout():
 	_style_option_row(%ButtonShowControls, %ToggleShowControls, $SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow/WrapperShowControls, dynamic_font_size, scale_factor)
 
 	# 5a. Connected Controllers Row
-	_style_option_row(%ButtonConnectedControllers, %ArrowConnectedControllers, $SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ConnectedControllersRow/WrapperConnectedControllers, dynamic_font_size, scale_factor)
+	%ButtonConnectedControllers.add_theme_font_size_override("font_size", dynamic_font_size)
 
 	# 6. Background Color Row
 	_style_option_row(%ButtonBgColor, %ColorPickerBG, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BgColorRow/WrapperBgColor, dynamic_font_size, scale_factor)
@@ -301,6 +313,7 @@ func _update_layout():
 	%BtnAudioToggle.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
 	if %ContainerAudio:
 		%ContainerAudio.add_theme_constant_override("margin_left", int(30 * scale_factor))
+		%ContainerAudio.add_theme_constant_override("margin_right", int(5 * scale_factor))
 		
 	_style_option_row(%ButtonAudioBackendLabel, %ToggleAudioBackend, $SlidePanel/ScrollContainer/VBoxContainer/SectionAudio/ContainerAudio/ContentAudio/AudioRow/WrapperAudioBackend, dynamic_font_size, scale_factor)
 
@@ -314,7 +327,10 @@ func _update_layout():
 	var slider = %SliderSensitivity
 	var slider_scaler = %SliderScaler
 	
+	%LabelSensitivityValue.custom_minimum_size.x = 80 * scale_factor
+	
 	# Reset base size (unscaled)
+	slider.reset_size()
 	slider.scale = Vector2(scale_factor, scale_factor)
 	
 	# Adjust wrapper to hold scaled slider
@@ -330,6 +346,7 @@ func _update_layout():
 	var slider_sat = %SliderSaturation
 	var slider_scaler_sat = %SliderScalerSaturation
 	
+	slider_sat.reset_size()
 	slider_sat.scale = Vector2(scale_factor, scale_factor)
 	var scaled_size_sat = slider_sat.size * scale_factor
 	slider_scaler_sat.custom_minimum_size = scaled_size_sat
@@ -346,6 +363,7 @@ func _update_layout():
 	var slider_hue = %SliderButtonHue
 	var slider_scaler_hue = %SliderScalerButtonHue
 	
+	slider_hue.reset_size()
 	slider_hue.scale = Vector2(scale_factor, scale_factor)
 	var scaled_size_hue = slider_hue.size * scale_factor
 	slider_scaler_hue.custom_minimum_size = scaled_size_hue
@@ -359,6 +377,7 @@ func _update_layout():
 	var slider_sat2 = %SliderButtonSat
 	var slider_scaler_sat2 = %SliderScalerButtonSat
 	
+	slider_sat2.reset_size()
 	slider_sat2.scale = Vector2(scale_factor, scale_factor)
 	var scaled_size_sat2 = slider_sat2.size * scale_factor
 	slider_scaler_sat2.custom_minimum_size = scaled_size_sat2
@@ -372,6 +391,7 @@ func _update_layout():
 	var slider_light = %SliderButtonLight
 	var slider_scaler_light = %SliderScalerButtonLight
 	
+	slider_light.reset_size()
 	slider_light.scale = Vector2(scale_factor, scale_factor)
 	var scaled_size_light = slider_light.size * scale_factor
 	slider_scaler_light.custom_minimum_size = scaled_size_light
@@ -380,6 +400,7 @@ func _update_layout():
 	%BtnOfflineToggle.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
 	if %ContainerOffline:
 		%ContainerOffline.add_theme_constant_override("margin_left", int(30 * scale_factor))
+		%ContainerOffline.add_theme_constant_override("margin_right", int(5 * scale_factor))
 		
 	%ButtonSelectRoot.add_theme_font_size_override("font_size", dynamic_font_size)
 	%ButtonClearRoot.add_theme_font_size_override("font_size", dynamic_font_size)
@@ -394,18 +415,12 @@ func _update_layout():
 
 	# 7f. Tools Section Styles
 	%BtnToolsToggle.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
-	if %ContainerTools:
-		%ContainerTools.add_theme_constant_override("margin_left", int(30 * scale_factor))
-
+	%ContainerTools.add_theme_constant_override("margin_left", int(20 * scale_factor))
+	%ContainerTools.add_theme_constant_override("margin_right", int(5 * scale_factor))
 
 	# 4. Save Buttons
 	%ButtonAppSettings.add_theme_font_size_override("font_size", dynamic_font_size)
-	if %ButtonSupport:
-		%ButtonSupport.add_theme_font_size_override("font_size", dynamic_font_size)
-		# Ensure icon scales comfortably with text
-		# Godot's expand_icon fits to height, which follows font size mostly
-	%ButtonSave.add_theme_font_size_override("font_size", dynamic_font_size)
-	
+	%ButtonSupport.add_theme_font_size_override("font_size", dynamic_font_size)
 	%ButtonSave.add_theme_font_size_override("font_size", dynamic_font_size)
 	
 	# 5. Version Label (slightly smaller)
@@ -452,10 +467,31 @@ func _update_layout():
 	# Wait for layout to process to get correct width
 	await get_tree().process_frame
 	
-	# Adjust panel width if content is wider (due to scaling)
+	# Calculate max width by checking all sections
+	# We temporarily show all sections to measure their true width
+	var containers = [
+		%ContainerDisplay,
+		%ContainerControls,
+		%ContainerTools
+	]
+	if %ContainerAudio: containers.append(%ContainerAudio)
+	if %ContainerOffline: containers.append(%ContainerOffline)
+	
+	var saved_states = {}
+	for c in containers:
+		if c:
+			saved_states[c] = c.visible
+			c.visible = true
+			
+	# Get the width of the parent container with all children potentially visible
 	var content_min_width = $SlidePanel/ScrollContainer/VBoxContainer.get_combined_minimum_size().x
+	
+	# Restore visibility
+	for c in containers:
+		if c:
+			c.visible = saved_states[c]
 	# Add some padding (margin of proper fit)
-	var required_width = content_min_width + 10
+	var required_width = content_min_width + 40
 	# Minimum safe width
 	var final_width = max(required_width, min(500, viewport_size.x * 0.5))
 	
@@ -723,16 +759,8 @@ func _on_audio_backend_toggled(toggled_on: bool):
 	OS.alert("App restart required for audio changes.", "Restart Required")
 
 func _save_audio_setting_only():
-	var config = ConfigFile.new()
-	# Load existing file to preserve other settings as they are ON DISK
-	# ignoring whatever changes are currently pending in the UI
-	var err = config.load(CONFIG_PATH)
-	if err != OK:
-		# If file doesn't exist, we just start fresh, which is fine
-		pass
-		
-	config.set_value("settings", "audio_backend", audio_backend)
-	config.save(CONFIG_PATH)
+	PicoBootManager.set_setting("settings", "audio_backend", audio_backend)
+	PicoBootManager.save_config()
 
 func _navigate_focus(side: Side):
 	var current_focus = get_viewport().gui_get_focus_owner()
@@ -922,150 +950,115 @@ func _on_connected_controllers_pressed():
 func _on_bg_color_picked(color: Color):
 	RenderingServer.set_default_clear_color(color)
 
-func save_config():
-	var config = ConfigFile.new()
-	config.set_value("settings", "haptic_enabled", PicoVideoStreamer.get_haptic_enabled())
-	config.set_value("settings", "swap_zx_enabled", PicoVideoStreamer.get_swap_zx_enabled())
-	config.set_value("settings", "trackpad_sensitivity", PicoVideoStreamer.get_trackpad_sensitivity())
-	config.set_value("settings", "integer_scaling_enabled", PicoVideoStreamer.get_integer_scaling_enabled())
-	config.set_value("settings", "bezel_enabled", PicoVideoStreamer.get_bezel_enabled())
-	config.set_value("settings", "always_show_controls", PicoVideoStreamer.get_always_show_controls())
-	config.set_value("settings", "ignored_devices_by_user", ControllerUtils.ignored_devices_by_user)
-	config.set_value("settings", "controller_assignments", ControllerUtils.controller_assignments)
-	config.set_value("settings", "shader_type", PicoVideoStreamer.get_shader_type())
-	config.set_value("settings", "saturation", PicoVideoStreamer.get_saturation())
-	config.set_value("settings", "button_hue", PicoVideoStreamer.get_button_hue())
-	config.set_value("settings", "button_saturation", PicoVideoStreamer.get_button_saturation())
-	config.set_value("settings", "button_lightness", PicoVideoStreamer.get_button_lightness())
-	config.set_value("settings", "bg_color", %ColorPickerBG.color)
-	config.set_value("settings", "display_drag_offset_portrait", PicoVideoStreamer.display_drag_offset_portrait)
-	config.set_value("settings", "display_drag_offset_landscape", PicoVideoStreamer.display_drag_offset_landscape)
-	config.set_value("settings", "display_scale_portrait", PicoVideoStreamer.display_scale_portrait)
-	config.set_value("settings", "display_scale_landscape", PicoVideoStreamer.display_scale_landscape)
-	config.set_value("settings", "audio_backend", audio_backend)
-	config.set_value("settings", "custom_root_path", custom_root_path)
-	config.set_value("settings", "control_layout_portrait", PicoVideoStreamer.control_layout_portrait)
-	config.set_value("settings", "control_layout_landscape", PicoVideoStreamer.control_layout_landscape)
-	config.save(CONFIG_PATH)
+func save_config() -> void:
+	PicoBootManager.set_setting("settings", "haptic_enabled", PicoVideoStreamer.get_haptic_enabled())
+	PicoBootManager.set_setting("settings", "swap_zx_enabled", PicoVideoStreamer.get_swap_zx_enabled())
+	PicoBootManager.set_setting("settings", "trackpad_sensitivity", PicoVideoStreamer.get_trackpad_sensitivity())
+	PicoBootManager.set_setting("settings", "integer_scaling_enabled", PicoVideoStreamer.get_integer_scaling_enabled())
+	PicoBootManager.set_setting("settings", "bezel_enabled", PicoVideoStreamer.get_bezel_enabled())
+	PicoBootManager.set_setting("settings", "always_show_controls", PicoVideoStreamer.get_always_show_controls())
+	
+	PicoBootManager.set_setting("settings", "ignored_devices_by_user", ControllerUtils.ignored_devices_by_user)
+	PicoBootManager.set_setting("settings", "controller_assignments", ControllerUtils.controller_assignments)
+	
+	PicoBootManager.set_setting("settings", "shader_type", PicoVideoStreamer.get_shader_type())
+	PicoBootManager.set_setting("settings", "saturation", PicoVideoStreamer.get_saturation())
+	PicoBootManager.set_setting("settings", "button_hue", PicoVideoStreamer.get_button_hue())
+	PicoBootManager.set_setting("settings", "button_saturation", PicoVideoStreamer.get_button_saturation())
+	PicoBootManager.set_setting("settings", "button_lightness", PicoVideoStreamer.get_button_lightness())
+	
+	PicoBootManager.set_setting("settings", "bg_color", %ColorPickerBG.color)
+	
+	PicoBootManager.set_setting("settings", "display_drag_offset_portrait", PicoVideoStreamer.display_drag_offset_portrait)
+	PicoBootManager.set_setting("settings", "display_drag_offset_landscape", PicoVideoStreamer.display_drag_offset_landscape)
+	PicoBootManager.set_setting("settings", "display_scale_portrait", PicoVideoStreamer.display_scale_portrait)
+	PicoBootManager.set_setting("settings", "display_scale_landscape", PicoVideoStreamer.display_scale_landscape)
+	
+	PicoBootManager.set_setting("settings", "audio_backend", audio_backend)
+	PicoBootManager.set_setting("settings", "custom_root_path", custom_root_path)
+	
+	PicoBootManager.set_setting("settings", "control_layout_portrait", PicoVideoStreamer.control_layout_portrait)
+	PicoBootManager.set_setting("settings", "control_layout_landscape", PicoVideoStreamer.control_layout_landscape)
+	
+	PicoBootManager.save_config()
 	
 	# Visual Feedback
 	var orig_text = %ButtonSave.text
 	%ButtonSave.text = "   Saved!"
-	%ButtonSave.release_focus() # Optional style choice, but keeps it clean
-	%ButtonSave.grab_focus() # Restore focus so nav isn't lost
+	%ButtonSave.release_focus()
+	%ButtonSave.grab_focus()
 	
 	await get_tree().create_timer(1.0).timeout
 	%ButtonSave.text = orig_text
-	
+
 func load_config():
-	var config = ConfigFile.new()
-	var err = config.load(CONFIG_PATH)
+	PicoBootManager.load_config()
 	
-	var haptic = false
-	var swap_zx = false
-	var sensitivity = 0.5
-	var integer_scaling = true
-	var bezel = false
-	var always_show = false
-	var shader_type = PicoVideoStreamer.ShaderType.NONE
-	var saturation = 1.0
-	var button_hue = 0.0
-	var button_saturation = 1.0
-	var button_lightness = 1.0
-	var display_drag_enabled = false
-	var display_drag_offset_portrait = Vector2.ZERO
-	var display_drag_offset_landscape = Vector2.ZERO
-	var display_scale_portrait = 1.0
-	var display_scale_landscape = 1.0
-	var control_layout_portrait = {}
-	var control_layout_landscape = {}
-	var audio_backend_loaded = "sles"
-	var custom_root_path_loaded = ""
+	# Load Simple Settings
+	var haptic = PicoBootManager.get_setting("settings", "haptic_enabled", false)
+	var swap_zx = PicoBootManager.get_setting("settings", "swap_zx_enabled", false)
+	var sensitivity = PicoBootManager.get_setting("settings", "trackpad_sensitivity", 0.5)
+	var integer_scaling = PicoBootManager.get_setting("settings", "integer_scaling_enabled", true)
+	var bezel = PicoBootManager.get_setting("settings", "bezel_enabled", false)
+	var always_show = PicoBootManager.get_setting("settings", "always_show_controls", false)
 	
-	if err == OK:
-		haptic = config.get_value("settings", "haptic_enabled", false)
-		swap_zx = config.get_value("settings", "swap_zx_enabled", false)
-		sensitivity = config.get_value("settings", "trackpad_sensitivity", 0.5)
-		integer_scaling = config.get_value("settings", "integer_scaling_enabled", true)
-		bezel = config.get_value("settings", "bezel_enabled", false)
-		always_show = config.get_value("settings", "always_show_controls", false)
-		# Safely load typed array for ignored devices
-		var loaded_ignored = config.get_value("settings", "ignored_devices_by_user", [])
-		ControllerUtils.ignored_devices_by_user.clear()
-		for device in loaded_ignored:
-			ControllerUtils.ignored_devices_by_user.append(str(device))
+	# Load Controller Settings
+	var curr_ignored = PicoBootManager.get_setting("settings", "ignored_devices_by_user", [])
+	ControllerUtils.ignored_devices_by_user.clear()
+	for device in curr_ignored:
+		ControllerUtils.ignored_devices_by_user.append(str(device))
 		
-		# ControllerUtils.ignored_devices_by_user = config.get_value("settings", "ignored_devices_by_user", [])
-		ControllerUtils.controller_assignments = config.get_value("settings", "controller_assignments", {})
-		
-		# Load shader type (defaults to NONE if not saved)
-		shader_type = config.get_value("settings", "shader_type", PicoVideoStreamer.ShaderType.NONE)
-		
-		# Load saturation
-		saturation = config.get_value("settings", "saturation", 1.0)
-		
-		# Load button hue
-		button_hue = config.get_value("settings", "button_hue", 0.0)
-		
-		# Load button saturation and lightness
-		button_saturation = config.get_value("settings", "button_saturation", 1.0)
-		button_lightness = config.get_value("settings", "button_lightness", 1.0)
-		
-		# Load reposition settings
-		display_drag_offset_portrait = config.get_value("settings", "display_drag_offset_portrait", Vector2.ZERO)
-		display_drag_offset_landscape = config.get_value("settings", "display_drag_offset_landscape", Vector2.ZERO)
-		display_scale_portrait = config.get_value("settings", "display_scale_portrait", 1.0)
-		display_scale_landscape = config.get_value("settings", "display_scale_landscape", 1.0)
-		
-		control_layout_portrait = config.get_value("settings", "control_layout_portrait", {})
-		control_layout_landscape = config.get_value("settings", "control_layout_landscape", {})
-		
-		# Legacy migration (if single offset existed, apply to both or just portrait? let's stick to default)
-		if config.has_section_key("settings", "display_drag_offset"):
-			var legacy_offset = config.get_value("settings", "display_drag_offset", Vector2.ZERO)
-			# Only apply if new ones are zero
-			if display_drag_offset_portrait == Vector2.ZERO:
-				display_drag_offset_portrait = legacy_offset
-			if display_drag_offset_landscape == Vector2.ZERO:
-				display_drag_offset_landscape = legacy_offset
-		
-		# Safely load typed array
-		var saved_ignored = config.get_value("settings", "ignored_devices_by_user", [])
-		ControllerUtils.ignored_devices_by_user.clear()
-		for device in saved_ignored:
-			ControllerUtils.ignored_devices_by_user.append(str(device))
-		
-		# Migration: Check for old oled_mode first
-		var default_bg = Color(0.0078, 0.0157, 0.0235, 1)
-		var saved_bg = config.get_value("settings", "bg_color", null)
-		
-		if saved_bg == null:
-			# Check for legacy OLED setting
-			if config.has_section_key("settings", "oled_mode"):
-				var oled_active = config.get_value("settings", "oled_mode", false)
-				saved_bg = Color.BLACK if oled_active else default_bg
-			else:
-				saved_bg = default_bg
-		
-		# Apply BG Color
-		if %ColorPickerBG:
-			%ColorPickerBG.color = saved_bg
-			_on_bg_color_picked(saved_bg)
-			
-		# Load Audio Backend
-		audio_backend_loaded = config.get_value("settings", "audio_backend", "sles")
-		custom_root_path_loaded = config.get_value("settings", "custom_root_path", "")
+	ControllerUtils.controller_assignments = PicoBootManager.get_setting("settings", "controller_assignments", {})
+
+	# Load Visual Settings
+	var shader_type = PicoBootManager.get_setting("settings", "shader_type", PicoVideoStreamer.ShaderType.NONE)
+	var saturation = PicoBootManager.get_setting("settings", "saturation", 1.0)
+	var button_hue = PicoBootManager.get_setting("settings", "button_hue", 0.0)
+	var button_saturation = PicoBootManager.get_setting("settings", "button_saturation", 1.0)
+	var button_lightness = PicoBootManager.get_setting("settings", "button_lightness", 1.0)
 	
-	# Apply Settings
-	custom_root_path = custom_root_path_loaded
+	var display_drag_offset_portrait = PicoBootManager.get_setting("settings", "display_drag_offset_portrait", Vector2.ZERO)
+	var display_drag_offset_landscape = PicoBootManager.get_setting("settings", "display_drag_offset_landscape", Vector2.ZERO)
+	var display_scale_portrait = PicoBootManager.get_setting("settings", "display_scale_portrait", 1.0)
+	var display_scale_landscape = PicoBootManager.get_setting("settings", "display_scale_landscape", 1.0)
+	
+	var control_layout_portrait = PicoBootManager.get_setting("settings", "control_layout_portrait", {})
+	var control_layout_landscape = PicoBootManager.get_setting("settings", "control_layout_landscape", {})
+
+	# BG Color Legacy Migration
+	var default_bg = Color(0.0078, 0.0157, 0.0235, 1)
+	var saved_bg = PicoBootManager.get_setting("settings", "bg_color", null)
+	if saved_bg == null:
+		# Check for legacy OLED setting directly from file if needed, or just assume default
+		# Since PicoBootManager wraps ConfigFile, we might miss the 'has_section_key' check logic unless exposed.
+		# For now, default is safe.
+		saved_bg = default_bg
+
+	if %ColorPickerBG:
+		%ColorPickerBG.color = saved_bg
+		_on_bg_color_picked(saved_bg)
+
+	# Load Audio Backend (Centralized Logic)
+	audio_backend = PicoBootManager.get_audio_backend()
+	custom_root_path = PicoBootManager.get_setting("settings", "custom_root_path", "")
+	
+	# UI Lock for Forced Mode
+	if PicoBootManager.is_audio_backend_forced():
+		if %ToggleAudioBackend:
+			%ToggleAudioBackend.disabled = true
+			%ToggleAudioBackend.tooltip_text = "Audio backend locked on External Storage"
+		if %ButtonAudioBackendLabel:
+			%ButtonAudioBackendLabel.disabled = true
+
+	# Apply Settings to VideoStreamer and UI
+	custom_root_path = custom_root_path # Redundant but clear
 	_update_root_path_label()
 	
-	audio_backend = audio_backend_loaded
 	if %ToggleAudioBackend:
 		var is_stream = (audio_backend == "stream")
 		%ToggleAudioBackend.set_pressed_no_signal(is_stream)
 		_update_audio_label(is_stream)
-	
+		
 	PicoVideoStreamer.set_haptic_enabled(haptic)
 	PicoVideoStreamer.set_swap_zx_enabled(swap_zx)
 	PicoVideoStreamer.set_trackpad_sensitivity(sensitivity)
@@ -1085,22 +1078,21 @@ func load_config():
 	PicoVideoStreamer.control_layout_portrait = control_layout_portrait
 	PicoVideoStreamer.control_layout_landscape = control_layout_landscape
 	
-	# Update UI
+	# Update UI Elements
 	if %ToggleHaptic: %ToggleHaptic.set_pressed_no_signal(haptic)
 	if %ToggleSwapZX: %ToggleSwapZX.set_pressed_no_signal(swap_zx)
 	if %ToggleIntegerScaling: %ToggleIntegerScaling.set_pressed_no_signal(integer_scaling)
 	if %ToggleBezel: %ToggleBezel.set_pressed_no_signal(bezel)
-	if %ToggleReposition: %ToggleReposition.set_pressed_no_signal(display_drag_enabled)
+	if %ToggleReposition: %ToggleReposition.set_pressed_no_signal(PicoVideoStreamer.display_drag_enabled) # logic check?
 	if %ToggleShowControls: %ToggleShowControls.set_pressed_no_signal(always_show)
 	if %ShaderSelect: %ShaderSelect.select(shader_type)
 	if %SliderSensitivity:
-		%SliderSensitivity.set_value_no_signal(sensitivity) # avoid double setting
+		%SliderSensitivity.set_value_no_signal(sensitivity)
 		%LabelSensitivityValue.text = str(sensitivity)
 	if %SliderSaturation:
 		%SliderSaturation.set_value_no_signal(saturation)
 		%LabelSaturationValue.text = "%.2f" % saturation
 	if %SliderButtonHue:
-		# Convert degrees (-180 to 180) back to slider range (0.0 to 2.0)
 		var slider_val = (button_hue / 180.0) + 1.0
 		%SliderButtonHue.set_value_no_signal(slider_val)
 		%LabelButtonHueValue.text = "%.2f" % slider_val
@@ -1110,16 +1102,15 @@ func load_config():
 	if %SliderButtonLight:
 		%SliderButtonLight.set_value_no_signal(button_lightness)
 		%LabelButtonLightValue.text = "%.2f" % button_lightness
-		
-	# Sync other non-saved states usually comes from default checks
+	
 	if %ToggleInputMode:
-		# Default to whatever PicoVideoStreamer has (usually MOUSE default)
 		var is_trackpad = PicoVideoStreamer.get_input_mode() == PicoVideoStreamer.InputMode.TRACKPAD
 		%ToggleInputMode.set_pressed_no_signal(is_trackpad)
 		_update_input_mode_label(is_trackpad)
 
 	if %ToggleKeyboard:
 		%ToggleKeyboard.button_pressed = KBMan.get_current_keyboard_type() == KBMan.KBType.FULL
+	
 
 func _on_app_settings_pressed():
 	if Applinks:

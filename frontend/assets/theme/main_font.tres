@@ -1,8 +1,9 @@
-[gd_resource type="SystemFont" load_steps=2 format=3]
+[gd_resource type="FontVariation" load_steps=3 format=3]
 
-[ext_resource type="FontFile" uid="uid://5m1nwexhtvjo" path="res://assets/font/NotoColorEmoji-Regular.ttf" id="1_emoji"]
+[ext_resource type="FontFile" uid="uid://basepixel123" path="res://assets/theme/base_pixel.tres" id="1_base"]
+[ext_resource type="FontVariation" path="res://assets/theme/emoji_fallback.tres" id="2_emoji"]
 
 [resource]
-font_names = PackedStringArray("Sans-Serif")
-subpixel_positioning = 0
-fallbacks = Array[Font]([ExtResource("1_emoji")])
+base_font = ExtResource("1_base")
+fallbacks = Array[Font]([ExtResource("2_emoji")])
+spacing_space = -8

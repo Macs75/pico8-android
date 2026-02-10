@@ -48,9 +48,10 @@ theme_override_constants/separation = 15
 [node name="Title" type="Label" parent="Panel/Margin/VBox" unique_id=1612256664]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 12
 text = "Cart Name"
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="Author" type="Label" parent="Panel/Margin/VBox" unique_id=1589636978]
 unique_name_in_owner = true

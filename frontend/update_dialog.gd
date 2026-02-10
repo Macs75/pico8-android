@@ -56,9 +56,9 @@ func _update_layout():
 	$Panel.pivot_offset = $Panel.size / 2
 	
 	# Apply Font Styling
-	var font_size = 24
+	var font_size = 12
 	if view_size.y > 0:
-		font_size = clamp(int(min(view_size.x, view_size.y) * 0.05), 16, 48)
+		font_size = clamp(int(min(view_size.x, view_size.y) * 0.05), 12, 36)
 	
 	_apply_font_style(%Title, font_size * 1.2)
 	_apply_font_style(%VersionLabel, font_size)

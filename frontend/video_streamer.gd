@@ -128,13 +128,7 @@ func _ready() -> void:
 	_check_for_updates()
 
 	# Start Audio Streamer
-	# Load dynamically to avoid class_name issues during runtime/cache refreshes
-	# Only start if NOT using SLES (legacy backend)
-	var config = ConfigFile.new()
-	var err = config.load("user://settings.cfg")
-	var audio_backend = "sles" # Default
-	if err == OK:
-		audio_backend = config.get_value("settings", "audio_backend", "sles")
+	var audio_backend = PicoBootManager.get_audio_backend()
 
 	if audio_backend != "sles":
 		var audio_streamer_script = load("res://audio_streamer.gd")
@@ -148,6 +142,11 @@ func _ready() -> void:
 	var analyzer = load("res://activity_log_analyzer.gd")
 	if analyzer:
 		analyzer.call_deferred("perform_analysis")
+
+func _notification(what):
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		_toggle_options_menu()
+
 
 func _exit_tree():
 	_thread_active = false
@@ -351,7 +350,7 @@ func _setup_debug_fps():
 	debug_fps_label.add_theme_color_override("font_color", Color(0, 1, 0, 1)) # Bright Green
 	debug_fps_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	debug_fps_label.add_theme_constant_override("outline_size", 8)
-	debug_fps_label.add_theme_font_size_override("font_size", 48) # Large text
+	debug_fps_label.add_theme_font_size_override("font_size", 24) # Large text
 	
 	debug_fps_label.z_index = 4096
 	
@@ -780,31 +779,7 @@ func vkb_setstate(id: String, down: bool, unicode: int = 0, echo = false):
 		return
 		
 	if down:
-		# CONTROLLER NAVIGATION for Quit Overlay
 		if quit_overlay and quit_overlay.visible:
-			if id == "Left":
-				if quit_focus_yes:
-					quit_focus_yes = false
-					_update_quit_focus_visuals()
-				return
-			
-			if id == "Right":
-				if not quit_focus_yes:
-					quit_focus_yes = true
-					_update_quit_focus_visuals()
-				return
-			
-			if id == "Z": # JoyButton A (Confirm)
-				if quit_focus_yes:
-					_quit_app()
-				else:
-					quit_overlay.visible = false
-				return
-				
-			if id == "X": # JoyButton B (Cancel)
-				quit_overlay.visible = false
-				return
-			
 			# Block other inputs while overlay is open
 			return
 		
@@ -1513,94 +1488,21 @@ func _quit_app():
 	get_tree().quit()
 
 func _setup_quit_overlay():
-	var canvas_layer = CanvasLayer.new()
-	canvas_layer.layer = 100
-	add_child(canvas_layer)
+	# 2. Create Dialog using UIUtils
+	quit_overlay = UIUtils.create_confirm_dialog(
+		self,
+		"Quit Confirmation", # Title (UIUtils might ignore or style)
+		"RETURN TO LAUNCHER?", # Text
+		"YES", # Confirm Label
+		"NO", # Cancel Label
+		true,
+		_quit_app, # Confirm Callback
+		func(): quit_overlay.visible = false # Cancel Callback
+	)
 	
-	quit_overlay = Control.new()
-	quit_overlay.name = "QuitOverlay"
+	# Default hidden
 	quit_overlay.visible = false
-	quit_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	canvas_layer.add_child(quit_overlay)
 	
-
-	# Dimmer
-	var bg = ColorRect.new()
-	bg.color = Color(0, 0, 0, 0.8)
-	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	bg.mouse_filter = Control.MOUSE_FILTER_STOP # Block input
-	quit_overlay.add_child(bg)
-	
-	# Robust Centering Container
-	var center_container = CenterContainer.new()
-	center_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	quit_overlay.add_child(center_container)
-	
-	# Panel
-	var panel = PanelContainer.new()
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.1, 0.1, 0.1, 1.0)
-	style.border_width_left = 4
-	style.border_width_top = 4
-	style.border_width_right = 4
-	style.border_width_bottom = 4
-	style.border_color = Color(1, 1, 1, 1)
-	style.expand_margin_top = 10
-	style.expand_margin_bottom = 10
-	style.expand_margin_left = 10
-	style.expand_margin_right = 10
-	panel.add_theme_stylebox_override("panel", style)
-	center_container.add_child(panel)
-	
-	var vbox = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 40)
-	# Add padding around the VBox content
-	var margin_container = MarginContainer.new()
-	margin_container.add_theme_constant_override("margin_top", 40)
-	margin_container.add_theme_constant_override("margin_bottom", 40)
-	margin_container.add_theme_constant_override("margin_left", 40)
-	margin_container.add_theme_constant_override("margin_right", 40)
-	margin_container.add_child(vbox)
-	panel.add_child(margin_container)
-	
-	# Font setup
-	var font = load("res://assets/font/atlas-0.png")
-	
-	# Calculate dynamic font size (5% of screen height, clamped)
-	var screen_size = get_viewport().get_visible_rect().size
-	var dynamic_font_size = 32 # Default fallback
-	if screen_size.y > 0:
-		dynamic_font_size = clamp(int(min(screen_size.x, screen_size.y) * 0.04), 16, 64)
-	
-	var label = Label.new()
-	label.text = "RETURN TO LAUNCHER?"
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD # Enable wrap for small screens
-	if font:
-		label.add_theme_font_override("font", font)
-		label.add_theme_font_size_override("font_size", dynamic_font_size)
-	vbox.add_child(label)
-	
-	# Constraint width to 80% of screen
-	if screen_size.x > 0:
-		panel.custom_minimum_size.x = min(600, screen_size.x * 0.8)
-	
-	var hbox = HBoxContainer.new()
-	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox.add_theme_constant_override("separation", int(dynamic_font_size * 1.25))
-	vbox.add_child(hbox)
-	
-	var btn_cancel = _create_pixel_button("NO", font, dynamic_font_size)
-	btn_cancel.pressed.connect(func(): quit_overlay.visible = false)
-	hbox.add_child(btn_cancel)
-	btn_quit_no = btn_cancel
-	
-	var btn_quit = _create_pixel_button("YES", font, dynamic_font_size)
-	btn_quit.pressed.connect(_quit_app)
-	hbox.add_child(btn_quit)
-	btn_quit_yes = btn_quit
-	
-	_update_quit_focus_visuals()
 
 func _toggle_options_menu():
 	var menu = get_node_or_null("OptionsMenu")
@@ -1625,41 +1527,6 @@ func _update_quit_focus_visuals():
 	var style_no = btn_quit_no.get_theme_stylebox("normal")
 	if style_no is StyleBoxFlat:
 		style_no.bg_color = col_focus if not quit_focus_yes else col_normal
-
-
-func _create_pixel_button(text, font, size = 32) -> Button:
-	var btn = Button.new()
-	btn.text = text
-	if font:
-		btn.add_theme_font_override("font", font)
-		btn.add_theme_font_size_override("font_size", size)
-	
-	# Minimal style for pixel art look
-	var style_normal = StyleBoxFlat.new()
-	style_normal.bg_color = Color(0.2, 0.2, 0.3, 1)
-	
-	# Dynamic Padding: Slim vertical, Wide horizontal
-	var pad_v = int(size * 0.2)
-	var pad_h = int(size * 0.8)
-	
-	style_normal.content_margin_top = pad_v
-	style_normal.content_margin_bottom = pad_v
-	style_normal.content_margin_left = pad_h
-	style_normal.content_margin_right = pad_h
-	
-	var style_pressed = StyleBoxFlat.new()
-	style_pressed.bg_color = Color(1, 0.2, 0.4, 1) # Pico-8 Redish
-	style_pressed.content_margin_top = pad_v
-	style_pressed.content_margin_bottom = pad_v
-	style_pressed.content_margin_left = pad_h
-	style_pressed.content_margin_right = pad_h
-	
-	btn.add_theme_stylebox_override("normal", style_normal)
-	btn.add_theme_stylebox_override("hover", style_normal)
-	btn.add_theme_stylebox_override("pressed", style_pressed)
-	btn.add_theme_stylebox_override("focus", style_normal)
-	
-	return btn
 
 # --- Bezel Support ---
 var bezel_overlay: BezelOverlay
