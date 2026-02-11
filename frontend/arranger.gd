@@ -542,7 +542,7 @@ func _update_layout():
 
 func _update_buttons_for_mode(is_trackpad: bool):
 	var x_btn = get_node_or_null("kbanchor/kb_gaming/X")
-	var z_btn = get_node_or_null("kbanchor/kb_gaming/Z")
+	var z_btn = get_node_or_null("kbanchor/kb_gaming/O")
 	
 	if is_trackpad:
 		if x_btn:
