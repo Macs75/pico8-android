@@ -41,8 +41,8 @@ func _ready() -> void:
 		%ToggleSwapZX.toggled.connect(_on_swap_zx_toggled)
 	if not %ToggleIntegerScaling.toggled.is_connected(_on_integer_scaling_toggled):
 		%ToggleIntegerScaling.toggled.connect(_on_integer_scaling_toggled)
-	if not %ToggleShowControls.toggled.is_connected(_on_show_controls_toggled):
-		%ToggleShowControls.toggled.connect(_on_show_controls_toggled)
+	if not %OptionShowControls.item_selected.is_connected(_on_show_controls_selected):
+		%OptionShowControls.item_selected.connect(_on_show_controls_selected)
 	if not %ToggleBezel.toggled.is_connected(_on_bezel_toggled):
 		%ToggleBezel.toggled.connect(_on_bezel_toggled)
 	if not %ShaderSelect.item_selected.is_connected(_on_shader_selected):
@@ -56,7 +56,7 @@ func _ready() -> void:
 	%ButtonKeyboard.pressed.connect(_on_label_pressed.bind(%ToggleKeyboard))
 	%ButtonIntegerScaling.pressed.connect(_on_label_pressed.bind(%ToggleIntegerScaling))
 	%ButtonBezel.pressed.connect(_on_label_pressed.bind(%ToggleBezel))
-	%ButtonShowControls.pressed.connect(_on_label_pressed.bind(%ToggleShowControls))
+	%ButtonShowControls.pressed.connect(_on_show_controls_button_pressed)
 	%ButtonShaderSelect.pressed.connect(_on_shader_button_pressed)
 	%ButtonConnectedControllers.pressed.connect(_on_connected_controllers_pressed)
 	%ButtonBgColor.pressed.connect(func(): %ColorPickerBG.get_popup().popup_centered())
@@ -272,12 +272,11 @@ func _update_layout():
 	var icon_size = dynamic_font_size * 1.3
 	%Icon.custom_minimum_size = Vector2(icon_size, icon_size)
 	
-	%ContainerDisplay.add_theme_constant_override("margin_left", int(25 * scale_factor))
-	%ContainerDisplay.add_theme_constant_override("margin_right", int(5 * scale_factor))
-	%ContainerControls.add_theme_constant_override("margin_left", int(25 * scale_factor))
-	%ContainerControls.add_theme_constant_override("margin_right", int(5 * scale_factor))
-	%ContainerButtons.add_theme_constant_override("margin_left", int(25 * scale_factor))
-	%ContainerButtons.add_theme_constant_override("margin_right", int(5 * scale_factor))
+	# Apply Scaling to Container Margins (Dynamically based on Tscn values)
+	_apply_scaled_margins(%ContainerDisplay, scale_factor)
+	_apply_scaled_margins(%ContainerControls, scale_factor)
+	_apply_scaled_margins(%ContainerButtons, scale_factor)
+	_apply_scaled_margins(%SaturationMargins, scale_factor)
 
 	# 2. Haptic Row
 	_style_option_row(%ButtonHaptic, %ToggleHaptic, $SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/HapticRow/WrapperHaptic, dynamic_font_size, scale_factor)
@@ -295,7 +294,8 @@ func _update_layout():
 	_style_option_row(%ButtonBezel, %ToggleBezel, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BezelRow/WrapperBezel, dynamic_font_size, scale_factor)
 
 	# 5. Show Controls Row
-	_style_option_row(%ButtonShowControls, %ToggleShowControls, $SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow/WrapperShowControls, dynamic_font_size, scale_factor)
+    # Using style_shader_select_row which works for OptionButton rows generally
+	_style_shader_select_row(%ButtonShowControls, %OptionShowControls, $SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow/WrapperShowControls, dynamic_font_size, scale_factor)
 
 	# 5a. Connected Controllers Row
 	%ButtonConnectedControllers.add_theme_font_size_override("font_size", dynamic_font_size)
@@ -311,9 +311,7 @@ func _update_layout():
 
 	# 6c. Audio Section Styles
 	%BtnAudioToggle.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
-	if %ContainerAudio:
-		%ContainerAudio.add_theme_constant_override("margin_left", int(30 * scale_factor))
-		%ContainerAudio.add_theme_constant_override("margin_right", int(5 * scale_factor))
+	_apply_scaled_margins(%ContainerAudio, scale_factor)
 		
 	_style_option_row(%ButtonAudioBackendLabel, %ToggleAudioBackend, $SlidePanel/ScrollContainer/VBoxContainer/SectionAudio/ContainerAudio/ContentAudio/AudioRow/WrapperAudioBackend, dynamic_font_size, scale_factor)
 
@@ -398,9 +396,7 @@ func _update_layout():
 
 	# 7e. Offline Section Styles
 	%BtnOfflineToggle.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
-	if %ContainerOffline:
-		%ContainerOffline.add_theme_constant_override("margin_left", int(30 * scale_factor))
-		%ContainerOffline.add_theme_constant_override("margin_right", int(5 * scale_factor))
+	_apply_scaled_margins(%ContainerOffline, scale_factor)
 		
 	%ButtonSelectRoot.add_theme_font_size_override("font_size", dynamic_font_size)
 	%ButtonClearRoot.add_theme_font_size_override("font_size", dynamic_font_size)
@@ -415,10 +411,10 @@ func _update_layout():
 
 	# 7f. Tools Section Styles
 	%BtnToolsToggle.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
-	%ContainerTools.add_theme_constant_override("margin_left", int(20 * scale_factor))
-	%ContainerTools.add_theme_constant_override("margin_right", int(5 * scale_factor))
+	_apply_scaled_margins(%ContainerTools, scale_factor)
 
 	# 4. Save Buttons
+	%ButtonsContainer.add_theme_constant_override("separation", 4 * scale_factor)
 	%ButtonAppSettings.add_theme_font_size_override("font_size", dynamic_font_size)
 	%ButtonSupport.add_theme_font_size_override("font_size", dynamic_font_size)
 	%ButtonSave.add_theme_font_size_override("font_size", dynamic_font_size)
@@ -874,12 +870,18 @@ func _on_integer_scaling_toggled(toggled_on: bool):
 	if arranger:
 		arranger.dirty = true
 
-func _on_show_controls_toggled(toggled_on: bool):
-	PicoVideoStreamer.set_always_show_controls(toggled_on)
+func _on_show_controls_selected(index: int):
+	PicoVideoStreamer.set_controls_mode(index)
 	# Force Arranger update
 	var arranger = get_tree().root.get_node_or_null("Main/Arranger")
 	if arranger:
 		arranger.dirty = true
+
+func _on_show_controls_button_pressed():
+	# Cycle through options
+	var current = %OptionShowControls.selected
+	%OptionShowControls.select((current + 1) % %OptionShowControls.item_count)
+	_on_show_controls_selected(%OptionShowControls.selected)
 
 func _on_bezel_toggled(toggled_on: bool):
 	PicoVideoStreamer.set_bezel_enabled(toggled_on)
@@ -902,7 +904,7 @@ func _style_shader_select_row(label_btn: Button, option_btn: OptionButton, wrapp
 	# Resize Wrapper
 	var wrapper_base_height = max(30.0, natural_size.y)
 	var reserved_width = 120.0 * scale_factor
-	var reserved_height = wrapper_base_height * scale_factor * 0.6
+	var reserved_height = wrapper_base_height * scale_factor
 	
 	wrapper.custom_minimum_size = Vector2(reserved_width, reserved_height)
 	
@@ -910,6 +912,22 @@ func _style_shader_select_row(label_btn: Button, option_btn: OptionButton, wrapp
 	var child_scaled_height = natural_size.y * scale_factor * 0.6
 	var y_offset = (reserved_height - child_scaled_height) / 2.0
 	option_btn.position.y = y_offset
+
+func _apply_scaled_margins(container: Control, dyn_scale: float):
+	if not container: return
+	
+	var margins = ["margin_left", "margin_top", "margin_right", "margin_bottom"]
+	for m in margins:
+		var meta_key = "base_" + m
+		var base_val = container.get_meta(meta_key, null)
+		
+		# First run: capture the value from Inspector/Theme
+		if base_val == null:
+			base_val = container.get_theme_constant(m)
+			container.set_meta(meta_key, base_val)
+		
+		# Apply scaled override
+		container.add_theme_constant_override(m, int(base_val * dyn_scale))
 
 func _on_shader_button_pressed():
 	# Cycle through shader options
@@ -956,7 +974,9 @@ func save_config() -> void:
 	PicoBootManager.set_setting("settings", "trackpad_sensitivity", PicoVideoStreamer.get_trackpad_sensitivity())
 	PicoBootManager.set_setting("settings", "integer_scaling_enabled", PicoVideoStreamer.get_integer_scaling_enabled())
 	PicoBootManager.set_setting("settings", "bezel_enabled", PicoVideoStreamer.get_bezel_enabled())
-	PicoBootManager.set_setting("settings", "always_show_controls", PicoVideoStreamer.get_always_show_controls())
+	
+	# Save Controls Mode (Integer)
+	PicoBootManager.set_setting("settings", "controls_mode", PicoVideoStreamer.get_controls_mode())
 	
 	PicoBootManager.set_setting("settings", "ignored_devices_by_user", ControllerUtils.ignored_devices_by_user)
 	PicoBootManager.set_setting("settings", "controller_assignments", ControllerUtils.controller_assignments)
@@ -1000,7 +1020,17 @@ func load_config():
 	var sensitivity = PicoBootManager.get_setting("settings", "trackpad_sensitivity", 0.5)
 	var integer_scaling = PicoBootManager.get_setting("settings", "integer_scaling_enabled", true)
 	var bezel = PicoBootManager.get_setting("settings", "bezel_enabled", false)
-	var always_show = PicoBootManager.get_setting("settings", "always_show_controls", false)
+	
+	# Load Controls Mode with Migration
+	var controls_mode = PicoBootManager.get_setting("settings", "controls_mode", null)
+	if controls_mode == null:
+		# Fallback to legacy
+		var always_show = PicoBootManager.get_setting("settings", "always_show_controls", false)
+		# False (Auto) -> 0, True (Force) -> 1
+		controls_mode = 1 if always_show else 0
+	
+	# Ensure integer type
+	controls_mode = int(controls_mode)
 	
 	# Load Controller Settings
 	var curr_ignored = PicoBootManager.get_setting("settings", "ignored_devices_by_user", [])
@@ -1064,7 +1094,7 @@ func load_config():
 	PicoVideoStreamer.set_trackpad_sensitivity(sensitivity)
 	PicoVideoStreamer.set_integer_scaling_enabled(integer_scaling)
 	PicoVideoStreamer.set_bezel_enabled(bezel)
-	PicoVideoStreamer.set_always_show_controls(always_show)
+	PicoVideoStreamer.set_controls_mode(controls_mode)
 	PicoVideoStreamer.set_shader_type(shader_type)
 	PicoVideoStreamer.set_saturation(saturation)
 	PicoVideoStreamer.set_button_hue(button_hue)
@@ -1084,7 +1114,7 @@ func load_config():
 	if %ToggleIntegerScaling: %ToggleIntegerScaling.set_pressed_no_signal(integer_scaling)
 	if %ToggleBezel: %ToggleBezel.set_pressed_no_signal(bezel)
 	if %ToggleReposition: %ToggleReposition.set_pressed_no_signal(PicoVideoStreamer.display_drag_enabled) # logic check?
-	if %ToggleShowControls: %ToggleShowControls.set_pressed_no_signal(always_show)
+	if %OptionShowControls: %OptionShowControls.select(controls_mode)
 	if %ShaderSelect: %ShaderSelect.select(shader_type)
 	if %SliderSensitivity:
 		%SliderSensitivity.set_value_no_signal(sensitivity)

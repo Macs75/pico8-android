@@ -80,7 +80,7 @@ layout_mode = 2
 
 [node name="SectionTools" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=1122334455]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 20
 
 [node name="BtnToolsToggle" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools" unique_id=556677889]
 unique_name_in_owner = true
@@ -95,7 +95,9 @@ alignment = 0
 [node name="ContainerTools" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools" unique_id=998877665]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/margin_left = 30
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
 
 [node name="ContentTools" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools" unique_id=443322111]
 layout_mode = 2
@@ -157,11 +159,13 @@ alignment = 0
 [node name="ContainerDisplay" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay" unique_id=1441320803]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/margin_left = 30
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
 
 [node name="ContentDisplay" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay" unique_id=530087331]
 layout_mode = 2
-theme_override_constants/separation = 15
+theme_override_constants/separation = 10
 
 [node name="IntegerScalingRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=1485190483]
 layout_mode = 2
@@ -279,7 +283,6 @@ layout_mode = 2
 [node name="ButtonShaderSelect" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow" unique_id=102769894]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
 tooltip_text = "Apply a shader to the pico8 output display"
 mouse_filter = 1
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
@@ -339,25 +342,30 @@ text = "Sat."
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="WrapperSaturation" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow" unique_id=1147146069]
+[node name="SaturationMargins" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow" unique_id=1570363210]
+layout_mode = 2
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="WrapperSaturation" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/SaturationMargins" unique_id=1147146069]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
 theme_override_constants/separation = 5
 
-[node name="ButtonSaturationMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation" unique_id=633293966]
+[node name="ButtonSaturationMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/SaturationMargins/WrapperSaturation" unique_id=633293966]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 theme_override_fonts/font = ExtResource("6_emoji")
 text = "➖"
 
-[node name="SliderScalerSaturation" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation" unique_id=1985874419]
+[node name="SliderScalerSaturation" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/SaturationMargins/WrapperSaturation" unique_id=1985874419]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 4
 
-[node name="SliderSaturation" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation/SliderScalerSaturation" unique_id=614667565]
+[node name="SliderSaturation" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/SaturationMargins/WrapperSaturation/SliderScalerSaturation" unique_id=614667565]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 0
@@ -369,14 +377,14 @@ step = 0.05
 value = 1.0
 ticks_on_borders = true
 
-[node name="ButtonSaturationPlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation" unique_id=1487138826]
+[node name="ButtonSaturationPlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/SaturationMargins/WrapperSaturation" unique_id=1487138826]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 theme_override_fonts/font = ExtResource("6_emoji")
 text = "➕"
 
-[node name="LabelSaturationValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/WrapperSaturation" unique_id=1098622956]
+[node name="LabelSaturationValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow/SaturationMargins/WrapperSaturation" unique_id=1098622956]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(35, 0)
 layout_mode = 2
@@ -399,11 +407,11 @@ vertical_alignment = 1
 
 [node name="ButtonsIndentWrapper" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=89997623]
 layout_mode = 2
-theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 15
 
 [node name="ButtonsContent" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper" unique_id=12764083]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 30
 
 [node name="ButtonHueRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent" unique_id=98409052]
 layout_mode = 2
@@ -590,7 +598,9 @@ alignment = 0
 [node name="ContainerControls" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls" unique_id=976083476]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/margin_left = 30
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
 
 [node name="ContentControls" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls" unique_id=1963445949]
 layout_mode = 2
@@ -684,13 +694,13 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-tooltip_text = "Show always the on screen controls even if a controller is detected"
+tooltip_text = "Configure on-screen controls visibility: Auto (Hide when controller connected), Force, or Disabled"
 mouse_filter = 1
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-text = "Always Show Controls"
+text = "On Screen Controls"
 flat = true
 alignment = 0
 
@@ -699,10 +709,19 @@ layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleShowControls" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow/WrapperShowControls" unique_id=665675022]
+[node name="OptionShowControls" type="OptionButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow/WrapperShowControls" unique_id=665675022]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
+alignment = 1
+selected = 0
+item_count = 3
+popup/item_0/text = "Auto"
+popup/item_0/id = 0
+popup/item_1/text = "Force"
+popup/item_1/id = 1
+popup/item_2/text = "Disabled"
+popup/item_2/id = 2
 
 [node name="ConnectedControllersRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls" unique_id=185596872]
 layout_mode = 2
@@ -809,7 +828,9 @@ alignment = 0
 [node name="ContainerAudio" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio" unique_id=1394884789]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/margin_left = 30
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
 
 [node name="ContentAudio" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionAudio/ContainerAudio" unique_id=323922004]
 layout_mode = 2
@@ -859,7 +880,9 @@ alignment = 0
 [node name="ContainerOffline" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline" unique_id=765432112]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/margin_left = 30
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
 
 [node name="ContentOffline" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline" unique_id=654321113]
 layout_mode = 2
@@ -907,9 +930,12 @@ size_flags_vertical = 3
 [node name="ContainerButtons" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer" unique_id=944071361]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/margin_left = 30
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
 
 [node name="ButtonsContainer" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/ContainerButtons" unique_id=1580658187]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="ButtonSupport" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/ContainerButtons/ButtonsContainer" unique_id=1749654714]

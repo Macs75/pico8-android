@@ -439,14 +439,24 @@ func _update_layout():
 		
 	# Keyboard Anchor Control
 	if kb_anchor != null:
-		var always_show = PicoVideoStreamer.get_always_show_controls()
+		var mode = PicoVideoStreamer.get_controls_mode()
 		var is_full_kb = (KBMan.get_current_keyboard_type() == KBMan.KBType.FULL)
+		
+		# Hierarchy of overrides:
+		# 1. Full Keyboard requested -> ALWAYS SHOW (unless landscape logic overrides, handled below)
+		# 2. Controls Disabled -> ALWAYS HIDE
+		# 3. Controls Forced -> ALWAYS SHOW
+		# 4. Auto -> Hide if controller connected
 		
 		if is_landscape:
 			kb_anchor.visible = false # Always hide portrait anchor in landscape
 		elif is_full_kb:
-			kb_anchor.visible = true # Always show if Full Keyboard is requested (override controller hide)
-		elif is_controller_connected and not always_show:
+			kb_anchor.visible = true
+		elif mode == PicoVideoStreamer.ControlsMode.DISABLED:
+			kb_anchor.visible = false
+		elif mode == PicoVideoStreamer.ControlsMode.FORCE:
+			kb_anchor.visible = true
+		elif is_controller_connected: # Auto mode implied
 			kb_anchor.visible = false
 		else:
 			kb_anchor.visible = true
@@ -454,7 +464,13 @@ func _update_layout():
 
 	if is_landscape:
 		if landscape_ui:
-			landscape_ui.visible = (not is_controller_connected) or PicoVideoStreamer.get_always_show_controls()
+			var mode = PicoVideoStreamer.get_controls_mode()
+			if mode == PicoVideoStreamer.ControlsMode.DISABLED:
+				landscape_ui.visible = false
+			elif mode == PicoVideoStreamer.ControlsMode.FORCE:
+				landscape_ui.visible = true
+			else: # Auto
+				landscape_ui.visible = not is_controller_connected
 		# Perfect Centering for Landscape Game Display
 		self.position = (Vector2(screensize) / 2).floor()
 	else:

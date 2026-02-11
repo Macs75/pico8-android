@@ -875,12 +875,18 @@ static func set_bezel_enabled(enabled: bool):
 static func get_bezel_enabled() -> bool:
 	return bezel_enabled
 
-static var always_show_controls: bool = false
-static func set_always_show_controls(enabled: bool):
-	always_show_controls = enabled
+enum ControlsMode {
+	AUTO = 0,
+	FORCE = 1,
+	DISABLED = 2
+}
+
+static var controls_mode: ControlsMode = ControlsMode.AUTO
+static func set_controls_mode(mode: int):
+	controls_mode = mode as ControlsMode
 	
-static func get_always_show_controls() -> bool:
-	return always_show_controls
+static func get_controls_mode() -> int:
+	return controls_mode
 
 enum ShaderType {
 	NONE = 0,
