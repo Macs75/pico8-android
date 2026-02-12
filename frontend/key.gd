@@ -11,6 +11,8 @@ static var keycap_normal = preload("res://assets/keycap.png")
 static var keycap_held = preload("res://assets/keycap_pressed.png")
 static var keycap_locked = preload("res://assets/keycap_locked.png")
 
+const CustomControlTextures = preload("res://custom_control_textures.gd")
+
 @export var key_id: String = "Left"
 @export var key_id_shift_override: String = ""
 @export var cap_type: KeycapType = KeycapType.TEXT
@@ -41,6 +43,9 @@ var is_repositionable: bool = true
 var active_touches = {}
 var initial_pinch_dist = 0.0
 var initial_scale_modifier = 1.0
+
+# Track if press effect is enabled (for custom textures without pressed variant)
+var has_press_effect: bool = true
 
 func send_ev(down: bool, echo: bool = false):
 	var shifting = "Shift" in PicoVideoStreamer.instance.held_keys
@@ -107,23 +112,27 @@ func _gui_input(event: InputEvent) -> void:
 					key_state = KeyState.HELD
 					repeat_timer = Time.get_ticks_msec() + REPEAT_TIME_FIRST
 				send_ev(true)
-				_update_visuals()
+				if has_press_effect: # Only update visuals if press effect enabled
+					_update_visuals()
 			elif key_state == KeyState.LOCKED:
 				key_state = KeyState.HELD
 				repeat_timer = INF
-				_update_visuals()
+				if has_press_effect: # Only update visuals if press effect enabled
+					_update_visuals()
 		elif key_state == KeyState.HELD:
 			key_state = KeyState.RELEASED
 			send_ev(false)
-			_update_visuals()
+			if has_press_effect: # Only update visuals if press effect enabled
+				_update_visuals()
 
-	match key_state:
-		KeyState.RELEASED:
-			self.texture = texture_normal if texture_normal else keycap_normal
-		KeyState.HELD:
-			self.texture = texture_pressed if texture_pressed else keycap_held
-		KeyState.LOCKED:
-			self.texture = keycap_locked
+	if has_press_effect: # Only apply texture changes if press effect enabled
+		match key_state:
+			KeyState.RELEASED:
+				self.texture = texture_normal if texture_normal else keycap_normal
+			KeyState.HELD:
+				self.texture = texture_pressed if texture_pressed else keycap_held
+			KeyState.LOCKED:
+				self.texture = keycap_locked
 
 func _ready() -> void:
 	if cap_type == KeycapType.HEX:
@@ -136,17 +145,6 @@ func _ready() -> void:
 		cap_text_shift = cap_text_shift.hex_decode().get_string_from_ascii()
 	elif cap_type_shift == KeycapType.NONE:
 		cap_text_shift = cap_text
-		
-	if texture_normal and key_state == KeyState.RELEASED:
-		self.texture = texture_normal
-		self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		%Label.visible = false
-	elif texture_pressed and key_state == KeyState.HELD:
-		self.texture = texture_pressed
-		self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		%Label.visible = false
-	
-	_update_visuals()
 	
 	# --- Drag & Drop Init ---
 	original_position = position
@@ -167,6 +165,54 @@ func _ready() -> void:
 			position = saved_pos
 		var saved_scale = PicoVideoStreamer.get_control_scale(name, is_landscape)
 		scale = original_scale * saved_scale
+	
+	# --- Custom Texture Loading ---
+	# Try to load custom textures FIRST before applying defaults
+	var texture_name = _get_texture_name_for_button()
+	var custom_loaded = false
+	if texture_name:
+		var custom_textures = CustomControlTextures.get_custom_textures(texture_name, is_landscape)
+		if custom_textures[0] != null: # Has custom texture
+			has_press_effect = (custom_textures[1] != null)
+			%Label.visible = false
+			set_textures(custom_textures[0], custom_textures[1])
+			self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR # or TEXTURE_FILTER_NEAREST for pixel-art
+			# Adapt button aspect ratio to match texture while preserving overall size
+			var tex_size = custom_textures[0].get_size()
+			if tex_size.x > 0 and tex_size.y > 0:
+				var tex_aspect = tex_size.x / tex_size.y
+				var btn_aspect = size.x / size.y if size.y > 0 else 1.0
+				
+				# If aspect ratios differ, adjust scale to match texture proportions
+				if abs(tex_aspect - btn_aspect) > 0.01: # Small tolerance
+					# Keep the area roughly the same
+					var area = size.x * size.y
+					var new_width = sqrt(area * tex_aspect)
+					var new_height = new_width / tex_aspect
+					
+					# Adjust scale to achieve new proportions
+					scale.x = (new_width / size.x) * original_scale.x
+					scale.y = (new_height / size.y) * original_scale.y
+					# Update original_scale so reset preserves the aspect ratio
+					original_scale = scale
+
+			# Adjust z-index to appear above bezel
+			z_index = 150
+			custom_loaded = true
+	
+	# Only apply default textures if custom ones weren't loaded
+	if not custom_loaded:
+		if texture_normal and key_state == KeyState.RELEASED:
+			self.texture = texture_normal
+			self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			%Label.visible = false
+		elif texture_pressed and key_state == KeyState.HELD:
+			self.texture = texture_pressed
+			self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			%Label.visible = false
+	
+	if (%Label.visible):
+		_update_visuals()
 
 func _is_in_landscape_ui() -> bool:
 	# heuristic: check if we are inside LandscapeUI node path
@@ -194,8 +240,21 @@ func set_textures(new_normal: Texture2D, new_pressed: Texture2D):
 	if key_state == KeyState.RELEASED:
 		self.texture = texture_normal if texture_normal else keycap_normal
 	elif key_state == KeyState.HELD:
-		self.texture = texture_pressed if texture_pressed else keycap_held
+		# If no pressed texture provided, use normal texture instead
+		if texture_pressed:
+			self.texture = texture_pressed
+		else:
+			self.texture = texture_normal if texture_normal else keycap_held
 	_update_visuals()
+
+func _get_texture_name_for_button() -> String:
+	# Map node names to texture base names
+	match name:
+		"X": return "X"
+		"O": return "O"
+		"Escape": return "escape"
+		"Pause": return "menu"
+		_: return "" # Not a customizable button
 
 var last_shift_state := false
 

@@ -17,6 +17,11 @@ var active_touches = {}
 var initial_pinch_dist = 0.0
 var initial_scale_modifier = 1.0
 
+const CustomControlTextures = preload("res://custom_control_textures.gd")
+
+# Track if press effect is enabled (for custom textures without pressed variant)
+var has_press_effect: bool = true
+
 
 func _ready() -> void:
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -94,6 +99,41 @@ func _ready() -> void:
 	
 	var saved_scale = PicoVideoStreamer.get_control_scale(name, is_landscape)
 	scale = original_scale * saved_scale
+	
+	# --- Custom Texture Loading ---
+	var custom_textures = CustomControlTextures.get_custom_textures("dpad", is_landscape)
+	if custom_textures[0] != null: # Has custom dpad texture
+		# Replace base texture with custom
+		self.texture = custom_textures[0]
+		self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR # or TEXTURE_FILTER_NEAREST for pixel-art
+		# If custom pressed texture provided, replace lit_texture
+		if custom_textures[1] != null:
+			lit_texture = custom_textures[1]
+			has_press_effect = true
+		else:
+			# No pressed texture - disable press effect
+			has_press_effect = false
+		# Adapt dpad aspect ratio to match texture while preserving overall size
+		var tex_size = custom_textures[0].get_size()
+		if tex_size.x > 0 and tex_size.y > 0:
+			var tex_aspect = tex_size.x / tex_size.y
+			var dpad_size = self.size if self.size.y > 0 else texture.get_size()
+			var dpad_aspect = dpad_size.x / dpad_size.y if dpad_size.y > 0 else 1.0
+			
+			# If aspect ratios differ, adjust scale to match texture proportions
+			if abs(tex_aspect - dpad_aspect) > 0.01:
+				# Keep the area roughly the same
+				var area = dpad_size.x * dpad_size.y
+				var new_width = sqrt(area * tex_aspect)
+				var new_height = new_width / tex_aspect
+				
+				# Adjust scale to achieve new proportions
+				scale.x = (new_width / dpad_size.x) * original_scale.x
+				scale.y = (new_height / dpad_size.y) * original_scale.y
+				# Update original_scale so reset preserves the aspect ratio
+				original_scale = scale
+		# Adjust z-index to appear above bezel
+		z_index = 150
 
 func _is_in_landscape_ui() -> bool:
 	var p = get_parent()
@@ -149,11 +189,13 @@ func update_dir(new_dir: Vector2i):
 	update_visuals(new_dir)
 
 func update_visuals(dir: Vector2i):
-	# Center is (1,1)
-	%Left.visible = (dir.x == 0)
-	%Right.visible = (dir.x == 2)
-	%Up.visible = (dir.y == 0)
-	%Down.visible = (dir.y == 2)
+	# Only update visuals if press effect is enabled
+	if has_press_effect:
+		# Center is (1,1)
+		%Left.visible = (dir.x == 0)
+		%Right.visible = (dir.x == 2)
+		%Up.visible = (dir.y == 0)
+		%Down.visible = (dir.y == 2)
 
 func _gui_input(event: InputEvent) -> void:
 	if PicoVideoStreamer.display_drag_enabled:

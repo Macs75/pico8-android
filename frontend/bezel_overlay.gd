@@ -12,10 +12,7 @@ var detected_hole_rect: Rect2 = Rect2()
 var is_bezel_loaded: bool = false
 var original_texture_size: Vector2 = Vector2.ZERO
 var original_image: Image = null
-var original_texture: Texture2D = null
 var current_bezel_path: String = ""
-
-var _resize_timer: Timer = null
 
 func _ready():
 	# Configure self
@@ -23,13 +20,6 @@ func _ready():
 	stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	z_index = 100 # Ensure it sits above the game display
-	
-	# Setup Debounce Timer
-	_resize_timer = Timer.new()
-	_resize_timer.one_shot = true
-	_resize_timer.wait_time = 0.5 # Wait for rotation/resize to settle
-	_resize_timer.timeout.connect(_perform_high_quality_resize)
-	add_child(_resize_timer)
 	
 	# Initial load attempt (deferred to allow window size init)
 	call_deferred("_initial_load")
@@ -64,9 +54,6 @@ func _load_bezel_from_path(bezel_path: String):
 		if image:
 			print("BezelOverlay: Loaded custom bezel image. Size: ", image.get_size())
 			original_image = image # Store original for high-quality resizing
-			
-			original_texture = ImageTexture.create_from_image(image)
-			self.texture = original_texture
 			original_texture_size = Vector2(image.get_width(), image.get_height())
 			
 			# Detect the transparent hole
@@ -181,13 +168,7 @@ func update_layout(game_display_rect: Rect2):
 	var current_tex_size = texture.get_size() if texture else Vector2.ZERO
 	# Use a small tolerance
 	if current_tex_size.distance_to(target_size) > 1.0:
-		# Mismatch!
-	# 1. Reset to standard quality immediately (if timer not running)
-		if _resize_timer.is_stopped() and original_texture:
-			self.texture = original_texture
-		
-		# 2. Schedule High-Res
-		_resize_timer.start()
+		_perform_high_quality_resize()
 
 func _perform_high_quality_resize():
 	# Perform High-Quality Resize based on current layout
@@ -199,5 +180,5 @@ func _perform_high_quality_resize():
 
 	# print("BezelOverlay: Performing High-Quality Resize to ", target_size)
 	var resized_img = original_image.duplicate()
-	resized_img.resize(int(target_size.x), int(target_size.y), Image.INTERPOLATE_CUBIC)
+	resized_img.resize(int(target_size.x), int(target_size.y), Image.INTERPOLATE_LANCZOS)
 	self.texture = ImageTexture.create_from_image(resized_img)

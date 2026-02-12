@@ -1,17 +1,10 @@
 extends Control
 
-var tex_x_normal = preload("res://assets/btn_x_normal.png")
-var tex_x_pressed = preload("res://assets/btn_x_pressed.png")
-var tex_o_normal = preload("res://assets/btn_o_normal.png")
-var tex_o_pressed = preload("res://assets/btn_o_pressed.png")
-
 var tex_mouse_l_normal = preload("res://assets/btn_mouse_left_normal.png")
 var tex_mouse_l_pressed = preload("res://assets/btn_mouse_left_pressed.png")
 var tex_mouse_r_normal = preload("res://assets/btn_mouse_right_normal.png")
 var tex_mouse_r_pressed = preload("res://assets/btn_mouse_right_pressed.png")
 
-var tex_esc_normal = preload("res://assets/btn_esc_normal.png")
-var tex_esc_pressed = preload("res://assets/btn_esc_pressed.png")
 var tex_power_normal = preload("res://assets/btn_poweroff_normal.png")
 var tex_power_pressed = preload("res://assets/btn_poweroff_pressed.png")
 
@@ -87,6 +80,8 @@ func _update_buttons_for_mode(is_trackpad: bool):
 			z_btn.set_textures(tex_mouse_r_normal, tex_mouse_r_pressed)
 	else:
 		if x_btn:
-			x_btn.set_textures(tex_x_normal, tex_x_pressed)
+			# Use button's own textures (may be custom or default)
+			x_btn.set_textures(x_btn.texture_normal, x_btn.texture_pressed)
 		if z_btn:
-			z_btn.set_textures(tex_o_normal, tex_o_pressed)
+			# Use button's own textures (may be custom or default)
+			z_btn.set_textures(z_btn.texture_normal, z_btn.texture_pressed)
