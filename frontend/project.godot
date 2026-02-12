@@ -48,8 +48,8 @@ enabled=PackedStringArray("res://addons/AndroidFilePicker/plugin.cfg", "res://ad
 
 [gui]
 
-theme/custom="res://assets/theme/default_theme.tres"
 common/snap_controls_to_pixels=false
+theme/custom="res://assets/theme/default_theme.tres"
 
 [input_devices]
 

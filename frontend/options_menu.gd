@@ -21,6 +21,7 @@ var edge_drag_start = Vector2.ZERO
 var is_edge_dragging = false
 var swipe_threshold = 50.0
 
+
 const CONFIG_PATH = "user://settings.cfg"
 
 func _ready() -> void:
@@ -58,8 +59,12 @@ func _ready() -> void:
 	%ButtonBezel.pressed.connect(_on_label_pressed.bind(%ToggleBezel))
 	%ButtonShowControls.pressed.connect(_on_show_controls_button_pressed)
 	%ButtonShaderSelect.pressed.connect(_on_shader_button_pressed)
+	
+	%ButtonTheme.pressed.connect(_on_theme_button_pressed)
+	%ThemeSelect.item_selected.connect(_on_theme_selected)
 	%ButtonConnectedControllers.pressed.connect(_on_connected_controllers_pressed)
 	%ButtonBgColor.pressed.connect(func(): %ColorPickerBG.get_popup().popup_centered())
+	%ColorPickerBG.get_popup().about_to_popup.connect(close_menu)
 	
 
 	%ButtonSelectRoot.pressed.connect(_on_select_root_pressed)
@@ -305,6 +310,9 @@ func _update_layout():
 
 	# 6a. Shader Select Row
 	_style_shader_select_row(%ButtonShaderSelect, %ShaderSelect, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow/WrapperShaderSelect, dynamic_font_size, scale_factor)
+
+	# 6ab. Theme Row
+	_style_shader_select_row(%ButtonTheme, %ThemeSelect, %WrapperTheme, dynamic_font_size, scale_factor)
 
 	# 6b. Reposition Row
 	_style_option_row(%ButtonCustomizeLayout, %ToggleReposition, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/RepositionRow/WrapperReposition, dynamic_font_size, scale_factor)
@@ -938,6 +946,58 @@ func _on_shader_button_pressed():
 func _on_shader_selected(index: int):
 	PicoVideoStreamer.set_shader_type(index as PicoVideoStreamer.ShaderType)
 
+func _on_theme_button_pressed():
+	var theme_option_button = %ThemeSelect
+	if not theme_option_button: return
+	var current = theme_option_button.selected
+	var count = theme_option_button.item_count
+	if count > 0:
+		var next = (current + 1) % count
+		theme_option_button.select(next)
+		_on_theme_selected(next)
+
+func _on_theme_selected(index: int):
+	# index 0 is always Default
+	var theme_name = ""
+	if index > 0:
+		theme_name = %ThemeSelect.get_item_text(index)
+	
+	ThemeManager.set_theme(theme_name)
+	
+	# Auto-enable bezel if theme has one
+	if not theme_name.is_empty():
+		var theme_dir = ThemeManager.get_themes_dir() + "/" + theme_name
+		var has_bezel = false
+		for f in ["bezel.png", "bezel_landscape.png", "bezel_portrait.png"]:
+			if FileAccess.file_exists(theme_dir + "/" + f):
+				has_bezel = true
+				break
+		
+		if has_bezel and %ToggleBezel:
+			%ToggleBezel.button_pressed = true
+	
+	# Trigger resource reload
+	# Bezel
+	var bezel = get_tree().root.get_node_or_null("Main/BezelOverlay")
+	if bezel and bezel.has_method("_initial_load"):
+		bezel._initial_load() # Forces check of current vs needed path
+		
+	# Controls (Force update)
+	_reload_control_textures()
+
+func _reload_control_textures():
+	var main = get_tree().root.get_node_or_null("Main")
+	if not main: return
+	
+	_recursive_reload_textures(main)
+
+func _recursive_reload_textures(node: Node):
+	if node.has_method("reload_textures"):
+		node.reload_textures()
+		
+	for child in node.get_children():
+		_recursive_reload_textures(child)
+
 var connected_controllers_dialog_instance = null
 
 func _on_connected_controllers_pressed():
@@ -1046,6 +1106,26 @@ func load_config():
 	var button_hue = PicoBootManager.get_setting("settings", "button_hue", 0.0)
 	var button_saturation = PicoBootManager.get_setting("settings", "button_saturation", 1.0)
 	var button_lightness = PicoBootManager.get_setting("settings", "button_lightness", 1.0)
+	
+	# Load Theme
+	var current_theme = ThemeManager.get_current_theme()
+	
+	# Populate Themes (Refresh list on open/load)
+	%ThemeSelect.clear()
+	var themes = ThemeManager.get_theme_list()
+	%ThemeSelect.add_item("Default", 0)
+	var id_counter = 1
+	for t in themes:
+		%ThemeSelect.add_item(t, id_counter)
+		id_counter += 1
+		
+	if current_theme.is_empty() or current_theme == "Default":
+		%ThemeSelect.select(0)
+	else:
+		for i in range(1, %ThemeSelect.item_count):
+			if %ThemeSelect.get_item_text(i) == current_theme:
+				%ThemeSelect.select(i)
+				break
 	
 	var display_drag_offset_portrait = PicoBootManager.get_setting("settings", "display_drag_offset_portrait", Vector2.ZERO)
 	var display_drag_offset_landscape = PicoBootManager.get_setting("settings", "display_drag_offset_landscape", Vector2.ZERO)

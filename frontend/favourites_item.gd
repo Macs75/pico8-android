@@ -129,12 +129,16 @@ func _get_drag_data(at_position: Vector2):
 	if not drag_enabled:
 		return null
 		
-	# only allow drag if touching the handle
+	# Check if we are touching the handle area
 	var handle = $Content/DragHandle
-	var global_touch_pos = get_global_transform() * at_position
-	if not handle.get_global_rect().has_point(global_touch_pos):
-		return null
+	var handle_rect = handle.get_rect()
 	
+	# Adjust at_position for Content offset
+	var local_at_content = at_position - $Content.position
+	
+	if not handle_rect.has_point(local_at_content):
+		return null
+		
 	var result = _create_drag_data()
 	set_drag_preview(result[1])
 	return result[0]
@@ -208,16 +212,18 @@ func _can_drop_data(at_position: Vector2, data) -> bool:
 		scroll_request.emit(1.0) # Scroll Down
 		
 	# Only accept drops from other items in the same list
-	if data is Dictionary and data.has("source_item") and data.source_item != self:
-		# Live reorder request
-		item_reorder_requested.emit(data.source_item, self)
+	if data is Dictionary and data.has("source_item"):
+		if data.source_item != self:
+			item_reorder_requested.emit(data.source_item, self)
 		return true
 	return false
 
 func _drop_data(_at_position: Vector2, data):
+	#print("💧 _drop_data CALLED on item:", item_data.name)
 	var source_idx = data.source_idx
 	# Emit signal to parent to handle the actual array reordering
 	item_dropped.emit(source_idx, list_index)
+	#print("💧 item_dropped signal EMITTED")
 
 func set_font_size(font_size: int):
 	_current_font_size = font_size

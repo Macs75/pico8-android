@@ -1,4 +1,4 @@
-extends Control
+extends CanvasLayer
 
 enum EditorMode {FAVORITES, STATS}
 var current_mode: EditorMode = EditorMode.FAVORITES
@@ -6,13 +6,14 @@ var current_mode: EditorMode = EditorMode.FAVORITES
 var item_scene = preload("res://favourites_item.tscn")
 const FavouritesManagerScript = preload("res://favourites_manager.gd")
 const ActivityLogAnalyzerScript = preload("res://activity_log_analyzer.gd")
-var current_items: Array = []
-var _all_items: Array = [] # Full list before pagination
+var current_items: Array[FavouritesManagerScript.FavouriteItem] = []
+var _all_items: Array[FavouritesManagerScript.FavouriteItem] = [] # Full list before pagination
 var _items_per_page: int = 25
 var _loaded_count: int = 0
 var is_ascending: bool = true
 var current_font_size: int = 0
 var _cached_metadata: Dictionary = {}
+var _last_focused_item: Control = null
 
 func _ready():
 	_configure_ui_for_mode()
@@ -21,6 +22,7 @@ func _ready():
 	# Only connect Save if in Favorites mode
 	if current_mode == EditorMode.FAVORITES:
 		%BtnSave.pressed.connect(_on_save)
+		%BtnShortcut.pressed.connect(_on_shortcut_pressed)
 	
 	%OptionSort.item_selected.connect(_on_sort_criteria_changed)
 	%OptionSort.gui_input.connect(_on_explicit_gui_input.bind(%OptionSort))
@@ -35,6 +37,7 @@ func _ready():
 	%BtnClose.gui_input.connect(_on_explicit_gui_input.bind(%BtnClose))
 	if current_mode == EditorMode.FAVORITES:
 		%BtnSave.gui_input.connect(_on_explicit_gui_input.bind(%BtnSave))
+		%BtnShortcut.gui_input.connect(_on_explicit_gui_input.bind(%BtnShortcut))
 	
 	# Initial layout
 	_update_layout()
@@ -84,7 +87,7 @@ func _exit_tree():
 		)
 
 func _update_layout():
-	var viewport_size = get_viewport_rect().size
+	var viewport_size = get_viewport().get_visible_rect().size
 	var min_dim = min(viewport_size.x, viewport_size.y)
 	
 	var dynamic_font_size = int(max(12, min_dim * 0.03))
@@ -123,6 +126,7 @@ func _update_layout():
 	%BtnClose.add_theme_font_size_override("font_size", dynamic_font_size)
 	%BtnSave.add_theme_font_size_override("font_size", dynamic_font_size)
 	%BtnReset.add_theme_font_size_override("font_size", dynamic_font_size)
+	%BtnShortcut.add_theme_font_size_override("font_size", dynamic_font_size)
 	
 	# Update items (only size needs to be passed down now, as they share the font resource or rely on theme)
 	# Wait, items are instantiated scenes (favourites_item.tscn). 
@@ -154,6 +158,7 @@ func _configure_ui_for_mode():
 	if current_mode == EditorMode.STATS:
 		$Panel/MarginContainer/VBox/Header/LabelTitle.text = "📶 Play Stats"
 		%BtnSave.visible = false
+		%BtnShortcut.visible = false
 		%BtnReset.visible = true
 		
 		# Connect if not already connected (check connection to avoid dupes if called multiple times, though usually called once)
@@ -164,6 +169,7 @@ func _configure_ui_for_mode():
 	else:
 		$Panel/MarginContainer/VBox/Header/LabelTitle.text = "💟 Favorites"
 		%BtnSave.visible = true
+		%BtnShortcut.visible = true
 		%BtnReset.visible = false
 
 
@@ -192,10 +198,10 @@ func _setup_sort_options():
 func _load_data():
 	if current_mode == EditorMode.FAVORITES:
 		# Load raw items
-		current_items = FavouritesManagerScript.load_favourites()
+		_all_items = FavouritesManagerScript.load_favourites()
 	else:
 		# Load Stats
-		current_items = []
+		_all_items = []
 		var data = ActivityLogAnalyzer.cached_data
 		
 		# Load Metadata Cache from static reference (populated by worker thread)
@@ -208,7 +214,6 @@ func _load_data():
 				# Repurposing 'author' field for stats display
 				# Key is already the base name (no extension)
 				var name_clean = key
-				var author_str = ""
 				
 				# Enrich from Metadata
 				if _cached_metadata.has(key):
@@ -227,7 +232,7 @@ func _load_data():
 				var rep_filename = entry.sub_carts.keys()[0]
 				var item_cart_id = key if is_bbs else rep_filename.get_basename().get_basename()
 				
-				current_items.append({
+				_all_items.append({
 					"name": name_clean,
 					"author": stats_str,
 					"cart_id": item_cart_id,
@@ -237,28 +242,26 @@ func _load_data():
 					"_sort_launches": entry.launches
 				})
 
-	# Apply initial sort if we are in Stats mode (or if generally desired)
-	if current_mode == EditorMode.STATS:
-		# Store full list and prepare pagination (no duplication needed)
-		_all_items = current_items # Move reference, don't duplicate
+	# Prepare pagination
+	_apply_sort()
+	
+	current_items = [] # Will be filled by _load_next_page
+	_loaded_count = 0
+	
+	# Clear container before loading first page
+	for child in %ListContainer.get_children():
+		child.queue_free()
 		
-		# Now that _all_items is set, apply the initial sort (Play Time by default)
-		_apply_sort()
-		
-		current_items = [] # Will be filled by _load_next_page
-		_loaded_count = 0
-		_load_next_page()
-	else:
-		_refresh_list()
+	_load_next_page()
 	
 	# Initial focus on first item if available
-	if current_items.size() > 0:
+	if _all_items.size() > 0:
 		call_deferred("_grab_initial_focus")
 
 # Helper for formatting
 func activity_time_fmt(total_seconds: int) -> String:
-	var h = total_seconds / 3600
-	var m = (total_seconds % 3600) / 60
+	var h = int(total_seconds / 3600.0)
+	var m = int((total_seconds % 3600) / 60.0)
 	var s = total_seconds % 60
 	if h > 0:
 		return "%dh:%02dm" % [h, m]
@@ -310,7 +313,7 @@ func _refresh_list():
 		if not item_node.focus_entered.is_connected(_on_item_focused):
 			item_node.focus_entered.connect(_on_item_focused.bind(item_data, item_node))
 			
-		# Stats Mode Specifics
+		# Mode Specifics
 		if current_mode == EditorMode.STATS:
 			# Hide Drag Handle
 			if item_node.has_node("Content/DragHandle"):
@@ -322,6 +325,11 @@ func _refresh_list():
 			# Connect Long Press for Details
 			if not item_node.item_long_pressed.is_connected(_on_item_long_pressed):
 				item_node.item_long_pressed.connect(_on_item_long_pressed)
+		else:
+			# Favorites Mode: Ensure drag handle is visible and enabled
+			if item_node.has_node("Content/DragHandle"):
+				item_node.get_node("Content/DragHandle").visible = true
+			item_node.drag_enabled = true
 	
 	# Apply font sizes in batch BEFORE showing
 	if current_font_size > 0:
@@ -349,6 +357,7 @@ func _load_next_page():
 		# Remove Load More button first
 		for child in %ListContainer.get_children():
 			if child is Button:
+				%ListContainer.remove_child(child)
 				child.queue_free()
 				break
 		
@@ -376,13 +385,17 @@ func _load_next_page():
 			if not item_node.focus_entered.is_connected(_on_item_focused):
 				item_node.focus_entered.connect(_on_item_focused.bind(item_data, item_node))
 			
-			# Stats Mode specifics
+			# Mode Specifics
 			if current_mode == EditorMode.STATS:
 				if item_node.has_node("Content/DragHandle"):
 					item_node.get_node("Content/DragHandle").visible = false
 				item_node.drag_enabled = false
 				if not item_node.item_long_pressed.is_connected(_on_item_long_pressed):
 					item_node.item_long_pressed.connect(_on_item_long_pressed)
+			else:
+				if item_node.has_node("Content/DragHandle"):
+					item_node.get_node("Content/DragHandle").visible = true
+				item_node.drag_enabled = true
 			
 			# Apply font size
 			if current_font_size > 0:
@@ -425,8 +438,12 @@ func _on_load_more_pressed():
 	_load_next_page()
 
 func _on_item_focused(item_data, item_node):
-	# Trigger smooth scroll to ensure visibility (immediate, no layout wait)
-	_ensure_node_visible(item_node, false)
+	_last_focused_item = item_node
+	
+	# Only auto-scroll during active user interaction (drag or navigation)
+	# Don't scroll when focus changes from passive mouse hover
+	if _should_auto_scroll():
+		_ensure_node_visible(item_node, false)
 	
 	var path = ""
 	var base_path = FavouritesManagerScript.PICO8_DATA_PATH
@@ -539,35 +556,59 @@ func _setup_focus_chain():
 		# Save
 		%BtnSave.focus_neighbor_top = %BtnClose.get_path()
 		%BtnSave.focus_neighbor_left = %BtnClose.get_path()
-		%BtnSave.focus_neighbor_right = %OptionSort.get_path() # Loop back to start
+		%BtnSave.focus_neighbor_right = %BtnShortcut.get_path()
+		
+		# Shortcut
+		%BtnShortcut.focus_neighbor_top = %BtnClose.get_path()
+		%BtnShortcut.focus_neighbor_left = %BtnSave.get_path()
+		%BtnShortcut.focus_neighbor_right = %OptionSort.get_path() # Loop back to start
 
 func _on_item_request_move_step(direction: int, item_node):
-	var idx = item_node.get_index()
-	var target_idx = idx + direction
+	var source_idx = item_node.list_index
+	var target_idx = source_idx + direction
 	
-	# Check bounds
 	if target_idx < 0 or target_idx >= current_items.size():
 		return
 		
-	# Update Array
-	var moved_data = current_items.pop_at(idx)
-	current_items.insert(target_idx, moved_data)
-	
-	# Update Visual Tree
+	# 1. Update Visual Tree FIRST
 	%ListContainer.move_child(item_node, target_idx)
 	
-	# Update indices to support mixed usage (Drag/Drop + Controller)
-	for i in range(%ListContainer.get_child_count()):
-		%ListContainer.get_child(i).list_index = i
+	# 2. Sync data from the new visual state
+	_sync_data_from_visual_order()
 	
-	# Switch to Manual sort mode
-	%OptionSort.selected = 0
+	# 3. Update sort mode to manual
+	if current_mode == EditorMode.FAVORITES:
+		%OptionSort.selected = 0
 	
-	# Re-setup neighbors because tree order changed
 	_setup_focus_chain()
-	
-	# Manually ensure visibility after layout update
 	_ensure_node_visible(item_node)
+
+func _sync_data_from_visual_order():
+	# Reconstruct our data arrays based on the ACTUAL current order of UI nodes
+	var new_current_items: Array[FavouritesManagerScript.FavouriteItem] = []
+	
+	for child in %ListContainer.get_children():
+		if child.has_method("setup") and child.item_data:
+			new_current_items.append(child.item_data)
+	
+	# Update visible subset
+	current_items = new_current_items
+	
+	# Update the master list segment that matches current_items
+	# current_items always starts from index 0 of _all_items
+	for i in range(current_items.size()):
+		_all_items[i] = current_items[i]
+	
+	# Sync indices on nodes
+	_update_list_indices()
+
+func _update_list_indices():
+	var item_idx = 0
+	for i in range(%ListContainer.get_child_count()):
+		var child = %ListContainer.get_child(i)
+		if child.has_method("setup"):
+			child.list_index = item_idx
+			item_idx += 1
 
 var _scroll_tween: Tween
 
@@ -605,23 +646,18 @@ func _ensure_node_visible(node: Control, wait_for_layout: bool = true):
 			.set_trans(Tween.TRANS_CUBIC) \
 			.set_ease(Tween.EASE_OUT)
 
-func _on_item_dropped_reorder(source_idx: int, target_idx: int):
-	if source_idx == target_idx:
-		return
-		
-	var moved_item = current_items.pop_at(source_idx)
+func _on_item_dropped_reorder(_source_idx: int, _target_idx: int):
+	#print("🟢 DROP HANDLER CALLED - source:", source_idx, " target:", target_idx)
+	# source_idx/target_idx are ignored because we sync from the FINAL visual state
+	# Perform the robust visual sync
+	_sync_data_from_visual_order()
 	
-	# Adjust target index if source was before target
-	if source_idx < target_idx:
-		target_idx -= 1
-		
-	current_items.insert(target_idx, moved_item)
+	# Switch to Manual sort mode
+	if current_mode == EditorMode.FAVORITES:
+		%OptionSort.selected = 0
 	
-	# Switch to Manual sort mode visual
-	%OptionSort.selected = 0
-	
-	_refresh_list()
-	# Restore focus if needed? Drag usually implies mouse, so probably fine.
+	# Reset drag state flag
+	is_dragging_item = false
 
 func _on_item_reorder_requested(source_item, target_item):
 	var source_idx = source_item.get_index()
@@ -632,12 +668,13 @@ func _on_item_reorder_requested(source_item, target_item):
 		
 	# Move in visual tree - this creates the "live" effect
 	%ListContainer.move_child(source_item, target_idx)
-
-	var moved_item_data = current_items.pop_at(source_idx)
-	current_items.insert(target_idx, moved_item_data)
 	
-	# For now, just update the sort mode to manual
-	%OptionSort.selected = 0
+	# Sync indices immediately
+	_update_list_indices()
+	
+	# Update the sort mode to manual
+	if current_mode == EditorMode.FAVORITES:
+		%OptionSort.selected = 0
 
 var is_dragging_item: bool = false
 var was_joy_a_pressed: bool = false
@@ -646,18 +683,51 @@ var popup_was_visible: bool = false
 
 func _notification(what):
 	if what == NOTIFICATION_DRAG_BEGIN:
-		# Disable manual scrolling during drag to prevent interference
-		%ListContainer.get_parent().mouse_filter = Control.MOUSE_FILTER_IGNORE
+		#print("🔵 DRAG BEGIN")
 		is_dragging_item = true
+		# Nudge the scroll to break the ScrollContainer's internal panning capture
+		call_deferred("_nudge_scroll_to_break_panning")
 	elif what == NOTIFICATION_DRAG_END:
-		# Re-enable manual scrolling
-		%ListContainer.get_parent().mouse_filter = Control.MOUSE_FILTER_STOP
+		#print("🔴 DRAG END - Will inject click DEFERRED")
 		is_dragging_item = false
+		
+		# Defer the synthetic click to allow drop event to complete first
+		call_deferred("_inject_click_to_cancel_scroll")
+
+func _inject_click_to_cancel_scroll():
+	# Simulate a click to cancel the ScrollContainer's stuck drag state
+	# User observed that clicking stops the unwanted scrolling
+	var mouse_pos = get_viewport().get_mouse_position()
+	
+	# Send mouse button press
+	var press_event = InputEventMouseButton.new()
+	press_event.button_index = MOUSE_BUTTON_LEFT
+	press_event.pressed = true
+	press_event.position = mouse_pos
+	press_event.global_position = mouse_pos
+	Input.parse_input_event(press_event)
+	
+	# Send mouse button release immediately after
+	var release_event = InputEventMouseButton.new()
+	release_event.button_index = MOUSE_BUTTON_LEFT
+	release_event.pressed = false
+	release_event.position = mouse_pos
+	release_event.global_position = mouse_pos
+	Input.parse_input_event(release_event)
+
+func _nudge_scroll_to_break_panning():
+	var scroll = %ListContainer.get_parent()
+	if scroll is ScrollContainer:
+		var current = scroll.scroll_vertical
+		# Tiny nudge to break engine internal panning state
+		scroll.scroll_vertical = current + 1
+		scroll.scroll_vertical = current
+
 
 func _process(delta):
 	# 1. Auto-Scroll Logic (Only when dragging)
 	if is_dragging_item:
-		var viewport_rect = get_viewport_rect()
+		var viewport_rect = get_viewport().get_visible_rect()
 		var mouse_pos = get_viewport().get_mouse_position()
 		var scroll_zone = viewport_rect.size.y * 0.15
 		var scroll_speed = 500.0 * delta
@@ -750,6 +820,17 @@ func _get_polling_action_held() -> bool:
 		return Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_A)
 	return false
 
+func _should_auto_scroll() -> bool:
+	# Auto-scroll should happen when user is actively interacting:
+	# 1. Dragging with touch screen or mouse (is_dragging_item is set by drag operations)
+	# 2. Navigating with keyboard or controller directional inputs
+	if is_dragging_item:
+		return true
+	
+	# Check if any directional input is currently pressed (keyboard or controller)
+	return Input.is_action_pressed("ui_up") or Input.is_action_pressed("ui_down") or \
+		   Input.is_action_pressed("ui_left") or Input.is_action_pressed("ui_right")
+
 func _manual_focus_step(current_node: Control, direction: int):
 	# direction -1 = Up, 1 = Down
 	var next_path = NodePath()
@@ -834,15 +915,13 @@ func _on_asc_desc_toggled():
 	_reset_pagination_and_refresh()
 
 func _reset_pagination_and_refresh():
-	if current_mode == EditorMode.STATS:
-		# Clear existing items
-		for child in %ListContainer.get_children():
-			child.queue_free()
-		current_items = []
-		_loaded_count = 0
-		_load_next_page()
-	else:
-		_refresh_list()
+	# Clear existing items and Load More button
+	for child in %ListContainer.get_children():
+		child.queue_free()
+	
+	current_items = []
+	_loaded_count = 0
+	_load_next_page()
 
 func _apply_sort():
 	var idx = %OptionSort.selected
@@ -850,8 +929,8 @@ func _apply_sort():
 	
 	if criteria == 0: return
 	
-	# Determine source array (Stats mode uses _all_items for pagination)
-	var sort_target = _all_items if current_mode == EditorMode.STATS else current_items
+	# Determine source array (Both modes now use _all_items for pagination)
+	var sort_target = _all_items
 	
 	sort_target.sort_custom(func(a, b):
 		if criteria == 3 or criteria == 4:
@@ -905,21 +984,69 @@ func _apply_sort():
 				return a_val.nocasecmp_to(b_val) > 0
 	)
 func _on_save():
-	var success = FavouritesManagerScript.save_favourites(current_items)
+	var success = FavouritesManagerScript.save_favourites(_all_items)
+	
 	if success:
 		# Restart PICO-8 to apply changes
 		var runcmd = get_tree().current_scene.find_child("runcmd")
 		if runcmd and runcmd.has_method("restart_pico8"):
 			runcmd.restart_pico8()
-		else:
-			print("Could not find runcmd to restart PICO-8")
-			
+		
 		queue_free()
 	else:
 		OS.alert("Failed to save favourites!", "Error")
 
 func _on_close():
 	queue_free()
+
+func _on_shortcut_pressed():
+	# Use the last focused item instead of current focus owner
+	# because clicking the button shifts focus to the button itself.
+	var focus_owner = _last_focused_item
+	
+	if not is_instance_valid(focus_owner) or not focus_owner.has_method("setup"):
+		# Fallback: if focus is elsewhere, use the first item? 
+		if %ListContainer.get_child_count() > 0:
+			focus_owner = %ListContainer.get_child(0)
+		else:
+			return
+		
+	var item_data = focus_owner.item_data
+	var path = _get_cart_path(item_data)
+	if path.is_empty():
+		OS.alert("Could not find cart file path!", "Error")
+		return
+		
+	if not FileAccess.file_exists(path):
+		OS.alert("Cart file does not exist: " + path, "Error")
+		return
+
+	var clean_label = _clean_shortcut_label(item_data.name)
+	Applinks.create_shortcut(clean_label, path)
+
+func _clean_shortcut_label(label: String) -> String:
+	var words = label.replace("_", " ").split(" ", false)
+	var capitalized_words = []
+	for word in words:
+		capitalized_words.append(word.capitalize())
+	return " ".join(capitalized_words)
+
+func _get_cart_path(item_data) -> String:
+	var path = ""
+	var base_path = FavouritesManagerScript.PICO8_DATA_PATH
+	
+	if not item_data.cart_id.is_empty():
+		var subfolder = "carts"
+		if item_data.cart_id.is_valid_int():
+			if item_data.cart_id.length() >= 5:
+				subfolder = item_data.cart_id[0]
+			else:
+				subfolder = "0"
+		path = base_path + "/bbs/" + subfolder + "/" + item_data.cart_id + ".p8.png"
+	elif not item_data.filename.is_empty():
+		path = base_path + "/carts/" + item_data.filename
+		
+	return path
 
 func _on_explicit_gui_input(event: InputEvent, control: Control):
 	if _is_action_held(event):

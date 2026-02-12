@@ -328,6 +328,36 @@ popup/item_9/id = 9
 popup/item_10/text = "CRT-1tap"
 popup/item_10/id = 10
 
+[node name="ThemeRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=456789123]
+layout_mode = 2
+
+[node name="ButtonTheme" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ThemeRow" unique_id=789123456]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Select a visual theme (bezel, buttons, dpad)"
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+text = "Theme"
+flat = true
+alignment = 0
+
+[node name="WrapperTheme" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ThemeRow" unique_id=123456789]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+
+[node name="ThemeSelect" type="OptionButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ThemeRow/WrapperTheme" unique_id=987654321]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 216.0
+offset_bottom = 23.0
+focus_mode = 0
+alignment = 1
+
 [node name="SaturationRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=1171679046]
 layout_mode = 2
 tooltip_text = "change the saturation of the pico8 output display"
@@ -888,7 +918,7 @@ theme_override_constants/margin_bottom = 5
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="RootPathRow" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline/ContentOffline" unique_id=987654321]
+[node name="RootPathRow" type="VBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline/ContentOffline" unique_id=1716906007]
 layout_mode = 2
 theme_override_constants/separation = 5
 
@@ -984,6 +1014,9 @@ expand_icon = true
 layout_mode = 3
 anchors_preset = 9
 anchor_bottom = 1.0
-offset_right = 30.0
+offset_left = 7.0
+offset_top = -24.0
+offset_right = 37.0
+offset_bottom = -24.0
 grow_vertical = 2
 mouse_default_cursor_shape = 10

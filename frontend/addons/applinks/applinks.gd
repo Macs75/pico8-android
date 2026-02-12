@@ -112,3 +112,7 @@ func pipe_write(id: int, data: PackedByteArray) -> bool:
 func pipe_close(id: int) -> void:
 	if applinks:
 		applinks.pipe_close(id)
+
+func create_shortcut(label: String, cart_path: String) -> void:
+	if applinks:
+		applinks.create_shortcut(label, cart_path)

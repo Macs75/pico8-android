@@ -37,6 +37,7 @@ const REPEAT_TIME_AFTER = 150
 
 var original_position: Vector2
 var original_scale: Vector2
+var editor_scale: Vector2 # Base scale from editor/tscn
 var drag_offset_start: Vector2
 var is_repositionable: bool = true
 
@@ -149,6 +150,7 @@ func _ready() -> void:
 	# --- Drag & Drop Init ---
 	original_position = position
 	original_scale = scale
+	editor_scale = scale
 	PicoVideoStreamer.instance.layout_reset.connect(_on_layout_reset)
 	
 	# Attempt to load saved position
@@ -167,38 +169,7 @@ func _ready() -> void:
 		scale = original_scale * saved_scale
 	
 	# --- Custom Texture Loading ---
-	# Try to load custom textures FIRST before applying defaults
-	var texture_name = _get_texture_name_for_button()
-	var custom_loaded = false
-	if texture_name:
-		var custom_textures = CustomControlTextures.get_custom_textures(texture_name, is_landscape)
-		if custom_textures[0] != null: # Has custom texture
-			has_press_effect = (custom_textures[1] != null)
-			%Label.visible = false
-			set_textures(custom_textures[0], custom_textures[1])
-			self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR # or TEXTURE_FILTER_NEAREST for pixel-art
-			# Adapt button aspect ratio to match texture while preserving overall size
-			var tex_size = custom_textures[0].get_size()
-			if tex_size.x > 0 and tex_size.y > 0:
-				var tex_aspect = tex_size.x / tex_size.y
-				var btn_aspect = size.x / size.y if size.y > 0 else 1.0
-				
-				# If aspect ratios differ, adjust scale to match texture proportions
-				if abs(tex_aspect - btn_aspect) > 0.01: # Small tolerance
-					# Keep the area roughly the same
-					var area = size.x * size.y
-					var new_width = sqrt(area * tex_aspect)
-					var new_height = new_width / tex_aspect
-					
-					# Adjust scale to achieve new proportions
-					scale.x = (new_width / size.x) * original_scale.x
-					scale.y = (new_height / size.y) * original_scale.y
-					# Update original_scale so reset preserves the aspect ratio
-					original_scale = scale
-
-			# Adjust z-index to appear above bezel
-			z_index = 150
-			custom_loaded = true
+	var custom_loaded = _load_and_apply_custom_textures(is_landscape)
 	
 	# Only apply default textures if custom ones weren't loaded
 	if not custom_loaded:
@@ -231,6 +202,65 @@ func _on_layout_reset(target_is_landscape: bool):
 	if target_is_landscape == _is_in_landscape_ui():
 		position = original_position
 		scale = original_scale
+
+func reload_textures():
+	var is_landscape = _is_in_landscape_ui()
+	
+	# Reset to defaults specified in export vars
+	self.texture = texture_normal if texture_normal else keycap_normal
+	has_press_effect = true # Reset assumption
+	%Label.visible = true
+	self.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	
+	var custom_loaded = _load_and_apply_custom_textures(is_landscape)
+			
+	if not custom_loaded:
+		# Restore original textures
+		if texture_normal and key_state == KeyState.RELEASED:
+			self.texture = texture_normal
+			self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			%Label.visible = false
+		elif texture_pressed and key_state == KeyState.HELD:
+			self.texture = texture_pressed
+			self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			%Label.visible = false
+		else:
+			# Fallback to keycaps
+			_update_visuals() # This handles keycap_normal/held assignment
+
+func _load_and_apply_custom_textures(is_landscape: bool) -> bool:
+	var texture_name = _get_texture_name_for_button()
+	if not texture_name:
+		return false
+		
+	var custom_textures = CustomControlTextures.get_custom_textures(texture_name, is_landscape)
+	if custom_textures[0] != null: # Has custom texture
+		has_press_effect = (custom_textures[1] != null)
+		%Label.visible = false
+		set_textures(custom_textures[0], custom_textures[1])
+		self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		
+		# Re-apply Aspect Ratio Logic
+		var tex_size = custom_textures[0].get_size()
+		if tex_size.x > 0 and tex_size.y > 0:
+			var tex_aspect = tex_size.x / tex_size.y
+			var btn_aspect = size.x / size.y if size.y > 0 else 1.0
+			
+			if abs(tex_aspect - btn_aspect) > 0.01:
+				var area = size.x * size.y
+				var new_width = sqrt(area * tex_aspect)
+				var new_height = new_width / tex_aspect
+				
+				# Adjust scale to achieve new proportions
+				scale.x = (new_width / size.x) * editor_scale.x
+				scale.y = (new_height / size.y) * editor_scale.y
+				# Update original_scale so reset preserves the aspect ratio
+				original_scale = scale
+				
+		z_index = 150
+		return true
+		
+	return false
 
 func set_textures(new_normal: Texture2D, new_pressed: Texture2D):
 	texture_normal = new_normal

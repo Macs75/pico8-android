@@ -32,17 +32,19 @@ func _initial_load():
 
 func _get_bezel_path_for_orientation(is_landscape: bool) -> String:
 	var target_file = BEZEL_LANDSCAPE_FILENAME if is_landscape else BEZEL_PORTRAIT_FILENAME
-	var full_path = PicoBootManager.PUBLIC_FOLDER + "/" + target_file
-	
-	if FileAccess.file_exists(full_path):
-		return full_path
+	# Use ThemeManager to resolve path
+	var path = ThemeManager.get_resource_path(target_file)
+	if path != "":
+		return path
 		
-	# Fallback
+	# Fallback (ThemeManager should handle this, but for safety)
 	return PicoBootManager.PUBLIC_FOLDER + "/" + BEZEL_FILENAME
 
 func _ensure_bezel_loaded(is_landscape: bool):
 	var needed_path = _get_bezel_path_for_orientation(is_landscape)
 	
+	# Force reload if path is empty (meaning default/fallback) but we had a custom one?
+	# Or if needed_path is different.
 	if needed_path != current_bezel_path:
 		_load_bezel_from_path(needed_path)
 

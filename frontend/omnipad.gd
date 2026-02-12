@@ -8,9 +8,11 @@ const SHIFT = Vector2(13.5, 13.5)
 const ORIGIN = Vector2(0, 0)
 
 @onready var lit_texture = preload("res://assets/omnipad_lit.png")
+@onready var default_texture = preload("res://assets/onmipad.png")
 
 var original_position: Vector2
 var original_scale: Vector2
+var editor_scale: Vector2
 var drag_offset_start: Vector2
 
 var active_touches = {}
@@ -28,67 +30,13 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	center_offset = size / 2
 	
-	# Convert normal TextureRects to use AtlasTexture dynamically
-	# This avoids hardcoding sizes in the .tscn
-	var w = lit_texture.get_width()
-	var h = lit_texture.get_height()
-	
-	# Assume 3x3 grid logic for D-pad slices
-	# 3x3 Grid Logic to isolate arms and avoid center overlap
-	var s_w = w / 3.0
-	var s_h = h / 3.0
-	
-	# Destination sizing (based on actual component size, e.g. 44x43)
-	var dest_w = size.x / 3.0
-	var dest_h = size.y / 3.0
-	
-	# UP: Top-Center Block
-	var at_up = AtlasTexture.new()
-	at_up.atlas = lit_texture
-	at_up.region = Rect2(s_w, 0, s_w, s_h)
-	at_up.filter_clip = true
-	%Up.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	%Up.texture = at_up
-	%Up.position = Vector2(dest_w, 0)
-	%Up.size = Vector2(dest_w, dest_h)
-	%Up.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
-	# DOWN: Bottom-Center Block
-	var at_down = AtlasTexture.new()
-	at_down.atlas = lit_texture
-	at_down.region = Rect2(s_w, s_h * 2, s_w, s_h)
-	%Down.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	%Down.texture = at_down
-	%Down.position = Vector2(dest_w, dest_h * 2)
-	%Down.size = Vector2(dest_w, dest_h)
-	%Down.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
-	# LEFT: Middle-Left Block
-	var at_left = AtlasTexture.new()
-	at_left.atlas = lit_texture
-	at_left.region = Rect2(0, s_h, s_w, s_h)
-	%Left.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	%Left.texture = at_left
-	%Left.position = Vector2(0, dest_h)
-	%Left.size = Vector2(dest_w, dest_h)
-	%Left.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
-	# RIGHT: Middle-Right Block
-	var at_right = AtlasTexture.new()
-	at_right.atlas = lit_texture
-	at_right.region = Rect2(s_w * 2, s_h, s_w, s_h)
-	%Right.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	%Right.texture = at_right
-	%Right.position = Vector2(dest_w * 2, dest_h)
-	%Right.size = Vector2(dest_w, dest_h)
-	%Right.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
 	# Reset all
 	update_visuals(Vector2i.ONE)
 	
 	# --- Drag & Drop Init ---
 	original_position = position
 	original_scale = scale
+	editor_scale = scale
 	PicoVideoStreamer.instance.layout_reset.connect(_on_layout_reset)
 	
 	# Attempt to load saved position and scale
@@ -101,39 +49,96 @@ func _ready() -> void:
 	scale = original_scale * saved_scale
 	
 	# --- Custom Texture Loading ---
+	# Load default sprites logic initially
+	if not _load_and_apply_custom_textures(is_landscape):
+		# Setup default sprites if no custom texture
+		_setup_dpad_sprites(lit_texture)
+
+func reload_textures():
+	var is_landscape = _is_in_landscape_ui()
+	
+	# Reset defaults first
+	lit_texture = preload("res://assets/omnipad_lit.png")
+	self.texture = default_texture
+	has_press_effect = true
+	
+	# Try Load Custom
+	if not _load_and_apply_custom_textures(is_landscape):
+		var saved_scale = PicoVideoStreamer.get_control_scale(name, is_landscape)
+		scale = original_scale * saved_scale
+		
+		_setup_dpad_sprites(lit_texture)
+		z_index = 0 # Default z-index? Or whatever it was.
+
+func _load_and_apply_custom_textures(is_landscape: bool) -> bool:
 	var custom_textures = CustomControlTextures.get_custom_textures("dpad", is_landscape)
-	if custom_textures[0] != null: # Has custom dpad texture
-		# Replace base texture with custom
+	if custom_textures[0] != null:
 		self.texture = custom_textures[0]
-		self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR # or TEXTURE_FILTER_NEAREST for pixel-art
-		# If custom pressed texture provided, replace lit_texture
+		self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		
 		if custom_textures[1] != null:
 			lit_texture = custom_textures[1]
 			has_press_effect = true
 		else:
-			# No pressed texture - disable press effect
 			has_press_effect = false
-		# Adapt dpad aspect ratio to match texture while preserving overall size
+			
+		# Apply sprites (if press effect enabled, or just to be safe if enabled later)
+		_setup_dpad_sprites(lit_texture)
+			
+		# Aspect Ratio Logic
 		var tex_size = custom_textures[0].get_size()
 		if tex_size.x > 0 and tex_size.y > 0:
 			var tex_aspect = tex_size.x / tex_size.y
-			var dpad_size = self.size if self.size.y > 0 else texture.get_size()
+			var dpad_size = self.size if self.size.y > 0 else (texture.get_size() if texture else Vector2(100, 100))
 			var dpad_aspect = dpad_size.x / dpad_size.y if dpad_size.y > 0 else 1.0
 			
-			# If aspect ratios differ, adjust scale to match texture proportions
 			if abs(tex_aspect - dpad_aspect) > 0.01:
-				# Keep the area roughly the same
 				var area = dpad_size.x * dpad_size.y
 				var new_width = sqrt(area * tex_aspect)
 				var new_height = new_width / tex_aspect
 				
-				# Adjust scale to achieve new proportions
-				scale.x = (new_width / dpad_size.x) * original_scale.x
-				scale.y = (new_height / dpad_size.y) * original_scale.y
-				# Update original_scale so reset preserves the aspect ratio
-				original_scale = scale
-		# Adjust z-index to appear above bezel
+				# Use editor_scale as base
+				scale.x = (new_width / dpad_size.x) * editor_scale.x
+				scale.y = (new_height / dpad_size.y) * editor_scale.y
+				
 		z_index = 150
+		return true
+	
+	return false
+
+func _setup_dpad_sprites(tex: Texture2D):
+	var w = tex.get_width()
+	var h = tex.get_height()
+	var s_w = w / 3.0
+	var s_h = h / 3.0
+	
+	# Destination sizing
+	var dest_w = size.x / 3.0
+	var dest_h = size.y / 3.0
+	
+	# Helper to setup a slice
+	_setup_slice(%Up, tex, Rect2(s_w, 0, s_w, s_h), Vector2(dest_w, 0), Vector2(dest_w, dest_h))
+	_setup_slice(%Down, tex, Rect2(s_w, s_h * 2, s_w, s_h), Vector2(dest_w, dest_h * 2), Vector2(dest_w, dest_h))
+	_setup_slice(%Left, tex, Rect2(0, s_h, s_w, s_h), Vector2(0, dest_h), Vector2(dest_w, dest_h))
+	_setup_slice(%Right, tex, Rect2(s_w * 2, s_h, s_w, s_h), Vector2(dest_w * 2, dest_h), Vector2(dest_w, dest_h))
+
+func _setup_slice(node: TextureRect, atlas: Texture2D, region: Rect2, pos: Vector2, slice_size: Vector2):
+	if not node: return
+	
+	var at = node.texture as AtlasTexture
+	if not at:
+		at = AtlasTexture.new()
+		node.texture = at
+	
+	at.atlas = atlas
+	at.region = region
+	at.filter_clip = true
+	
+	node.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	node.position = pos
+	node.size = slice_size
+	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 
 func _is_in_landscape_ui() -> bool:
 	var p = get_parent()

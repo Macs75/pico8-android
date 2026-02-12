@@ -33,14 +33,8 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[node name="FavouritesEditor" type="Control" unique_id=1922155292]
-z_index = 200
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="FavouritesEditor" type="CanvasLayer" unique_id=1922155292]
+layer = 15
 script = ExtResource("1_editor")
 
 [node name="Panel" type="Panel" parent="." unique_id=1747027266]
@@ -167,3 +161,10 @@ custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
 text = "💾 Save"
+
+[node name="BtnShortcut" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=57242823]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+theme_override_fonts/font = SubResource("FontVariation_bqpnx")
+text = "🔗 New Shortcut"
