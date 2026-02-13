@@ -22,7 +22,7 @@
 [ext_resource type="FontFile" uid="uid://c2jlc3nt8y38q" path="res://assets/font/atlas-0.png" id="20_d13ii"]
 [ext_resource type="Texture2D" uid="uid://shpx84pg158k" path="res://assets/pico8_logo_vector.png" id="23_1u8w0"]
 [ext_resource type="Script" uid="uid://3yarkysfetgu" path="res://kb_toggler.gd" id="37_come4"]
-[ext_resource type="PackedScene" uid="uid://bgklhpsaac82q" path="res://omnipad.tscn" id="41_0cp0l"]
+[ext_resource type="PackedScene" uid="uid://bgklhpsaac82q" path="res://dpad.tscn" id="41_0cp0l"]
 [ext_resource type="Script" uid="uid://c7rts7fcblaav" path="res://run_pico_cmd.gd" id="41_4lmeg"]
 [ext_resource type="PackedScene" uid="uid://dgbacxvbwjfsh" path="res://landscape_ui.tscn" id="42_land"]
 [ext_resource type="Texture2D" uid="uid://cih0d0dnky0b5" path="res://assets/btn_x_normal.png" id="43_x_norm"]
@@ -963,7 +963,7 @@ texture_normal = ExtResource("43_x_norm")
 texture_pressed = ExtResource("44_x_press")
 metadata/_edit_use_anchors_ = true
 
-[node name="Onmipad" parent="Arranger/kbanchor/kb_gaming" unique_id=827209010 instance=ExtResource("41_0cp0l")]
+[node name="dpad" parent="Arranger/kbanchor/kb_gaming" unique_id=827209010 instance=ExtResource("41_0cp0l")]
 offset_left = 3.0
 offset_top = 4.0
 offset_right = 47.0

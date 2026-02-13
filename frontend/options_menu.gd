@@ -202,13 +202,13 @@ func _update_layout():
 		
 		var edge_width = max(60.0, viewport_size.x * 0.10)
 		
-		# Prevent overlap with Left D-Pad (Onmipad)
+		# Prevent overlap with Left D-Pad (dpad)
 		var main = get_node_or_null("/root/Main")
 		if main:
 			# Arranger check
 			var arranger = main.get_node_or_null("Arranger")
 			if arranger and arranger.visible:
-				var dpad = arranger.get_node_or_null("kbanchor/kb_gaming/Onmipad")
+				var dpad = arranger.get_node_or_null("kbanchor/kb_gaming/dpad")
 				if dpad and dpad.is_visible_in_tree():
 					var dpad_rect = dpad.get_global_rect()
 					var dpad_left_x = dpad_rect.position.x
@@ -221,7 +221,7 @@ func _update_layout():
 			# LandscapeUI Check (Absolute Path)
 			var landscape_ui = main.get_node_or_null("LandscapeUI")
 			if landscape_ui and landscape_ui.visible:
-				var dpad = landscape_ui.get_node_or_null("Control/LeftPad/Omnipad")
+				var dpad = landscape_ui.get_node_or_null("Control/LeftPad/dpad")
 				if dpad and dpad.is_visible_in_tree():
 					var dpad_rect = dpad.get_global_rect()
 					var dpad_left_x = dpad_rect.position.x

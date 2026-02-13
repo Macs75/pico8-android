@@ -9,7 +9,7 @@ var tex_power_normal = preload("res://assets/btn_poweroff_normal.png")
 var tex_power_pressed = preload("res://assets/btn_poweroff_pressed.png")
 
 @onready var arranger = get_node_or_null("../Arranger")
-@onready var dpad = get_node_or_null("Control/LeftPad/Omnipad")
+@onready var dpad = get_node_or_null("Control/LeftPad/dpad")
 @onready var x_btn = get_node_or_null("Control/RightPad/X")
 @onready var z_btn = get_node_or_null("Control/RightPad/O")
 @onready var esc_btn = get_node_or_null("Control/SystemButtons/Escape")

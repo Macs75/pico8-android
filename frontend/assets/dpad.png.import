@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bkvluwn6j1bai"
-path="res://.godot/imported/omnipad_lit.png-e2c83319a6ebbe9ba50b31760d62fff7.ctex"
+uid="uid://p4t3y0s2ujx5"
+path="res://.godot/imported/dpad.png-5f007fc91bb9608c91f399c91a9a7b7e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/omnipad_lit.png"
-dest_files=["res://.godot/imported/omnipad_lit.png-e2c83319a6ebbe9ba50b31760d62fff7.ctex"]
+source_file="res://assets/dpad.png"
+dest_files=["res://.godot/imported/dpad.png-5f007fc91bb9608c91f399c91a9a7b7e.ctex"]
 
 [params]
 

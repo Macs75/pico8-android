@@ -1,22 +1,14 @@
-[gd_scene load_steps=4 format=3 uid="uid://bgklhpsaac82q"]
+[gd_scene format=3 uid="uid://bgklhpsaac82q"]
 
-[ext_resource type="Texture2D" uid="uid://bsbipulwwdclu" path="res://assets/onmipad.png" id="1_rsxs0"]
-[ext_resource type="Script" uid="uid://c2gfm2xphdykv" path="res://omnipad.gd" id="2_rsxs0"]
-[ext_resource type="Texture2D" uid="uid://bicul8g5o2my2" path="res://assets/onmistick.png" id="3_o0p1c"]
+[ext_resource type="Texture2D" uid="uid://bsbipulwwdclu" path="res://assets/dpad.png" id="1_rsxs0"]
+[ext_resource type="Script" uid="uid://c2gfm2xphdykv" path="res://dpad.gd" id="2_rsxs0"]
 
-[node name="Omnipad" type="TextureRect"]
+[node name="dpad" type="TextureRect"]
 offset_right = 44.0
 offset_bottom = 43.0
 mouse_filter = 0
 texture = ExtResource("1_rsxs0")
 script = ExtResource("2_rsxs0")
-
-[node name="Stick" type="Sprite2D" parent="."]
-unique_name_in_owner = true
-visible = false
-position = Vector2(10, 9)
-texture = ExtResource("3_o0p1c")
-centered = false
 
 [node name="Up" type="TextureRect" parent="."]
 unique_name_in_owner = true

@@ -399,9 +399,14 @@ func _update_layout():
 		zoom_control.pivot_offset = Vector2(0, zoom_control.size.y)
 	
 	# Compensate for Arranger zoom to keep high-res D-pad at constant physical size
-	var dpad = get_node_or_null("kbanchor/kb_gaming/Onmipad")
+	var dpad = get_node_or_null("kbanchor/kb_gaming/dpad")
 	if dpad:
-		var target_scale = 8.5 / float(maxScale)
+		var baseline = 8.5 / float(maxScale)
+		if "original_scale" in dpad:
+			dpad.original_scale = Vector2(baseline, baseline)
+			
+		var saved_scale = PicoVideoStreamer.get_control_scale(dpad.name, is_landscape)
+		var target_scale = baseline * saved_scale
 		dpad.scale = Vector2(target_scale, target_scale)
 
 	if auto_show and not visible:

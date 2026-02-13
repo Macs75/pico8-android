@@ -7,8 +7,8 @@ var center_offset = Vector2.ZERO
 const SHIFT = Vector2(13.5, 13.5)
 const ORIGIN = Vector2(0, 0)
 
-@onready var lit_texture = preload("res://assets/omnipad_lit.png")
-@onready var default_texture = preload("res://assets/onmipad.png")
+@onready var lit_texture = preload("res://assets/dpad_lit.png")
+@onready var default_texture = preload("res://assets/dpad.png")
 
 var original_position: Vector2
 var original_scale: Vector2
@@ -58,7 +58,7 @@ func reload_textures():
 	var is_landscape = _is_in_landscape_ui()
 	
 	# Reset defaults first
-	lit_texture = preload("res://assets/omnipad_lit.png")
+	lit_texture = preload("res://assets/dpad_lit.png")
 	self.texture = default_texture
 	has_press_effect = true
 	

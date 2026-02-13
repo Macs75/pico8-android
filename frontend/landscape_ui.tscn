@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dgbacxvbwjfsh"]
 
 [ext_resource type="Script" uid="uid://cd42rybf366x2" path="res://landscape_ui.gd" id="1_land"]
-[ext_resource type="PackedScene" uid="uid://bgklhpsaac82q" path="res://omnipad.tscn" id="2_pad"]
+[ext_resource type="PackedScene" uid="uid://bgklhpsaac82q" path="res://dpad.tscn" id="2_pad"]
 [ext_resource type="PackedScene" uid="uid://c5k0xmbhdlmaw" path="res://key.tscn" id="3_key"]
 [ext_resource type="Texture2D" uid="uid://cih0d0dnky0b5" path="res://assets/btn_x_normal.png" id="4_x_norm"]
 [ext_resource type="Texture2D" uid="uid://c6bxpj3hmbwud" path="res://assets/btn_x_pressed.png" id="5_x_press"]
@@ -38,7 +38,7 @@ offset_right = 256.0
 offset_bottom = 256.0
 mouse_filter = 2
 
-[node name="Omnipad" parent="Control/LeftPad" unique_id=514930858 instance=ExtResource("2_pad")]
+[node name="dpad" parent="Control/LeftPad" unique_id=514930858 instance=ExtResource("2_pad")]
 layout_mode = 0
 offset_left = 12.0
 offset_top = 12.0
