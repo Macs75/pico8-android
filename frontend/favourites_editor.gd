@@ -339,7 +339,7 @@ func _refresh_list():
 	# Show container - this triggers a single layout recalculation for all items
 	%ListContainer.visible = true
 	
-	_setup_focus_chain()
+	_update_full_focus_chain()
 
 func _load_next_page():
 	# Load next batch of items
@@ -402,7 +402,7 @@ func _load_next_page():
 				item_node.set_font_size(current_font_size)
 		
 		_loaded_count = end_idx
-		_setup_focus_chain()
+		_update_full_focus_chain()
 	
 	# 1. Trigger automatic background loading if we haven't reached the 100-item limit
 	if _loaded_count < 100 and _loaded_count < _all_items.size():
@@ -475,94 +475,6 @@ func _on_item_focused(item_data, item_node):
 		# Clear if no image found
 		if %BackgroundArt: %BackgroundArt.texture = null
 
-func _setup_focus_chain():
-	var items = %ListContainer.get_children()
-	var count = items.size()
-	# Button now exists in scene, just check visibility/mode
-	var reset_active = %BtnReset.visible
-	
-	# 1. Header connections
-	# Sort Option
-	%OptionSort.focus_neighbor_right = %BtnAscDesc.get_path()
-	
-	if current_mode == EditorMode.STATS:
-		# Loop back to Close or Reset
-		%OptionSort.focus_neighbor_left = %BtnClose.get_path()
-	else:
-		%OptionSort.focus_neighbor_left = %BtnSave.get_path() # From Save (Loop)
-		
-	if count > 0:
-		%OptionSort.focus_neighbor_bottom = items[0].get_path()
-	else:
-		%OptionSort.focus_neighbor_bottom = %BtnReset.get_path() if reset_active else %BtnClose.get_path()
-		
-	# Asc/Desc
-	%BtnAscDesc.focus_neighbor_left = %OptionSort.get_path()
-	if count > 0:
-		%BtnAscDesc.focus_neighbor_right = items[0].get_path() # Cycle logic: Sort -> Asc/Desc -> List
-		%BtnAscDesc.focus_neighbor_bottom = items[0].get_path()
-	else:
-		%BtnAscDesc.focus_neighbor_right = %BtnClose.get_path()
-		%BtnAscDesc.focus_neighbor_bottom = %BtnClose.get_path()
-
-	# 2. List connections
-	for i in range(count):
-		var item = items[i]
-		var prev = items[i - 1] if i > 0 else null
-		var next = items[i + 1] if i < count - 1 else null
-		
-		# Up
-		if prev:
-			item.focus_neighbor_top = prev.get_path()
-		else:
-			item.focus_neighbor_top = %OptionSort.get_path()
-			
-		# Down
-		if next:
-			item.focus_neighbor_bottom = next.get_path()
-		else:
-			# Go to Cancel (Close) as it's the first button (leftmost)
-			item.focus_neighbor_bottom = %BtnClose.get_path()
-			
-		# Left/Right Cycle
-		# List.Left -> Asc/Desc
-		item.focus_neighbor_left = %BtnAscDesc.get_path()
-		# List.Right -> Cancel (Close)
-		item.focus_neighbor_right = %BtnClose.get_path()
-		
-	# 3. Footer connections
-	if current_mode == EditorMode.STATS:
-		# Close (Cancel) Button - STATS - Position: [Close] [Reset]
-		%BtnClose.focus_neighbor_top = items[count - 1].get_path() if count > 0 else %OptionSort.get_path()
-		%BtnClose.focus_neighbor_bottom = %OptionSort.get_path() # Loop
-		%BtnClose.focus_neighbor_left = items[count - 1].get_path() if count > 0 else %BtnAscDesc.get_path()
-		%BtnClose.focus_neighbor_right = %BtnReset.get_path()
-		
-		# Reset Button
-		%BtnReset.focus_neighbor_top = items[count - 1].get_path() if count > 0 else %OptionSort.get_path()
-		%BtnReset.focus_neighbor_bottom = %OptionSort.get_path() # Loop
-		%BtnReset.focus_neighbor_left = %BtnClose.get_path()
-		%BtnReset.focus_neighbor_right = %OptionSort.get_path()
-		
-	else:
-		# Cancel
-		%BtnClose.focus_neighbor_top = items[count - 1].get_path() if count > 0 else %OptionSort.get_path()
-		%BtnClose.focus_neighbor_bottom = %BtnSave.get_path() # Custom Down behavior
-		
-		# Left/Right Cycle: List -> Cancel -> Save
-		%BtnClose.focus_neighbor_left = items[count - 1].get_path() if count > 0 else %BtnAscDesc.get_path()
-		%BtnClose.focus_neighbor_right = %BtnSave.get_path()
-		
-		# Save
-		%BtnSave.focus_neighbor_top = %BtnClose.get_path()
-		%BtnSave.focus_neighbor_left = %BtnClose.get_path()
-		%BtnSave.focus_neighbor_right = %BtnShortcut.get_path()
-		
-		# Shortcut
-		%BtnShortcut.focus_neighbor_top = %BtnClose.get_path()
-		%BtnShortcut.focus_neighbor_left = %BtnSave.get_path()
-		%BtnShortcut.focus_neighbor_right = %OptionSort.get_path() # Loop back to start
-
 func _on_item_request_move_step(direction: int, item_node):
 	var source_idx = item_node.list_index
 	var target_idx = source_idx + direction
@@ -580,8 +492,100 @@ func _on_item_request_move_step(direction: int, item_node):
 	if current_mode == EditorMode.FAVORITES:
 		%OptionSort.selected = 0
 	
-	_setup_focus_chain()
+	_update_surgical_focus_range(source_idx, target_idx)
 	_ensure_node_visible(item_node)
+
+func _update_full_focus_chain():
+	_setup_static_focus_connections()
+	var count = %ListContainer.get_child_count()
+	if count == 0:
+		_update_boundary_focus() # Fallback for empty list
+		return
+		
+	for i in range(count):
+		_update_focus_for_index(i)
+
+func _setup_static_focus_connections():
+	# Internal header/footer connections that don't depend on the list order
+	%OptionSort.focus_neighbor_right = %BtnAscDesc.get_path()
+	%BtnAscDesc.focus_neighbor_left = %OptionSort.get_path()
+	
+	if current_mode == EditorMode.STATS:
+		%OptionSort.focus_neighbor_left = %BtnClose.get_path()
+		%BtnClose.focus_neighbor_right = %BtnReset.get_path()
+		# Close -> Reset loop
+		%BtnClose.focus_neighbor_bottom = %OptionSort.get_path()
+		%BtnReset.focus_neighbor_left = %BtnClose.get_path()
+		%BtnReset.focus_neighbor_right = %OptionSort.get_path()
+		%BtnReset.focus_neighbor_bottom = %OptionSort.get_path()
+	else:
+		%OptionSort.focus_neighbor_left = %BtnSave.get_path()
+		%BtnClose.focus_neighbor_bottom = %BtnSave.get_path()
+		%BtnClose.focus_neighbor_right = %BtnSave.get_path()
+		%BtnSave.focus_neighbor_left = %BtnClose.get_path()
+		%BtnSave.focus_neighbor_right = %BtnShortcut.get_path()
+		%BtnSave.focus_neighbor_top = %BtnClose.get_path()
+		%BtnShortcut.focus_neighbor_left = %BtnSave.get_path()
+		%BtnShortcut.focus_neighbor_right = %OptionSort.get_path()
+		%BtnShortcut.focus_neighbor_top = %BtnClose.get_path()
+
+func _update_surgical_focus_range(idx_a: int, idx_b: int):
+	var min_idx = clampi(mini(idx_a, idx_b) - 1, 0, %ListContainer.get_child_count() - 1)
+	var max_idx = clampi(maxi(idx_a, idx_b) + 1, 0, %ListContainer.get_child_count() - 1)
+	
+	for i in range(min_idx, max_idx + 1):
+		_update_focus_for_index(i)
+
+func _update_focus_for_index(idx: int):
+	var items = %ListContainer.get_children()
+	var count = items.size()
+	if idx < 0 or idx >= count: return
+	
+	var item = items[idx]
+	var prev = items[idx - 1] if idx > 0 else null
+	var next = items[idx + 1] if idx < count - 1 else null
+	
+	# 1. Update the Item itself
+	item.focus_neighbor_top = prev.get_path() if prev else %OptionSort.get_path()
+	item.focus_neighbor_bottom = next.get_path() if next else %BtnClose.get_path()
+	item.focus_neighbor_left = %BtnAscDesc.get_path()
+	item.focus_neighbor_right = %BtnClose.get_path()
+	
+	# 2. Update Boundaries if this index is at an edge
+	if idx == 0:
+		%OptionSort.focus_neighbor_bottom = item.get_path()
+		%BtnAscDesc.focus_neighbor_right = item.get_path()
+		%BtnAscDesc.focus_neighbor_bottom = item.get_path()
+	
+	if idx == count - 1:
+		_update_boundary_focus(item)
+
+func _update_boundary_focus(last_item: Control = null):
+	var items = %ListContainer.get_children()
+	var count = items.size()
+	
+	if count == 0:
+		# Empty list: Header links directly to Footer
+		var footer_target = %BtnReset if %BtnReset.visible else %BtnClose
+		%OptionSort.focus_neighbor_bottom = footer_target.get_path()
+		%BtnAscDesc.focus_neighbor_bottom = %BtnClose.get_path()
+		%BtnAscDesc.focus_neighbor_right = %BtnClose.get_path()
+		%BtnClose.focus_neighbor_top = %OptionSort.get_path()
+		%BtnClose.focus_neighbor_left = %BtnAscDesc.get_path()
+		if %BtnReset.visible: %BtnReset.focus_neighbor_top = %OptionSort.get_path()
+		return
+
+	if not last_item:
+		last_item = items[count - 1]
+		
+	# Footer points back to last item
+	%BtnClose.focus_neighbor_top = last_item.get_path()
+	%BtnClose.focus_neighbor_left = last_item.get_path()
+	if %BtnReset.visible:
+		%BtnReset.focus_neighbor_top = last_item.get_path()
+	
+	# Ensure the last item points to Footer
+	last_item.focus_neighbor_bottom = %BtnClose.get_path()
 
 func _sync_data_from_visual_order():
 	# Reconstruct our data arrays based on the ACTUAL current order of UI nodes
@@ -672,9 +676,15 @@ func _on_item_reorder_requested(source_item, target_item):
 	# Sync indices immediately
 	_update_list_indices()
 	
+	# NEW: Ensure data is synced during live reorder so it's ready even if drop is "aborted"
+	_sync_data_from_visual_order()
+	
 	# Update the sort mode to manual
 	if current_mode == EditorMode.FAVORITES:
 		%OptionSort.selected = 0
+	
+	# Refresh focus chain surgically
+	_update_surgical_focus_range(source_idx, target_idx)
 
 var is_dragging_item: bool = false
 var was_joy_a_pressed: bool = false
@@ -690,6 +700,9 @@ func _notification(what):
 	elif what == NOTIFICATION_DRAG_END:
 		#print("🔴 DRAG END - Will inject click DEFERRED")
 		is_dragging_item = false
+		
+		# Robust Sync: Ensure data matches visual order even if drop was cancelled/missed
+		_sync_data_from_visual_order()
 		
 		# Defer the synthetic click to allow drop event to complete first
 		call_deferred("_inject_click_to_cancel_scroll")
