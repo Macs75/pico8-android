@@ -21,14 +21,17 @@ shader_type canvas_item;
 // This value must be between 0.0 (totally black) and 1.0 (nearest neighbor)
 uniform float RETRO_PIXEL_SIZE : hint_range(0.0, 1.0, 0.01) = 0.84;
 uniform float SATURATION : hint_range(0.0, 2.0, 0.05) = 1.0;
+uniform float STRENGTH : hint_range(0.0, 1.0, 0.01) = 1.0;
 
 void fragment() {
+    vec3 original = texture(TEXTURE, UV).rgb;
+    
     // Get texture info (in Godot, TEXTURE_PIXEL_SIZE gives us 1/SourceSize)
     vec2 SourceSize = 1.0 / TEXTURE_PIXEL_SIZE;  // e.g., vec2(128.0, 128.0)
     vec2 OutputSize = 1.0 / SCREEN_PIXEL_SIZE;   // Screen resolution
     
     // Reading the texel with gamma correction (convert to linear space)
-    vec3 texel_linear = pow(texture(TEXTURE, UV).rgb, vec3(2.4));
+    vec3 texel_linear = pow(original, vec3(2.4));
     
     // Calculate fractional position within pixel
     vec2 fp = fract(UV * SourceSize);
@@ -52,6 +55,6 @@ void fragment() {
     vec3 gray = vec3(dot(res, vec3(0.299, 0.587, 0.114)));
     res = mix(gray, res, SATURATION);
     
-    COLOR.rgb = res;
+    COLOR.rgb = mix(original, res, STRENGTH);
     COLOR.a = 1.0;
 }

@@ -24,6 +24,7 @@ uniform float RETRO_COLOR_BOOST : hint_range(1.0, 2.0, 0.01) = 1.36;
 uniform float RETRO_GAMMA_IN : hint_range(1.0, 3.0, 0.05) = 2.20;
 uniform float RETRO_GAMMA_OUT : hint_range(1.0, 3.0, 0.05) = 2.20;
 uniform float SATURATION : hint_range(0.0, 2.0, 0.05) = 1.0;
+uniform float STRENGTH : hint_range(0.0, 1.0, 0.01) = 1.0;
 
 varying vec2 v_texcoord_scaled;
 
@@ -33,6 +34,7 @@ void vertex() {
 }
 
 void fragment() {
+	vec3 original = texture(TEXTURE, UV).rgb;
 	vec2 SourceSize = 1.0 / TEXTURE_PIXEL_SIZE;
 	vec2 OutputSize = 1.0 / SCREEN_PIXEL_SIZE;
 	
@@ -71,5 +73,5 @@ void fragment() {
 	vec3 gray = vec3(dot(res, vec3(0.299, 0.587, 0.114)));
 	res = mix(gray, res, SATURATION);
 	
-	COLOR = vec4(res, 1.0);
+	COLOR = vec4(mix(original, res, STRENGTH), 1.0);
 }

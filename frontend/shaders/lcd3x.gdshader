@@ -11,6 +11,7 @@ shader_type canvas_item;
 uniform float brighten_scanlines : hint_range(1.0, 32.0, 0.5) = 16.0;
 uniform float brighten_lcd : hint_range(1.0, 12.0, 0.1) = 4.0;
 uniform float SATURATION : hint_range(0.0, 2.0, 0.05) = 1.0;
+uniform float STRENGTH : hint_range(0.0, 1.0, 0.01) = 1.0;
 
 void fragment() {
     // Get source texture size
@@ -41,5 +42,5 @@ void fragment() {
     vec3 gray = vec3(dot(color, vec3(0.299, 0.587, 0.114)));
     color = mix(gray, color, SATURATION);
     
-    COLOR = vec4(color, 1.0);
+    COLOR = vec4(mix(res, color, STRENGTH), 1.0);
 }

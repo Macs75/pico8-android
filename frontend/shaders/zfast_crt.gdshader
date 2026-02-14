@@ -44,6 +44,7 @@ uniform float BRIGHTBOOST : hint_range(0.5, 1.5, 0.05) = 1.35;
 uniform float MASK_DARK : hint_range(0.0, 1.0, 0.05) = 0.10;
 uniform float MASK_FADE : hint_range(0.0, 1.0, 0.05) = 0.5;
 uniform float SATURATION : hint_range(0.0, 2.0, 0.05) = 1.0;
+uniform float STRENGTH : hint_range(0.0, 1.0, 0.01) = 1.0;
 
 // Use fine mask (comment out for coarser 3-pixel mask)
 #define FINEMASK
@@ -87,10 +88,11 @@ void fragment() {
 	// Final color with scanlines and mask
 	colour = colour * mix(scanLineWeight * mask, scanLineWeightB, dot(colour, vec3(maskFade)));
 	
+	vec3 original = texture(TEXTURE, UV).rgb;
 	// Apply saturation
 	vec3 gray = vec3(dot(colour, vec3(0.299, 0.587, 0.114)));
 	colour = mix(gray, colour, SATURATION);
 	
-	COLOR.rgb = colour;
+	COLOR.rgb = mix(original, colour, STRENGTH);
 	COLOR.a = 1.0;
 }

@@ -17,6 +17,7 @@ uniform float darken_colour : hint_range(0.0, 2.0, 0.05) = 0.0;
 uniform float background_intensity : hint_range(0.0, 1.0, 0.05) = 0.0;
 uniform float lcd_background_blend : hint_range(0.0, 1.0, 0.05) = 0.8;
 uniform float SATURATION : hint_range(0.0, 2.0, 0.05) = 1.0;
+uniform float STRENGTH : hint_range(0.0, 1.0, 0.01) = 1.0;
 
 // LCD screen background color (yellowish-green tint of original GBC)
 uniform vec3 lcd_bg_color : source_color = vec3(0.77, 0.82, 0.62);
@@ -112,5 +113,6 @@ void fragment() {
 	vec3 gray = vec3(dot(colour, vec3(0.299, 0.587, 0.114)));
 	colour = mix(gray, colour, SATURATION);
 	
-	COLOR = vec4(colour, 1.0);
+	vec3 original = texture(TEXTURE, UV).rgb;
+	COLOR = vec4(mix(original, colour, STRENGTH), 1.0);
 }

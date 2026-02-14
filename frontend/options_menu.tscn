@@ -359,6 +359,7 @@ focus_mode = 0
 alignment = 1
 
 [node name="SaturationRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=1171679046]
+unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "change the saturation of the pico8 output display"
 
@@ -422,6 +423,69 @@ theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 text = "1.00"
 horizontal_alignment = 2
 
+[node name="ShaderOpacityRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=1171679047]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Adjust the intensity/opacity of the active shader"
+
+[node name="LabelShaderOpacity" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderOpacityRow" unique_id=866523146]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "Strength"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ShaderOpacityMargins" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderOpacityRow" unique_id=1570363211]
+layout_mode = 2
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="WrapperShaderOpacity" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderOpacityRow/ShaderOpacityMargins" unique_id=1147146070]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+theme_override_constants/separation = 5
+
+[node name="ButtonShaderOpacityMinus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderOpacityRow/ShaderOpacityMargins/WrapperShaderOpacity" unique_id=633293967]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_fonts/font = ExtResource("6_emoji")
+text = "➖"
+
+[node name="SliderScalerShaderOpacity" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderOpacityRow/ShaderOpacityMargins/WrapperShaderOpacity" unique_id=1985874420]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="SliderShaderOpacity" type="HSlider" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderOpacityRow/ShaderOpacityMargins/WrapperShaderOpacity/SliderScalerShaderOpacity" unique_id=614667566]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 0
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.01
+value = 1.0
+ticks_on_borders = true
+
+[node name="ButtonShaderOpacityPlus" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderOpacityRow/ShaderOpacityMargins/WrapperShaderOpacity" unique_id=1487138827]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+theme_override_fonts/font = ExtResource("6_emoji")
+text = "➕"
+
+[node name="LabelShaderOpacityValue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderOpacityRow/ShaderOpacityMargins/WrapperShaderOpacity" unique_id=1098622957]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(35, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+text = "1.00"
+horizontal_alignment = 2
+
 [node name="ButtonsHeaderRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=2099243280]
 layout_mode = 2
 
@@ -444,6 +508,7 @@ layout_mode = 2
 theme_override_constants/separation = 30
 
 [node name="ButtonHueRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent" unique_id=98409052]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="LabelButtonHue" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonHueRow" unique_id=1035473739]
@@ -500,6 +565,7 @@ text = "1.00"
 horizontal_alignment = 1
 
 [node name="ButtonSatRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent" unique_id=144665626]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="LabelButtonSat" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonSatRow" unique_id=1258114745]
@@ -556,6 +622,7 @@ text = "1.00"
 horizontal_alignment = 2
 
 [node name="ButtonLightRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent" unique_id=1844467607]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="LabelButtonLight" type="Label" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ButtonsIndentWrapper/ButtonsContent/ButtonLightRow" unique_id=2034572478]

@@ -44,6 +44,7 @@ uniform float GAMMA_INPUT : hint_range(1.0, 5.0, 0.1) = 2.4;
 uniform float GAMMA_OUTPUT : hint_range(1.0, 5.0, 0.1) = 2.4;
 uniform float BRIGHTNESS : hint_range(0.0, 2.0, 0.05) = 1.4;
 uniform float SATURATION : hint_range(0.0, 2.0, 0.05) = 1.0;
+uniform float STRENGTH : hint_range(0.0, 1.0, 0.01) = 1.0;
 
 vec3 TEX2D(sampler2D tex, vec2 c) {
     return pow(texture(tex, c).rgb, vec3(GAMMA_INPUT));
@@ -140,6 +141,7 @@ void fragment() {
     vec3 gray = vec3(dot(col, vec3(0.299, 0.587, 0.114)));
     col = mix(gray, col, SATURATION);
     
-    COLOR.rgb = col;
+    vec3 original = texture(TEXTURE, UV).rgb;
+    COLOR.rgb = mix(original, col, STRENGTH);
     COLOR.a = 1.0;
 }

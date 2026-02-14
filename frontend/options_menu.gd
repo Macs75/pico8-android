@@ -24,6 +24,9 @@ var swipe_threshold = 50.0
 
 const CONFIG_PATH = "user://settings.cfg"
 
+var focus_active: bool = false
+var nodes_hidden: Array[CanvasItem] = []
+
 func _ready() -> void:
 	# Hide immediately to prevent flash
 	if panel:
@@ -141,6 +144,39 @@ func _ready() -> void:
 	%ButtonAudioBackendLabel.pressed.connect(_on_label_pressed.bind(%ToggleAudioBackend))
 	if not %ToggleAudioBackend.toggled.is_connected(_on_audio_backend_toggled):
 		%ToggleAudioBackend.toggled.connect(_on_audio_backend_toggled)
+	
+	# 1. Shader Strength Row
+	if not %SliderShaderOpacity.value_changed.is_connected(_on_shader_opacity_changed):
+		%SliderShaderOpacity.value_changed.connect(_on_shader_opacity_changed)
+	
+	_connect_focus_signals(%SliderShaderOpacity, %ShaderOpacityRow)
+	_connect_focus_signals(%ButtonShaderOpacityMinus, %ShaderOpacityRow)
+	_connect_focus_signals(%ButtonShaderOpacityPlus, %ShaderOpacityRow)
+	
+	if not %ButtonShaderOpacityMinus.pressed.is_connected(_on_shader_opacity_minus):
+		%ButtonShaderOpacityMinus.pressed.connect(_on_shader_opacity_minus)
+	if not %ButtonShaderOpacityPlus.pressed.is_connected(_on_shader_opacity_plus):
+		%ButtonShaderOpacityPlus.pressed.connect(_on_shader_opacity_plus)
+		
+	# 2. Saturation Row (Reuse existing signals, add focus)
+	_connect_focus_signals(%SliderSaturation, %SaturationRow)
+	_connect_focus_signals(%ButtonSaturationMinus, %SaturationRow)
+	_connect_focus_signals(%ButtonSaturationPlus, %SaturationRow)
+
+	# 3. Button Hue Row
+	_connect_focus_signals(%SliderButtonHue, %ButtonHueRow)
+	_connect_focus_signals(%ButtonHueMinus, %ButtonHueRow)
+	_connect_focus_signals(%ButtonHuePlus, %ButtonHueRow)
+
+	# 4. Button Saturation Row
+	_connect_focus_signals(%SliderButtonSat, %ButtonSatRow)
+	_connect_focus_signals(%ButtonSatMinus, %ButtonSatRow)
+	_connect_focus_signals(%ButtonSatPlus, %ButtonSatRow)
+
+	# 5. Button Lightness Row
+	_connect_focus_signals(%SliderButtonLight, %ButtonLightRow)
+	_connect_focus_signals(%ButtonLightMinus, %ButtonLightRow)
+	_connect_focus_signals(%ButtonLightPlus, %ButtonLightRow)
 	
 	# Settings are applied via load_config(), no need to manually set button_pressed here if sync works
 	# But we need to ensure the UI reflects the loaded state.
@@ -282,6 +318,7 @@ func _update_layout():
 	_apply_scaled_margins(%ContainerControls, scale_factor)
 	_apply_scaled_margins(%ContainerButtons, scale_factor)
 	_apply_scaled_margins(%SaturationMargins, scale_factor)
+	_apply_scaled_margins(%ShaderOpacityMargins, scale_factor)
 
 	# 2. Haptic Row
 	_style_option_row(%ButtonHaptic, %ToggleHaptic, $SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/HapticRow/WrapperHaptic, dynamic_font_size, scale_factor)
@@ -345,7 +382,7 @@ func _update_layout():
 	
 	# 7a. Saturation Row
 	%LabelSaturation.add_theme_font_size_override("font_size", dynamic_font_size)
-	%LabelSaturationValue.add_theme_font_size_override("font_size", dynamic_font_size)
+	%LabelSaturationValue.add_theme_font_size_override("font_size", dynamic_font_size * 0.85)
 	%ButtonSaturationMinus.add_theme_font_size_override("font_size", dynamic_font_size)
 	%ButtonSaturationPlus.add_theme_font_size_override("font_size", dynamic_font_size)
 	
@@ -356,6 +393,20 @@ func _update_layout():
 	slider_sat.scale = Vector2(scale_factor, scale_factor)
 	var scaled_size_sat = slider_sat.size * scale_factor
 	slider_scaler_sat.custom_minimum_size = scaled_size_sat
+	
+	# 7a-2. Shader Strength Row
+	%LabelShaderOpacity.add_theme_font_size_override("font_size", dynamic_font_size)
+	%LabelShaderOpacityValue.add_theme_font_size_override("font_size", dynamic_font_size * 0.85)
+	%ButtonShaderOpacityMinus.add_theme_font_size_override("font_size", dynamic_font_size)
+	%ButtonShaderOpacityPlus.add_theme_font_size_override("font_size", dynamic_font_size)
+	
+	var slider_op = %SliderShaderOpacity
+	var slider_scaler_op = %SliderScalerShaderOpacity
+	
+	slider_op.reset_size()
+	slider_op.scale = Vector2(scale_factor, scale_factor)
+	var scaled_size_op = slider_op.size * scale_factor
+	slider_scaler_op.custom_minimum_size = scaled_size_op
 	
 	# 7b. Buttons Header
 	%LabelButtonsHeader.add_theme_font_size_override("font_size", dynamic_font_size)
@@ -589,6 +640,49 @@ func _style_option_row(label_btn: Button, toggle: Control, wrapper: Control, fon
 	if toggle is ColorPickerButton:
 		toggle.text = ""
 		toggle.icon = null
+
+		toggle.icon = null
+
+func _set_focus_mode(active: bool, target_row: Control = null):
+	if active == focus_active:
+		return
+		
+	focus_active = active
+	
+	if active:
+		# Fade out panel background
+		var tween = create_tween()
+		tween.tween_property(panel, "self_modulate:a", 0.0, 0.2)
+		
+		# Hide everything except the target row and its parents
+		var root_content = $SlidePanel/ScrollContainer/VBoxContainer
+		_recursive_set_modulate(root_content, target_row)
+	else:
+		# Restore panel background
+		var tween = create_tween()
+		tween.tween_property(panel, "self_modulate:a", 1.0, 0.2)
+		
+		# Restore all nodes
+		for node in nodes_hidden:
+			if is_instance_valid(node):
+				var t = create_tween()
+				t.tween_property(node, "modulate:a", 1.0, 0.2)
+		nodes_hidden.clear()
+
+func _recursive_set_modulate(node: Node, target_row: Node):
+	if node == target_row:
+		return
+		
+	# Check if node is an ancestor of target_row
+	if node.is_ancestor_of(target_row):
+		for child in node.get_children():
+			_recursive_set_modulate(child, target_row)
+	else:
+		if node is CanvasItem:
+			# Hide this node
+			var tween = create_tween()
+			tween.tween_property(node, "modulate:a", 0.0, 0.2)
+			nodes_hidden.append(node)
 
 func open_menu():
 	is_open = true
@@ -1042,6 +1136,7 @@ func save_config() -> void:
 	PicoBootManager.set_setting("settings", "controller_assignments", ControllerUtils.controller_assignments)
 	
 	PicoBootManager.set_setting("settings", "shader_type", PicoVideoStreamer.get_shader_type())
+	PicoBootManager.set_setting("settings", "shader_opacity", PicoVideoStreamer.get_shader_opacity())
 	PicoBootManager.set_setting("settings", "saturation", PicoVideoStreamer.get_saturation())
 	PicoBootManager.set_setting("settings", "button_hue", PicoVideoStreamer.get_button_hue())
 	PicoBootManager.set_setting("settings", "button_saturation", PicoVideoStreamer.get_button_saturation())
@@ -1102,6 +1197,7 @@ func load_config():
 
 	# Load Visual Settings
 	var shader_type = PicoBootManager.get_setting("settings", "shader_type", PicoVideoStreamer.ShaderType.NONE)
+	var shader_opacity = PicoBootManager.get_setting("settings", "shader_opacity", 1.0)
 	var saturation = PicoBootManager.get_setting("settings", "saturation", 1.0)
 	var button_hue = PicoBootManager.get_setting("settings", "button_hue", 0.0)
 	var button_saturation = PicoBootManager.get_setting("settings", "button_saturation", 1.0)
@@ -1176,6 +1272,7 @@ func load_config():
 	PicoVideoStreamer.set_bezel_enabled(bezel)
 	PicoVideoStreamer.set_controls_mode(controls_mode)
 	PicoVideoStreamer.set_shader_type(shader_type)
+	PicoVideoStreamer.set_shader_opacity(shader_opacity)
 	PicoVideoStreamer.set_saturation(saturation)
 	PicoVideoStreamer.set_button_hue(button_hue)
 	PicoVideoStreamer.set_button_saturation(button_saturation)
@@ -1202,6 +1299,10 @@ func load_config():
 	if %SliderSaturation:
 		%SliderSaturation.set_value_no_signal(saturation)
 		%LabelSaturationValue.text = "%.2f" % saturation
+	
+	if %SliderShaderOpacity:
+		%SliderShaderOpacity.set_value_no_signal(shader_opacity)
+		%LabelShaderOpacityValue.text = "%.2f" % shader_opacity
 	if %SliderButtonHue:
 		var slider_val = (button_hue / 180.0) + 1.0
 		%SliderButtonHue.set_value_no_signal(slider_val)
@@ -1221,6 +1322,22 @@ func load_config():
 	if %ToggleKeyboard:
 		%ToggleKeyboard.button_pressed = KBMan.get_current_keyboard_type() == KBMan.KBType.FULL
 	
+
+func _connect_focus_signals(control: Control, row: Control):
+	if control is Slider:
+		if not control.drag_started.is_connected(_set_focus_mode):
+			control.drag_started.connect(_set_focus_mode.bind(true, row))
+		if not control.drag_ended.is_connected(_set_focus_mode_off):
+			control.drag_ended.connect(_set_focus_mode_off)
+	elif control is Button:
+		if not control.button_down.is_connected(_set_focus_mode):
+			control.button_down.connect(_set_focus_mode.bind(true, row))
+		if not control.button_up.is_connected(_set_focus_mode_off):
+			control.button_up.connect(_set_focus_mode_off)
+
+func _set_focus_mode_off(val_changed: bool = false):
+	# Handle slider drag_ended which passes a bool
+	_set_focus_mode(false)
 
 func _on_app_settings_pressed():
 	if Applinks:
@@ -1261,3 +1378,16 @@ func _on_play_stats_pressed():
 	get_tree().root.add_child(editor)
 	
 	close_menu()
+
+
+func _on_shader_opacity_changed(val: float):
+	PicoVideoStreamer.set_shader_opacity(val)
+	%LabelShaderOpacityValue.text = "%.2f" % val
+
+func _on_shader_opacity_minus():
+	var s = %SliderShaderOpacity
+	s.value = clamp(s.value - s.step, s.min_value, s.max_value)
+
+func _on_shader_opacity_plus():
+	var s = %SliderShaderOpacity
+	s.value = clamp(s.value + s.step, s.min_value, s.max_value)

@@ -905,6 +905,7 @@ enum ShaderType {
 }
 
 static var current_shader_type: ShaderType = ShaderType.NONE
+static var current_shader_opacity: float = 1.0
 
 static func set_shader_type(shader_type: ShaderType):
 	current_shader_type = shader_type
@@ -943,14 +944,26 @@ static func set_shader_type(shader_type: ShaderType):
 				var mat = ShaderMaterial.new()
 				mat.shader = shader
 				
-				# Apply current saturation value
+				# Apply current parameters
 				mat.set_shader_parameter("SATURATION", current_saturation)
+				mat.set_shader_parameter("STRENGTH", current_shader_opacity)
 				
 				# Apply to displayContainer (the sprite showing the upscaled viewport texture)
 				instance.displayContainer.material = mat
 
 static func get_shader_type() -> ShaderType:
 	return current_shader_type
+
+static func set_shader_opacity(opacity: float):
+	current_shader_opacity = clamp(opacity, 0.0, 1.0)
+	
+	if instance and instance.displayContainer.material:
+		var mat = instance.displayContainer.material as ShaderMaterial
+		if mat and mat.shader:
+			mat.set_shader_parameter("STRENGTH", current_shader_opacity)
+
+static func get_shader_opacity() -> float:
+	return current_shader_opacity
 
 # Saturation control
 static var current_saturation: float = 1.0

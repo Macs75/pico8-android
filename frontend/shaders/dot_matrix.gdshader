@@ -10,6 +10,7 @@ uniform float shine : hint_range(0.0, 0.5, 0.01) = 0.05;
 uniform float blend : hint_range(0.0, 1.0, 0.01) = 0.65;
 uniform float soft : hint_range(0.0, 1.0, 0.1) = 0.0;
 uniform float SATURATION : hint_range(0.0, 2.0, 0.05) = 1.0;
+uniform float STRENGTH : hint_range(0.0, 1.0, 0.01) = 1.0;
 
 varying vec2 pixel_no;
 varying vec4 c00_10;
@@ -66,11 +67,12 @@ void fragment() {
 	color += lookup(pixel_no,  0.0,  1.0, texture(TEXTURE, c12_22.xy).rgb);
 	color += lookup(pixel_no,  1.0,  1.0, texture(TEXTURE, c12_22.zw).rgb);
 	
+	vec3 original = texture(TEXTURE, UV).rgb;
 	vec3 out_color = mix(1.2 * mid_color, color, blend);
 	
 	// Apply saturation
 	vec3 gray = vec3(dot(out_color, vec3(0.299, 0.587, 0.114)));
 	out_color = mix(gray, out_color, SATURATION);
 	
-	COLOR = vec4(out_color, 1.0);
+	COLOR = vec4(mix(original, out_color, STRENGTH), 1.0);
 }

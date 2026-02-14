@@ -41,6 +41,7 @@ uniform float H_SHARP : hint_range(0.0, 1.0, 0.05) = 0.15;
 uniform float SUBPX_POS : hint_range(-0.5, 0.5, 0.01) = 0.35;
 uniform float THICK_FALLOFF : hint_range(0.2, 2.0, 0.05) = 0.65;
 uniform float SATURATION : hint_range(0.0, 2.0, 0.05) = 1.0;
+uniform float STRENGTH : hint_range(0.0, 1.0, 0.01) = 1.0;
 
 void fragment() {
     vec2 SourceSize = 1.0 / TEXTURE_PIXEL_SIZE;
@@ -71,6 +72,7 @@ void fragment() {
     vec3 gray = vec3(dot(col, vec3(0.299, 0.587, 0.114)));
     col = mix(gray, col, SATURATION);
     
-    COLOR.rgb = col;
+    vec3 original = texture(TEXTURE, UV).rgb;
+    COLOR.rgb = mix(original, col, STRENGTH);
     COLOR.a = 1.0;
 }

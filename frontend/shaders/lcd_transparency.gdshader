@@ -36,6 +36,7 @@ uniform float shadow_opacity : hint_range(0.0, 1.0, 0.01) = 0.5;
 uniform float shadow_blur : hint_range(0.0, 5.0, 0.1) = 1.0;
 
 uniform float SATURATION : hint_range(0.0, 2.0, 0.05) = 1.0;
+uniform float STRENGTH : hint_range(0.0, 1.0, 0.01) = 1.0;
 
 // ITU-R BT.709 luminance constants
 const float LUMA_R = 0.2126;
@@ -193,8 +194,9 @@ void fragment() {
 	}
 	
 	// Apply saturation
-	vec3 gray = vec3(dot(output_color.rgb, vec3(0.299, 0.587, 0.114)));
-	output_color.rgb = mix(gray, output_color.rgb, SATURATION);
+	vec3 gray_col = vec3(dot(output_color.rgb, vec3(0.299, 0.587, 0.114)));
+	output_color.rgb = mix(gray_col, output_color.rgb, SATURATION);
 	
-	COLOR = output_color;
+	vec3 original = texture(TEXTURE, UV).rgb;
+	COLOR = vec4(mix(original, output_color.rgb, STRENGTH), 1.0);
 }

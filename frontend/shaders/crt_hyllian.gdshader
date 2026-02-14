@@ -52,6 +52,7 @@ uniform float BEAM_MIN_WIDTH : hint_range(0.0, 1.0, 0.02) = 0.80;
 uniform float BEAM_MAX_WIDTH : hint_range(0.0, 1.0, 0.02) = 0.95;
 uniform float CRT_ANTI_RINGING : hint_range(0.0, 1.0, 0.1) = 0.8;
 uniform float SATURATION : hint_range(0.0, 2.0, 0.05) = 1.0;
+uniform float STRENGTH : hint_range(0.0, 1.0, 0.01) = 1.0;
 
 // Horizontal cubic filter constants
 // Using Catmull-Rom Spline filter (B = 0.0, C = 0.5)
@@ -149,6 +150,7 @@ void fragment() {
     vec3 gray = vec3(dot(color, vec3(0.299, 0.587, 0.114)));
     color = mix(gray, color, SATURATION);
     
-    COLOR.rgb = color;
+    vec3 original = texture(TEXTURE, UV).rgb;
+    COLOR.rgb = mix(original, color, STRENGTH);
     COLOR.a = 1.0;
 }
