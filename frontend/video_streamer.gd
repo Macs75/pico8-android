@@ -1,8 +1,10 @@
 extends Node2D
 class_name PicoVideoStreamer
 
+
 signal layout_reset(is_landscape: bool)
 signal control_selected(control: CanvasItem)
+signal bezel_layout_updated(bezel_rect: Rect2, scale: Vector2)
 
 @export var loading: AnimatedSprite2D
 @export var display: Sprite2D
@@ -118,8 +120,8 @@ func _ready() -> void:
 	# Connect to Arranger layout updates for Bezel Sync
 	var arranger = get_node_or_null("Arranger")
 	if arranger:
-		if not arranger.layout_updated.is_connected(_update_bezel_layout):
-			arranger.layout_updated.connect(_update_bezel_layout)
+		if not arranger.layout_updated.is_connected(_on_viewport_size_changed):
+			arranger.layout_updated.connect(_on_viewport_size_changed)
 
 	if OS.is_debug_build():
 		_setup_debug_fps()
@@ -1556,13 +1558,33 @@ func _setup_bezel_overlay():
 	# Connect to resize for layout updates
 	get_tree().root.size_changed.connect(_on_viewport_size_changed)
 
+	# Force initial layout update immediately (Synchronous) to prevent startup flicker
+	_update_bezel_layout()
+
 func _on_viewport_size_changed():
-	# Defer to allow UI layout to settle
-	call_deferred("_update_bezel_layout")
+	_update_bezel_layout()
 
 func _update_bezel_layout():
-	if bezel_overlay and bezel_overlay.is_bezel_loaded:
+	if bezel_overlay:
 		bezel_overlay.update_layout(get_display_rect())
+		
+		# Emit signal if bezel is legally loaded and ready
+		if bezel_overlay.is_bezel_loaded:
+			bezel_layout_updated.emit(bezel_overlay.get_global_rect(), Vector2.ONE) # Scale is calculated by consumer
+
+# Transform a point from Theme Coordinates to Global Screen Coordinates
+# theme_pos: The (x,y) in the layout.json
+# theme_bezel_size: The [w,h] of the bezel image in layout.json
+# actual_bezel_rect: The current global Rect2 of the BezelOverlay
+static func transform_theme_pos(theme_pos: Vector2, theme_bezel_size: Vector2, actual_bezel_rect: Rect2) -> Vector2:
+	if theme_bezel_size.x == 0 or theme_bezel_size.y == 0:
+		return Vector2.ZERO
+		
+	var scale_x = actual_bezel_rect.size.x / theme_bezel_size.x
+	var scale_y = actual_bezel_rect.size.y / theme_bezel_size.y
+	
+	var offset = theme_pos * Vector2(scale_x, scale_y)
+	return actual_bezel_rect.position + offset
 
 # Helper to get the screen-space rect of the game display
 func get_display_rect() -> Rect2:
@@ -1652,6 +1674,11 @@ static func get_control_pos(control_name: String, is_landscape: bool) -> Variant
 	if data == null: return null
 	if data is Vector2: return data # Legacy support
 	return data.get("pos", null)
+	
+func get_current_bezel_rect() -> Rect2:
+	if bezel_overlay and bezel_overlay.is_bezel_loaded:
+		return bezel_overlay.get_global_rect()
+	return Rect2()
 
 static func get_control_scale(control_name: String, is_landscape: bool) -> float:
 	var data = get_control_layout_data(control_name, is_landscape)

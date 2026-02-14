@@ -15,16 +15,34 @@ func _ready() -> void:
 	
 	if PicoVideoStreamer.instance:
 		PicoVideoStreamer.instance.layout_reset.connect(_on_layout_reset)
+		PicoVideoStreamer.instance.bezel_layout_updated.connect(_on_bezel_layout_updated)
 	
-	
-	# Attempt to load saved position and scale
+	# Initial attempt to set position
+	_update_position_from_layout()
+
+func _update_position_from_layout():
 	var is_landscape = _is_in_landscape_ui()
+	
+	# 1. User Override (Highest Priority)
 	var saved_pos = PicoVideoStreamer.get_control_pos(name, is_landscape)
 	if saved_pos != null:
 		position = saved_pos
+		var saved_scale = PicoVideoStreamer.get_control_scale(name, is_landscape)
+		scale = original_scale * saved_scale
+		return
+
+	# 2. Theme Layout
+	# Try to apply immediately if bezel is ready (catches startup race)
+	if PicoVideoStreamer.instance:
+		var rect = PicoVideoStreamer.instance.get_current_bezel_rect()
+		if rect.has_area():
+			_on_bezel_layout_updated(rect, Vector2.ONE)
+			
+	# 3. Default (Original) stays if nothing else applies
+
+func _on_bezel_layout_updated(bezel_rect: Rect2, _unused_scale: Vector2):
+	LayoutHelper.apply_layout(self, bezel_rect)
 	
-	var saved_scale = PicoVideoStreamer.get_control_scale(name, is_landscape)
-	scale = original_scale * saved_scale
 
 func _gui_input(event: InputEvent) -> void:
 	if PicoVideoStreamer.display_drag_enabled and is_repositionable:
@@ -70,17 +88,10 @@ func _gui_input(event: InputEvent) -> void:
 		return # Block normal input (clicks) when in drag mode
 	
 func _is_in_landscape_ui() -> bool:
-	# heuristic: check if we are inside LandscapeUI node path
-	var p = get_parent()
-	while p:
-		if p.name == "LandscapeUI":
-			return true
-		p = p.get_parent()
-	return false
+	return LayoutHelper.is_in_landscape_ui(self)
 
 func _save_layout():
-	var current_scale_mod = scale.x / original_scale.x
-	PicoVideoStreamer.set_control_layout_data(name, position, current_scale_mod, _is_in_landscape_ui())
+	LayoutHelper.save_layout(self, original_scale.x)
 
 func _on_layout_reset(target_is_landscape: bool):
 	if target_is_landscape == _is_in_landscape_ui():

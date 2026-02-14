@@ -67,7 +67,7 @@ static func get_resource_path(filename: String) -> String:
 	if not current_theme.is_empty():
 		var theme_path = get_themes_dir() + "/" + current_theme + "/" + filename
 		if FileAccess.file_exists(theme_path):
-			print("ThemeManager: Found themed resource: ", theme_path)
+			# print("ThemeManager: Found themed resource: ", theme_path)
 			return theme_path
 			
 	# 2. Key functionality: Check PUBLIC_FOLDER (legacy/default location)
@@ -129,3 +129,38 @@ static func _extract_theme_if_needed(theme_name: String):
 					
 		reader.close()
 		print("ThemeManager: Extraction complete.")
+
+static var _cached_layout: Dictionary = {}
+static var _cached_layout_theme: String = ""
+static var _cached_layout_orientation: bool = false # false=portrait, true=landscape
+
+static func get_theme_layout(is_landscape: bool) -> Dictionary:
+	var current_theme = get_current_theme()
+	if current_theme.is_empty():
+		return {}
+		
+	# Check Cache
+	if _cached_layout_theme == current_theme and _cached_layout_orientation == is_landscape:
+		return _cached_layout
+
+	var layout_file = "layout_landscape.json" if is_landscape else "layout_portrait.json"
+	var path = get_themes_dir() + "/" + current_theme + "/" + layout_file
+	
+	if FileAccess.file_exists(path):
+		var content = FileAccess.get_file_as_string(path)
+		var json = JSON.new()
+		var err = json.parse(content)
+		if err == OK:
+			_cached_layout = json.data
+			_cached_layout_theme = current_theme
+			_cached_layout_orientation = is_landscape
+			print("ThemeManager: Loaded layout from ", path)
+			return _cached_layout
+		else:
+			print("ThemeManager: Failed to parse layout JSON: ", json.get_error_message())
+	
+	# Clear cache if not found or invalid
+	_cached_layout = {}
+	_cached_layout_theme = current_theme
+	_cached_layout_orientation = is_landscape
+	return {}
