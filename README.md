@@ -40,12 +40,16 @@ This fork introduces several enhancements to improve the experience on Android d
 *   **Options Menu:** Access the side menu for settings and options by sliding from the left side of the screen or pressing the **Left Shoulder (L1/LB)** button on a controller.
 *   **Frontend Integration:** Compatible with frontends like **ES-DE** to launch PICO-8 games directly or access Splore (see v0.0.7 release notes for setup instructions; pending official integration from the ES-DE team). **Beacon Launcher** support added since v1.0.0. Please check the [wiki pages](https://github.com/Macs75/pico8-android/wiki/Frontends-Integration) for the setup.
 *   **Direct Cart Launch:** Launch `.p8.png` cartridges directly from any file manager or web browser. Supports **Deep Links** to launch carts directly from the [Lexaloffle website](https://www.lexaloffle.com/), as well as standard Android "Share Link" and "Share Image" actions.
-*   **2 Player support:** connect 2 controllers and you can play games that support them
-*   **Integrated shaders:** try to one of the integrated shaders to see if you like it more than the original output. They can be modified in /Documents/pico8/shaders . Copy one of the existing rename it in [name].custom.gslang, it will be loaded next time you select it from the menu, without need to restart. The format is Godot shader language, not the standard slang.
-*   **Bezel support:** you can activate a bezel around the pico8 screen, and personalize it changing the PNG in /Documents/pico9/bezel.png. Just rember to leave a square transparent space where the video should be.
-*   **Custom Color Calibration:** Take control over the visual profile by adjusting scolor parameters to your preference.
-*   **Custom Layout adjustements:** Move and zoom the on screen controls to afjust them to your preferences
-*   **Controller mapping:** If you have problems with how the button are recognized on your controller use the new controller mapping feature. Check the wiki for more details.
+*   **Home Screen Shortcuts:** Create shortcuts to launch your favorite games directly from your home screen.
+*   **Favourites Management:** Reorder your Splore favorites list with easy drag-and-drop or using predefined sorts (name, author, most played).
+*   **Play Stats:** Review your play statistics as recorded by PICO-8.
+*   **Theme Support:** Create your own custom theme or use one of the pre-made ones. Check the [wiki](https://github.com/Macs75/pico8-android/wiki/Themes) for more details.
+*   **2 Player Support:** Connect 2 controllers to play games that support multiplayer.
+*   **Integrated Shaders:** Try one of the integrated shaders for a custom retro look. Shaders can be modified in `/Documents/pico8/shaders`. Simply rename an existing shader to `[name].custom.gslang` and it will be loaded without a restart.
+*   **Bezel Support:** Activate a bezel around the PICO-8 screen and personalize it by changing the PNG in `/Documents/pico8/bezel.png`.
+*   **Custom Color Calibration:** Take control over the visual profile by adjusting color parameters to your preference.
+*   **Custom Layout Adjustments:** Move and zoom the on-screen controls to adjust them to your preferences.
+*   **Controller Mapping:** Easily map your controller buttons if they aren't recognized correctly. Check the [wiki](https://github.com/Macs75/pico8-android/wiki/Controller-Mapping) for more details.
 
 
 ## 📂 Project Structure
