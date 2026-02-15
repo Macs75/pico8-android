@@ -1328,24 +1328,33 @@ func _unhandled_input(event: InputEvent) -> void:
 			if event.axis_value < -axis_threshold:
 				if key_left not in held_keys: vkb_setstate(key_left, true)
 			else:
-				if key_left in held_keys: vkb_setstate(key_left, false)
+				if key_left in held_keys:
+					# Only release if D-PAD is NOT also holding it
+					if not Input.is_joy_button_pressed(event.device, JoyButton.JOY_BUTTON_DPAD_LEFT):
+						vkb_setstate(key_left, false)
 
 			if event.axis_value > axis_threshold:
 				if key_right not in held_keys: vkb_setstate(key_right, true)
 			else:
-				if key_right in held_keys: vkb_setstate(key_right, false)
+				if key_right in held_keys:
+					if not Input.is_joy_button_pressed(event.device, JoyButton.JOY_BUTTON_DPAD_RIGHT):
+						vkb_setstate(key_right, false)
 		
 		# Handle Left Stick Y (Up/Down)
 		elif event.axis == JoyAxis.JOY_AXIS_LEFT_Y:
 			if event.axis_value < -axis_threshold:
 				if key_up not in held_keys: vkb_setstate(key_up, true)
 			else:
-				if key_up in held_keys: vkb_setstate(key_up, false)
+				if key_up in held_keys:
+					if not Input.is_joy_button_pressed(event.device, JoyButton.JOY_BUTTON_DPAD_UP):
+						vkb_setstate(key_up, false)
 
 			if event.axis_value > axis_threshold:
 				if key_down not in held_keys: vkb_setstate(key_down, true)
 			else:
-				if key_down in held_keys: vkb_setstate(key_down, false)
+				if key_down in held_keys:
+					if not Input.is_joy_button_pressed(event.device, JoyButton.JOY_BUTTON_DPAD_DOWN):
+						vkb_setstate(key_down, false)
 		
 
 	#if not (tcp and tcp.get_status() == StreamPeerTCP.STATUS_CONNECTED):
