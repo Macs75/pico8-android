@@ -25,6 +25,8 @@ var _thread_active: bool = false
 var _reset_requested: bool = false
 var _input_queue: Array = []
 var _main_thread_input_buffer: Array = []
+var _pipe_reset_complete: bool = true
+var _connection_allowed: bool = false
 
 const PIDOT_EVENT_MOUSEEV = 1;
 const PIDOT_EVENT_KEYEV = 2;
@@ -49,7 +51,32 @@ func hard_reset_connection():
 	if _mutex:
 		_mutex.lock()
 		_reset_requested = true
+		_pipe_reset_complete = false
 		_mutex.unlock()
+
+func hold_connection():
+	print("Holding connection attempts...")
+	if _mutex:
+		_mutex.lock()
+		_reset_requested = true
+		_pipe_reset_complete = false
+		_connection_allowed = false
+		_mutex.unlock()
+
+func allow_connection():
+	print("Releasing connection hold...")
+	if _mutex:
+		_mutex.lock()
+		_connection_allowed = true
+		_mutex.unlock()
+
+func is_pipe_reset_complete() -> bool:
+	var ret = false
+	if _mutex:
+		_mutex.lock()
+		ret = _pipe_reset_complete
+		_mutex.unlock()
+	return ret
 
 static var instance: PicoVideoStreamer
 
@@ -219,10 +246,24 @@ func _thread_function():
 					_applinks_plugin.pipe_close(vid_pipe_id)
 					vid_pipe_id = -1
 				
-				if in_pipe_id != -1:
 					print("Pipe: Hard Reset - Closing Input Pipe")
 					_applinks_plugin.pipe_close(in_pipe_id)
 					in_pipe_id = -1
+			
+			if _mutex:
+				_mutex.lock()
+				_pipe_reset_complete = true
+				_mutex.unlock()
+		
+		var can_connect = true
+		if _mutex:
+			_mutex.lock()
+			can_connect = _connection_allowed
+			_mutex.unlock()
+			
+		if not can_connect:
+			OS.delay_msec(50)
+			continue
 		
 		# Connection Management (Open Pipes)
 		if vid_pipe_id == -1 or in_pipe_id == -1:
