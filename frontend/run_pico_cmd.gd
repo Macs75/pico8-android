@@ -180,13 +180,32 @@ func _launch_pico8(target_path: String) -> void:
 	if not extra_bind_export.is_empty():
 		extra_bind_export = "export PROOT_EXTRA_BIND='" + extra_bind_export + "'; "
 	
-	# 3. Ensure pipes exist before launching to avoid race conditions
-	var fifo_vid = pkg_path + "/tmp/pico8.vid"
-	var fifo_in = pkg_path + "/tmp/pico8.in"
-	if not FileAccess.file_exists(fifo_vid) or not FileAccess.file_exists(fifo_in):
-		print("Creating pipes from Godot...")
-		var mkfifo_cmd = "cd " + pkg_path + "; ./busybox mkdir -p tmp; ./busybox mkfifo tmp/pico8.vid tmp/pico8.in; chmod 666 tmp/pico8.vid tmp/pico8.in"
-		OS.execute(PicoBootManager.BIN_PATH + "/sh", ["-c", mkfifo_cmd])
+	# 3. Synchronize and Recreate Pipes (Force Clean State)
+	# We perform this ON EVERY LAUNCH to prevent stale regular files or broken permissions
+	if PicoVideoStreamer.instance:
+		# 1. PAUSE Godot connection attempts entirely
+		# This prevents the thread from grabbing the file handle mid-creation
+		PicoVideoStreamer.instance.hold_connection()
+		
+		# 2. Sync Wait (Ensure thread has actually stopped/closed)
+		print("Waiting for Video Streamer to release pipes...")
+		var wait_start = Time.get_ticks_msec()
+		while not PicoVideoStreamer.instance.is_pipe_reset_complete():
+			await get_tree().process_frame
+			if (Time.get_ticks_msec() - wait_start) > 2000:
+				print("Pipe Release Timeout! Proceeding anyway...")
+				break
+		print("Pipes released by Godot.")
+
+	print("Recreating pipes from Godot...")
+	# Unconditional delete and recreate
+	var mkfifo_cmd = "cd " + pkg_path + ";LD_LIBRARY_PATH=. ./busybox mkdir -p tmp; rm -f tmp/pico8.vid tmp/pico8.in; LD_LIBRARY_PATH=. ./busybox mkfifo tmp/pico8.vid tmp/pico8.in; chmod 666 tmp/pico8.vid tmp/pico8.in"
+	OS.execute(PicoBootManager.BIN_PATH + "/sh", ["-c", mkfifo_cmd])
+	
+	# 4. Resume Godot connection attempts
+	if PicoVideoStreamer.instance:
+		print("Resuming Godot connection attempts...")
+		PicoVideoStreamer.instance.allow_connection()
 
 	var cmdline = env_setup + extra_bind_export + root_bind_export + bbs_bind_export + 'cd ' + pkg_path + '; LD_LIBRARY_PATH=. ./busybox ash start_pico_proot.sh' + run_arg + ' >' + PicoBootManager.PUBLIC_FOLDER + '/logs/pico_out.txt 2>' + PicoBootManager.PUBLIC_FOLDER + "/logs/pico_err.txt"
 	
@@ -364,15 +383,10 @@ func _complete_restart() -> void:
 	pico_pid = null
 
 	# Cleanup temp files that might block restart (PID files, sockets)
-	# IMPORTANT: We PRESERVE the pipes (pico8.* and xdgopen) to avoid inode rotation deadlocks
 	var pkg_path = PicoBootManager.APPDATA_FOLDER + "/package"
 	var rm_cmd = "rm -rf " + pkg_path + "/ptmp/*; " + \
-				 "find " + pkg_path + "/tmp/ -mindepth 1 -not -name 'pico8.*' -not -name 'xdgopen' -exec rm -rf {} +"
+				 "find " + pkg_path + "/tmp/ -mindepth 1 -not -name 'xdgopen' -exec rm -rf {} +"
 	OS.execute(PicoBootManager.BIN_PATH + "/sh", ["-c", rm_cmd], [])
-
-	# Force TCP reset on streamer side to ensure immediate pickup
-	if PicoVideoStreamer.instance:
-		PicoVideoStreamer.instance.hard_reset_connection()
 
 	# Final Step: Launch new process
 	print("Launching new PICO-8 instance: ", pending_restart_path)

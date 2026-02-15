@@ -27,6 +27,8 @@ var _thread_active: bool = false
 var _reset_requested: bool = false
 var _input_queue: Array = []
 var _main_thread_input_buffer: Array = []
+var _pipe_reset_complete: bool = true
+var _connection_allowed: bool = false
 
 const PIDOT_EVENT_MOUSEEV = 1;
 const PIDOT_EVENT_KEYEV = 2;
@@ -51,7 +53,32 @@ func hard_reset_connection():
 	if _mutex:
 		_mutex.lock()
 		_reset_requested = true
+		_pipe_reset_complete = false
 		_mutex.unlock()
+
+func hold_connection():
+	print("Holding connection attempts...")
+	if _mutex:
+		_mutex.lock()
+		_reset_requested = true
+		_pipe_reset_complete = false
+		_connection_allowed = false
+		_mutex.unlock()
+
+func allow_connection():
+	print("Releasing connection hold...")
+	if _mutex:
+		_mutex.lock()
+		_connection_allowed = true
+		_mutex.unlock()
+
+func is_pipe_reset_complete() -> bool:
+	var ret = false
+	if _mutex:
+		_mutex.lock()
+		ret = _pipe_reset_complete
+		_mutex.unlock()
+	return ret
 
 static var instance: PicoVideoStreamer
 
@@ -221,10 +248,24 @@ func _thread_function():
 					_applinks_plugin.pipe_close(vid_pipe_id)
 					vid_pipe_id = -1
 				
-				if in_pipe_id != -1:
 					print("Pipe: Hard Reset - Closing Input Pipe")
 					_applinks_plugin.pipe_close(in_pipe_id)
 					in_pipe_id = -1
+			
+			if _mutex:
+				_mutex.lock()
+				_pipe_reset_complete = true
+				_mutex.unlock()
+		
+		var can_connect = true
+		if _mutex:
+			_mutex.lock()
+			can_connect = _connection_allowed
+			_mutex.unlock()
+			
+		if not can_connect:
+			OS.delay_msec(50)
+			continue
 		
 		# Connection Management (Open Pipes)
 		if vid_pipe_id == -1 or in_pipe_id == -1:
@@ -1302,24 +1343,33 @@ func _unhandled_input(event: InputEvent) -> void:
 			if event.axis_value < -axis_threshold:
 				if key_left not in held_keys: vkb_setstate(key_left, true)
 			else:
-				if key_left in held_keys: vkb_setstate(key_left, false)
+				if key_left in held_keys:
+					# Only release if D-PAD is NOT also holding it
+					if not Input.is_joy_button_pressed(event.device, JoyButton.JOY_BUTTON_DPAD_LEFT):
+						vkb_setstate(key_left, false)
 
 			if event.axis_value > axis_threshold:
 				if key_right not in held_keys: vkb_setstate(key_right, true)
 			else:
-				if key_right in held_keys: vkb_setstate(key_right, false)
+				if key_right in held_keys:
+					if not Input.is_joy_button_pressed(event.device, JoyButton.JOY_BUTTON_DPAD_RIGHT):
+						vkb_setstate(key_right, false)
 		
 		# Handle Left Stick Y (Up/Down)
 		elif event.axis == JoyAxis.JOY_AXIS_LEFT_Y:
 			if event.axis_value < -axis_threshold:
 				if key_up not in held_keys: vkb_setstate(key_up, true)
 			else:
-				if key_up in held_keys: vkb_setstate(key_up, false)
+				if key_up in held_keys:
+					if not Input.is_joy_button_pressed(event.device, JoyButton.JOY_BUTTON_DPAD_UP):
+						vkb_setstate(key_up, false)
 
 			if event.axis_value > axis_threshold:
 				if key_down not in held_keys: vkb_setstate(key_down, true)
 			else:
-				if key_down in held_keys: vkb_setstate(key_down, false)
+				if key_down in held_keys:
+					if not Input.is_joy_button_pressed(event.device, JoyButton.JOY_BUTTON_DPAD_DOWN):
+						vkb_setstate(key_down, false)
 		
 
 	#if not (tcp and tcp.get_status() == StreamPeerTCP.STATUS_CONNECTED):
