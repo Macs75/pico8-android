@@ -88,6 +88,9 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	set_process_input(true)
 	
+	# Apply saved orientation immediately
+	apply_orientation()
+	
 	# Apply shader if it was set before instance was ready
 	if current_shader_type != ShaderType.NONE:
 		set_shader_type(current_shader_type)
@@ -798,7 +801,37 @@ var input_blocked: bool = false
 
 func set_input_blocked(blocked: bool):
 	input_blocked = blocked
-	print("Input Blocked: ", blocked)
+
+# --- Orientation Settings ---
+enum OrientationMode {
+	AUTO = 0,
+	LANDSCAPE = 1,
+	LANDSCAPE_REVERSED = 2,
+	PORTRAIT = 3,
+	PORTRAIT_REVERSED = 4
+}
+
+static var orientation_mode: OrientationMode = OrientationMode.AUTO
+
+static func set_orientation_mode(mode: int):
+	orientation_mode = mode as OrientationMode
+	apply_orientation()
+
+static func get_orientation_mode() -> int:
+	return orientation_mode
+
+static func apply_orientation():
+	match orientation_mode:
+		OrientationMode.AUTO:
+			DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR) # DisplayServer.SCREEN_ORIENTATION_SENSOR
+		OrientationMode.LANDSCAPE:
+			DisplayServer.screen_set_orientation(DisplayServer.SCREEN_LANDSCAPE) # DisplayServer.SCREEN_ORIENTATION_LANDSCAPE
+		OrientationMode.LANDSCAPE_REVERSED:
+			DisplayServer.screen_set_orientation(DisplayServer.SCREEN_REVERSE_LANDSCAPE) # DisplayServer.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+		OrientationMode.PORTRAIT:
+			DisplayServer.screen_set_orientation(DisplayServer.SCREEN_PORTRAIT) # DisplayServer.SCREEN_ORIENTATION_PORTRAIT
+		OrientationMode.PORTRAIT_REVERSED:
+			DisplayServer.screen_set_orientation(DisplayServer.SCREEN_REVERSE_PORTRAIT) # DisplayServer.SCREEN_ORIENTATION_REVERSE_PORTRAIT
 
 func vkb_setstate(id: String, down: bool, unicode: int = 0, echo = false):
 	# INTENT SESSION EXIT (via specific button)

@@ -277,6 +277,46 @@ focus_mode = 0
 color = Color(0.00784314, 0.0156863, 0.0235294, 1)
 edit_alpha = false
 
+[node name="OrientationRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=987612345]
+layout_mode = 2
+
+[node name="ButtonOrientation" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/OrientationRow" unique_id=876543210]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Lock the application orientation"
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+text = "Orientation"
+flat = true
+alignment = 0
+
+[node name="WrapperOrientation" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/OrientationRow" unique_id=765432109]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 4
+
+[node name="OptionOrientation" type="OptionButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/OrientationRow/WrapperOrientation" unique_id=654321098]
+unique_name_in_owner = true
+layout_mode = 0
+focus_mode = 0
+alignment = 2
+selected = 0
+item_count = 5
+popup/item_0/text = "Auto"
+popup/item_0/id = 0
+popup/item_1/text = "Landscape"
+popup/item_1/id = 1
+popup/item_2/text = "Landscape Rev"
+popup/item_2/id = 2
+popup/item_3/text = "Portrait"
+popup/item_3/id = 3
+popup/item_4/text = "Portrait Rev"
+popup/item_4/id = 4
+
 [node name="ShaderSelectRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=128213912]
 layout_mode = 2
 
@@ -289,20 +329,20 @@ theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-text = "Display Shader"
+text = "Shader"
 flat = true
 alignment = 0
 
 [node name="WrapperShaderSelect" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow" unique_id=713065520]
 layout_mode = 2
-size_flags_horizontal = 8
+size_flags_horizontal = 6
 size_flags_vertical = 4
 
 [node name="ShaderSelect" type="OptionButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow/WrapperShaderSelect" unique_id=789330752]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
-alignment = 1
+alignment = 2
 selected = 0
 item_count = 11
 popup/item_0/text = "OFF"
@@ -340,14 +380,14 @@ theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-text = "Theme"
+text = "Theme          "
 flat = true
 alignment = 0
 
 [node name="WrapperTheme" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ThemeRow" unique_id=123456789]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 8
+size_flags_horizontal = 6
 size_flags_vertical = 4
 
 [node name="ThemeSelect" type="OptionButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ThemeRow/WrapperTheme" unique_id=987654321]
@@ -356,7 +396,7 @@ layout_mode = 0
 offset_right = 216.0
 offset_bottom = 23.0
 focus_mode = 0
-alignment = 1
+alignment = 2
 
 [node name="SaturationRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay" unique_id=1171679046]
 unique_name_in_owner = true
@@ -374,6 +414,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="SaturationMargins" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/SaturationRow" unique_id=1570363210]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/margin_top = 5
 theme_override_constants/margin_bottom = 5
@@ -439,6 +480,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ShaderOpacityMargins" type="MarginContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderOpacityRow" unique_id=1570363211]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/margin_top = 5
 theme_override_constants/margin_bottom = 5
@@ -989,10 +1031,10 @@ theme_override_constants/separation = 20
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="RootPathHeader" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline/ContentOffline/RootPathRow" unique_id=876543210]
+[node name="RootPathHeader" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline/ContentOffline/RootPathRow" unique_id=1187861190]
 layout_mode = 2
 
-[node name="ButtonSelectRoot" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline/ContentOffline/RootPathRow/RootPathHeader" unique_id=765432109]
+[node name="ButtonSelectRoot" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline/ContentOffline/RootPathRow/RootPathHeader" unique_id=1456017688]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -1005,7 +1047,7 @@ text = "Path to multipart carts"
 flat = true
 alignment = 0
 
-[node name="ButtonClearRoot" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline/ContentOffline/RootPathRow/RootPathHeader" unique_id=654321098]
+[node name="ButtonClearRoot" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionOffline/ContainerOffline/ContentOffline/RootPathRow/RootPathHeader" unique_id=1602412800]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0

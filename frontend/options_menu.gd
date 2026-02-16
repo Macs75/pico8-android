@@ -60,8 +60,16 @@ func _ready() -> void:
 	%ButtonKeyboard.pressed.connect(_on_label_pressed.bind(%ToggleKeyboard))
 	%ButtonIntegerScaling.pressed.connect(_on_label_pressed.bind(%ToggleIntegerScaling))
 	%ButtonBezel.pressed.connect(_on_label_pressed.bind(%ToggleBezel))
-	%ButtonShowControls.pressed.connect(_on_show_controls_button_pressed)
-	%ButtonShaderSelect.pressed.connect(_on_shader_button_pressed)
+	if not %ButtonShowControls.pressed.is_connected(_on_show_controls_button_pressed):
+		%ButtonShowControls.pressed.connect(_on_show_controls_button_pressed)
+	if not %ButtonShaderSelect.pressed.is_connected(_on_shader_button_pressed):
+		%ButtonShaderSelect.pressed.connect(_on_shader_button_pressed)
+	
+	# Orientation Row
+	if not %OptionOrientation.item_selected.is_connected(_on_orientation_selected):
+		%OptionOrientation.item_selected.connect(_on_orientation_selected)
+	if not %ButtonOrientation.pressed.is_connected(_on_orientation_button_pressed):
+		%ButtonOrientation.pressed.connect(_on_orientation_button_pressed)
 	
 	%ButtonTheme.pressed.connect(_on_theme_button_pressed)
 	%ThemeSelect.item_selected.connect(_on_theme_selected)
@@ -336,8 +344,8 @@ func _update_layout():
 	_style_option_row(%ButtonBezel, %ToggleBezel, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BezelRow/WrapperBezel, dynamic_font_size, scale_factor)
 
 	# 5. Show Controls Row
-    # Using style_shader_select_row which works for OptionButton rows generally
-	_style_shader_select_row(%ButtonShowControls, %OptionShowControls, $SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow/WrapperShowControls, dynamic_font_size, scale_factor)
+	# Using style_shader_select_row which works for OptionButton rows generally
+	_style_select_row(%ButtonShowControls, %OptionShowControls, $SlidePanel/ScrollContainer/VBoxContainer/SectionControls/ContainerControls/ContentControls/ShowControlsRow/WrapperShowControls, dynamic_font_size, scale_factor)
 
 	# 5a. Connected Controllers Row
 	%ButtonConnectedControllers.add_theme_font_size_override("font_size", dynamic_font_size)
@@ -345,11 +353,14 @@ func _update_layout():
 	# 6. Background Color Row
 	_style_option_row(%ButtonBgColor, %ColorPickerBG, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/BgColorRow/WrapperBgColor, dynamic_font_size, scale_factor)
 
+	# 6. Orientation Row
+	_style_select_row(%ButtonOrientation, %OptionOrientation, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/OrientationRow/WrapperOrientation, dynamic_font_size, scale_factor)
+
 	# 6a. Shader Select Row
-	_style_shader_select_row(%ButtonShaderSelect, %ShaderSelect, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow/WrapperShaderSelect, dynamic_font_size, scale_factor)
+	_style_select_row(%ButtonShaderSelect, %ShaderSelect, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/ShaderSelectRow/WrapperShaderSelect, dynamic_font_size, scale_factor)
 
 	# 6ab. Theme Row
-	_style_shader_select_row(%ButtonTheme, %ThemeSelect, %WrapperTheme, dynamic_font_size, scale_factor)
+	_style_select_row(%ButtonTheme, %ThemeSelect, %WrapperTheme, dynamic_font_size, scale_factor)
 
 	# 6b. Reposition Row
 	_style_option_row(%ButtonCustomizeLayout, %ToggleReposition, $SlidePanel/ScrollContainer/VBoxContainer/SectionDisplay/ContainerDisplay/ContentDisplay/RepositionRow/WrapperReposition, dynamic_font_size, scale_factor)
@@ -991,7 +1002,7 @@ func _on_bezel_toggled(toggled_on: bool):
 func _on_reposition_toggled(toggled_on: bool):
 	PicoVideoStreamer.set_display_drag_enabled(toggled_on)
 
-func _style_shader_select_row(label_btn: Button, option_btn: OptionButton, wrapper: Control, font_size: int, scale_factor: float):
+func _style_select_row(label_btn: Button, option_btn: OptionButton, wrapper: Control, font_size: int, scale_factor: float):
 	# Style Label Button
 	label_btn.add_theme_font_size_override("font_size", font_size)
 	
@@ -1021,10 +1032,12 @@ func _apply_scaled_margins(container: Control, dyn_scale: float):
 	var margins = ["margin_left", "margin_top", "margin_right", "margin_bottom"]
 	for m in margins:
 		var meta_key = "base_" + m
-		var base_val = container.get_meta(meta_key, null)
+		var base_val
 		
-		# First run: capture the value from Inspector/Theme
-		if base_val == null:
+		if container.has_meta(meta_key):
+			base_val = container.get_meta(meta_key)
+		else:
+			# First run: capture the value from Inspector/Theme
 			base_val = container.get_theme_constant(m)
 			container.set_meta(meta_key, base_val)
 		
@@ -1039,6 +1052,15 @@ func _on_shader_button_pressed():
 
 func _on_shader_selected(index: int):
 	PicoVideoStreamer.set_shader_type(index as PicoVideoStreamer.ShaderType)
+
+func _on_orientation_button_pressed():
+	# Cycle through orientation options
+	var current = %OptionOrientation.selected
+	%OptionOrientation.select((current + 1) % %OptionOrientation.item_count)
+	_on_orientation_selected(%OptionOrientation.selected)
+
+func _on_orientation_selected(index: int):
+	PicoVideoStreamer.set_orientation_mode(index)
 
 func _on_theme_button_pressed():
 	var theme_option_button = %ThemeSelect
@@ -1136,6 +1158,7 @@ func save_config() -> void:
 	PicoBootManager.set_setting("settings", "controller_assignments", ControllerUtils.controller_assignments)
 	
 	PicoBootManager.set_setting("settings", "shader_type", PicoVideoStreamer.get_shader_type())
+	PicoBootManager.set_setting("settings", "orientation_mode", PicoVideoStreamer.get_orientation_mode())
 	PicoBootManager.set_setting("settings", "shader_opacity", PicoVideoStreamer.get_shader_opacity())
 	PicoBootManager.set_setting("settings", "saturation", PicoVideoStreamer.get_saturation())
 	PicoBootManager.set_setting("settings", "button_hue", PicoVideoStreamer.get_button_hue())
@@ -1197,6 +1220,7 @@ func load_config():
 
 	# Load Visual Settings
 	var shader_type = PicoBootManager.get_setting("settings", "shader_type", PicoVideoStreamer.ShaderType.NONE)
+	var orientation_mode = PicoBootManager.get_setting("settings", "orientation_mode", PicoVideoStreamer.OrientationMode.AUTO)
 	var shader_opacity = PicoBootManager.get_setting("settings", "shader_opacity", 1.0)
 	var saturation = PicoBootManager.get_setting("settings", "saturation", 1.0)
 	var button_hue = PicoBootManager.get_setting("settings", "button_hue", 0.0)
@@ -1272,6 +1296,7 @@ func load_config():
 	PicoVideoStreamer.set_bezel_enabled(bezel)
 	PicoVideoStreamer.set_controls_mode(controls_mode)
 	PicoVideoStreamer.set_shader_type(shader_type)
+	PicoVideoStreamer.set_orientation_mode(orientation_mode)
 	PicoVideoStreamer.set_shader_opacity(shader_opacity)
 	PicoVideoStreamer.set_saturation(saturation)
 	PicoVideoStreamer.set_button_hue(button_hue)
@@ -1293,6 +1318,7 @@ func load_config():
 	if %ToggleReposition: %ToggleReposition.set_pressed_no_signal(PicoVideoStreamer.display_drag_enabled) # logic check?
 	if %OptionShowControls: %OptionShowControls.select(controls_mode)
 	if %ShaderSelect: %ShaderSelect.select(shader_type)
+	if %OptionOrientation: %OptionOrientation.select(orientation_mode)
 	if %SliderSensitivity:
 		%SliderSensitivity.set_value_no_signal(sensitivity)
 		%LabelSensitivityValue.text = str(sensitivity)
