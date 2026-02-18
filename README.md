@@ -4,6 +4,8 @@ This application is a specialized frontend for the Android platform that allows 
 
 **Note:** This application is a wrapper/launcher; it does **not** contain PICO-8 itself. You must provide your own legally purchased copy of the PICO-8 Raspberry Pi executable at the start of the application.
 
+**PICO-8 logo used with permission from Lexaloffle**
+
 ## ⚠️ Important Technical Details
 
 ### Android Version Target & Warning
