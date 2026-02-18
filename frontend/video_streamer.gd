@@ -18,7 +18,6 @@ var vid_pipe_id: int = -1
 var in_pipe_id: int = -1
 var _applinks_plugin = null
 
-const TOTAL_PACKET_SIZE = 11 + 1 + (128 * 128 * 4)
 
 # TCP Threading
 var _thread: Thread
@@ -41,6 +40,9 @@ const RETRY_INTERVAL: int = 200
 const READ_TIMEOUT: int = 5000
 var is_intent_session: bool = false
 var is_pico_suspended: bool = false # Track if PICO-8 process is suspended
+var advanced_features_enabled: bool = false
+var is_square: bool = false
+
 
 var selected_control: CanvasItem = null
 func _on_intent_session_started():
@@ -152,6 +154,10 @@ func _ready() -> void:
 	if arranger:
 		if not arranger.layout_updated.is_connected(_on_viewport_size_changed):
 			arranger.layout_updated.connect(_on_viewport_size_changed)
+
+	var size = get_viewport().get_visible_rect().size
+	var aspect = size.x / float(max(1, size.y))
+	is_square = abs(aspect - 1.0) < 0.1
 
 	if OS.is_debug_build():
 		_setup_debug_fps()
@@ -366,12 +372,11 @@ func _thread_function():
 			else:
 				# Synched Mode - validate header at position 0
 				if buffer.size() >= TOTAL_PACKET_SIZE:
-					# Manual byte-by-byte header check (most reliable)
+					# Validate Header
 					var header_valid = true
-					for i in range(11):
-						if buffer[i] != SYNC_SEQ_PBA[i]:
-							header_valid = false
-							break
+					# Fast checking using slice equality
+					if buffer.slice(0, SYNC_SEQ_PBA.size()) != SYNC_SEQ_PBA:
+						header_valid = false
 					
 					if header_valid:
 						var packet = buffer.slice(0, TOTAL_PACKET_SIZE)
@@ -429,12 +434,14 @@ func release_input_locks():
 	get_viewport().gui_release_focus()
 	DisplayServer.virtual_keyboard_hide()
 
-const SYNC_SEQ = [80, 73, 67, 79, 56, 83, 89, 78, 67, 95, 95] # "PICO8SYNC"
+const SYNC_SEQ = [80, 73, 67, 79, 56, 83, 89, 78, 67, 95, 95] # "PICO8SYNC__"
+#const SYNC_SEQ = [80, 73, 67, 79, 56, 83, 89] # "PICO8SY"
 var SYNC_SEQ_PBA: PackedByteArray
 const CUSTOM_BYTE_COUNT = 1
+#const CUSTOM_BYTE_COUNT = 5 # State(1) + Input(1) + Cart(1) + Editor(1) + NavState(1)
 var current_custom_data := range(CUSTOM_BYTE_COUNT)
-const DISPLAY_BYTES = 128 * 128 * 4
-const PACKLEN = len(SYNC_SEQ) + CUSTOM_BYTE_COUNT + DISPLAY_BYTES
+const DISPLAY_BYTES = 128 * 128 * 4 # 64KB RGBA8888
+const TOTAL_PACKET_SIZE = len(SYNC_SEQ) + CUSTOM_BYTE_COUNT + DISPLAY_BYTES
 
 var _buffer_images: Array[Image] = []
 var _write_head: int = 0
@@ -527,8 +534,41 @@ func _process(delta: float) -> void:
 				fps_frame_count = 0
 				_mutex.unlock()
 				
-			debug_fps_label.text = "FPS: " + str(current_frames)
+			var state_flags = ""
+			if current_navstate & 32: state_flags += "L"
+			if current_navstate & 8: state_flags += "S"
+			if current_navstate & 16: state_flags += "C"
+			if current_navstate & 1: state_flags += "E"
+			if current_navstate & 2: state_flags += "G"
+			if current_navstate & 4: state_flags += "D"
+			if current_navstate & 64: state_flags += "P"
+			if state_flags == "": state_flags = "IDLE"
+			
+			debug_fps_label.text = "FPS: " + str(current_frames) + " | " + state_flags # + \
+			#"\nSt:" + str(raw_state_enum) + " In:" + str(raw_input_mode) + \
+			#" Ct:" + str(raw_cart_loaded) + " Ed:" + str(raw_is_editor)
 			fps_timer -= 1.0
+	
+	# Auto-Trackpad Logic for Devkit Carts
+	# D (0x04) = Devkit Supported | P (0x40) = Paused.
+	if advanced_features_enabled:
+		var has_devkit = (current_navstate & 0x04) != 0
+		var is_paused_flag = (current_navstate & 0x40) != 0
+		
+		if has_devkit:
+			if is_paused_flag:
+				# Paused -> Mouse Mode (Menu Navigation)
+				if input_mode == InputMode.TRACKPAD:
+					_sync_input_mode_ui(false)
+			else:
+				# Active Devkit Game -> Trackpad Mode (Precision)
+				# ONLY if screen is not 1:1 (Square screens have no room for trackpad)
+				if not is_square and input_mode == InputMode.MOUSE:
+					_sync_input_mode_ui(true)
+		else:
+			# No Devkit (Splore/Console/Normal Game) -> Mouse Mode
+			if input_mode == InputMode.TRACKPAD:
+				_sync_input_mode_ui(false)
 			
 	# Input polling and queueing
 	var screen_pos: Vector2i = Vector2i.ZERO
@@ -607,7 +647,29 @@ func _process(delta: float) -> void:
 				_flush_logs()
 
 
+var current_navstate: int = 0
+var raw_state_enum: int = 0
+var raw_input_mode: int = 0
+var raw_cart_loaded: int = 0
+var raw_is_editor: int = 0
+
 func _process_packet_thread(data: PackedByteArray):
+	# Data Structure for debug:
+	# 0-6: "PICO8SY" (7 bytes)
+	# 7: State Enum
+	# 8: Input Mode
+	# 9: Cart Loaded
+	# 10: Is Editor
+	# 11: NavState (Classic Flags)
+	# 12+: Video Data (8192 bytes)
+	if data.size() >= 12:
+		#raw_state_enum = data[7]
+		#raw_input_mode = data[8]
+		#raw_cart_loaded = data[9]
+		#raw_is_editor = data[10]
+		current_navstate = data[11]
+
+	# Image starts after SYNC + CUSTOM
 	var im_start = len(SYNC_SEQ) + CUSTOM_BYTE_COUNT
 	var im = data.slice(im_start, im_start + DISPLAY_BYTES)
 	set_im_from_data_threaded(im)
@@ -1802,3 +1864,21 @@ static func reset_display_layout(is_landscape: bool):
 			if arranger.has_method("_update_reset_button_visibility"):
 				arranger._update_reset_button_visibility()
 			arranger.dirty = true
+
+func _sync_input_mode_ui(is_trackpad: bool):
+	var options = get_tree().root.get_node_or_null("Main/OptionsMenu")
+	if options and options.has_method("set_input_mode_programmatically"):
+		options.set_input_mode_programmatically(is_trackpad)
+	else:
+		# Fallback to direct set if menu not found
+		PicoVideoStreamer.set_input_mode(is_trackpad)
+
+static func set_advanced_features_enabled(enabled: bool) -> void:
+	if instance:
+		instance.advanced_features_enabled = enabled
+		print("Video Streamer: Advanced Features set to ", enabled)
+
+static func get_advanced_features_enabled() -> bool:
+	if instance:
+		return instance.advanced_features_enabled
+	return false

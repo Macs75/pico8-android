@@ -27,6 +27,8 @@ const CONFIG_PATH = "user://settings.cfg"
 var focus_active: bool = false
 var nodes_hidden: Array[CanvasItem] = []
 
+const PICO8_0_2_7_SIZE = 1640888
+
 func _ready() -> void:
 	# Hide immediately to prevent flash
 	if panel:
@@ -152,19 +154,26 @@ func _ready() -> void:
 	%ButtonAudioBackendLabel.pressed.connect(_on_label_pressed.bind(%ToggleAudioBackend))
 	if not %ToggleAudioBackend.toggled.is_connected(_on_audio_backend_toggled):
 		%ToggleAudioBackend.toggled.connect(_on_audio_backend_toggled)
+
+	# Advanced Features
+	if %ToggleAdvancedFeatures:
+		if not %ToggleAdvancedFeatures.toggled.is_connected(_on_advanced_features_toggled):
+			%ToggleAdvancedFeatures.toggled.connect(_on_advanced_features_toggled)
+	if %ButtonAdvancedFeaturesLabel:
+		%ButtonAdvancedFeaturesLabel.pressed.connect(_on_label_pressed.bind(%ToggleAdvancedFeatures))
 	
 	# 1. Shader Strength Row
 	if not %SliderShaderOpacity.value_changed.is_connected(_on_shader_opacity_changed):
 		%SliderShaderOpacity.value_changed.connect(_on_shader_opacity_changed)
-	
-	_connect_focus_signals(%SliderShaderOpacity, %ShaderOpacityRow)
-	_connect_focus_signals(%ButtonShaderOpacityMinus, %ShaderOpacityRow)
-	_connect_focus_signals(%ButtonShaderOpacityPlus, %ShaderOpacityRow)
-	
+
 	if not %ButtonShaderOpacityMinus.pressed.is_connected(_on_shader_opacity_minus):
 		%ButtonShaderOpacityMinus.pressed.connect(_on_shader_opacity_minus)
 	if not %ButtonShaderOpacityPlus.pressed.is_connected(_on_shader_opacity_plus):
 		%ButtonShaderOpacityPlus.pressed.connect(_on_shader_opacity_plus)
+	
+	_connect_focus_signals(%SliderShaderOpacity, %ShaderOpacityRow)
+	_connect_focus_signals(%ButtonShaderOpacityMinus, %ShaderOpacityRow)
+	_connect_focus_signals(%ButtonShaderOpacityPlus, %ShaderOpacityRow)
 		
 	# 2. Saturation Row (Reuse existing signals, add focus)
 	_connect_focus_signals(%SliderSaturation, %SaturationRow)
@@ -205,6 +214,7 @@ func _ready() -> void:
 	# Edge Handler - Connect for Swipe-to-Open
 	if edge_handler:
 		edge_handler.gui_input.connect(_on_edge_handler_input)
+
 
 	# Initial Layout Update
 	_update_layout()
@@ -482,6 +492,7 @@ func _update_layout():
 	# 7f. Tools Section Styles
 	%BtnToolsToggle.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
 	_apply_scaled_margins(%ContainerTools, scale_factor)
+	_style_option_row(%ButtonAdvancedFeaturesLabel, %ToggleAdvancedFeatures, %WrapperAdvancedFeatures, dynamic_font_size, scale_factor)
 
 	# 4. Save Buttons
 	%ButtonsContainer.add_theme_constant_override("separation", 4 * scale_factor)
@@ -799,10 +810,6 @@ func _input(event: InputEvent) -> void:
 		# Also allow stick navigation/adjustment
 		if event.axis == JoyAxis.JOY_AXIS_LEFT_X:
 			if abs(event.axis_value) > 0.5:
-				# Use a timer or a simple "only trigger once per press" check?
-				# For sliders, continuous is better, for nav, discrete.
-				# Simple implementation: treat strong values as discrete press for now
-				# Real implementation would need a repeat timer.
 				pass
 		elif event.axis == JoyAxis.JOY_AXIS_LEFT_Y:
 			if event.axis_value < -0.5:
@@ -906,6 +913,12 @@ func _on_external_keyboard_change(enabled: bool):
 func _on_input_mode_toggled(toggled_on: bool):
 	PicoVideoStreamer.set_input_mode(toggled_on)
 	_update_input_mode_label(toggled_on)
+
+func set_input_mode_programmatically(is_trackpad: bool):
+	if %ToggleInputMode and %ToggleInputMode.button_pressed != is_trackpad:
+		%ToggleInputMode.button_pressed = is_trackpad
+		# This will trigger the signal _on_input_mode_toggled, which updates the label and static state.
+
 
 func _update_input_mode_label(is_trackpad: bool):
 	if %ButtonInputMode:
@@ -1167,7 +1180,10 @@ func save_config() -> void:
 	PicoBootManager.set_setting("settings", "saturation", PicoVideoStreamer.get_saturation())
 	PicoBootManager.set_setting("settings", "button_hue", PicoVideoStreamer.get_button_hue())
 	PicoBootManager.set_setting("settings", "button_saturation", PicoVideoStreamer.get_button_saturation())
+	PicoBootManager.set_setting("settings", "button_saturation", PicoVideoStreamer.get_button_saturation())
 	PicoBootManager.set_setting("settings", "button_lightness", PicoVideoStreamer.get_button_lightness())
+	
+	PicoBootManager.set_setting("settings", "advanced_features_enabled", PicoVideoStreamer.get_advanced_features_enabled())
 	
 	PicoBootManager.set_setting("settings", "bg_color", %ColorPickerBG.color)
 	
@@ -1230,6 +1246,33 @@ func load_config():
 	var button_hue = PicoBootManager.get_setting("settings", "button_hue", 0.0)
 	var button_saturation = PicoBootManager.get_setting("settings", "button_saturation", 1.0)
 	var button_lightness = PicoBootManager.get_setting("settings", "button_lightness", 1.0)
+	
+	# Advanced Features Logic
+	var is_0_2_7 = _check_pico8_version()
+	var advanced_enabled = false
+	
+	if is_0_2_7:
+		# If user is on 0.2.7, load setting. If not set, default to True.
+		var stored_val = PicoBootManager.get_setting("settings", "advanced_features_enabled", null)
+		if stored_val == null:
+			advanced_enabled = true
+		else:
+			advanced_enabled = bool(stored_val)
+			
+		if %ToggleAdvancedFeatures:
+			%ToggleAdvancedFeatures.disabled = false
+			%ToggleAdvancedFeatures.tooltip_text = "Enable advanced integrations (Auto-Trackpad, etc.)"
+	else:
+		# Not 0.2.7 -> Forced Off and Disabled
+		advanced_enabled = false
+		if %ToggleAdvancedFeatures:
+			%ToggleAdvancedFeatures.disabled = true
+			%ToggleAdvancedFeatures.tooltip_text = "Requires PICO-8 0.2.7"
+	
+	if %ToggleAdvancedFeatures:
+		%ToggleAdvancedFeatures.set_pressed_no_signal(advanced_enabled)
+	
+	PicoVideoStreamer.set_advanced_features_enabled(advanced_enabled)
 	
 	# Load Theme
 	var current_theme = ThemeManager.get_current_theme()
@@ -1417,7 +1460,20 @@ func _on_shader_opacity_changed(val: float):
 func _on_shader_opacity_minus():
 	var s = %SliderShaderOpacity
 	s.value = clamp(s.value - s.step, s.min_value, s.max_value)
-
+	
 func _on_shader_opacity_plus():
 	var s = %SliderShaderOpacity
 	s.value = clamp(s.value + s.step, s.min_value, s.max_value)
+
+func _on_advanced_features_toggled(toggled_on: bool):
+	PicoVideoStreamer.set_advanced_features_enabled(toggled_on)
+	
+func _check_pico8_version() -> bool:
+	var path = "user://package/rootfs/home/pico/pico-8/pico8_64"
+	var f = FileAccess.open(path, FileAccess.READ)
+	if f:
+		var size = f.get_length()
+		f.close()
+		if size == PICO8_0_2_7_SIZE:
+			return true
+	return false

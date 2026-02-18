@@ -22,7 +22,7 @@
 [ext_resource type="FontFile" uid="uid://c2jlc3nt8y38q" path="res://assets/font/atlas-0.png" id="20_d13ii"]
 [ext_resource type="Texture2D" uid="uid://shpx84pg158k" path="res://assets/pico8_logo_vector.png" id="23_1u8w0"]
 [ext_resource type="Script" uid="uid://3yarkysfetgu" path="res://kb_toggler.gd" id="37_come4"]
-[ext_resource type="PackedScene" path="res://dpad.tscn" id="41_0cp0l"]
+[ext_resource type="PackedScene" uid="uid://bgklhpsaac82q" path="res://dpad.tscn" id="41_0cp0l"]
 [ext_resource type="Script" uid="uid://c7rts7fcblaav" path="res://run_pico_cmd.gd" id="41_4lmeg"]
 [ext_resource type="PackedScene" uid="uid://dgbacxvbwjfsh" path="res://landscape_ui.tscn" id="42_land"]
 [ext_resource type="Texture2D" uid="uid://cih0d0dnky0b5" path="res://assets/btn_x_normal.png" id="43_x_norm"]

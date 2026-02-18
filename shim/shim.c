@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <SDL2/SDL.h>
+#include <link.h> // For dl_iterate_phdr
 
 #define FINDSDL(VAR, NAME) \
     if (!(VAR)) { \
@@ -31,12 +32,35 @@ static int in_fd = -1;
 static Uint8 keystate[256];
 
 static uint8_t* picoram = NULL;
-#define PICORAM_INDEX_ISINEDITOR 0x2586c
-#define PICORAM_INDEX_ISINGAME 0x25868
-// this address is garbage lol
-#define PICORAM_INDEX_ISPAUSED 0x3726c
-// devkit address is *probably* correct?
-#define PICORAM_INDEX_DEVKIT 0x2c8e5
+static size_t picoram_size = 0;
+
+// Version Guarding
+#define PICO8_VERSION_0_2_7_SIZE 1640888
+static bool is_version_0_2_7 = false;
+
+// #define MAX_CANDIDATES 16
+// typedef struct {
+//     void* ptr;
+//     size_t size;
+// } MemCandidate;
+// static MemCandidate candidates[MAX_CANDIDATES];
+// static int candidate_count = 0;
+
+// 0.2.7 Memory locations
+// Found via 4-way memdump analysis (Take 2)
+#define PICORAM_INDEX_ISINEDITOR 0x25700
+#define PICORAM_INDEX_ISINGAME 0x257d4
+// 11 = Editor/Menu, 27 = Game
+#define PICORAM_INDEX_STATE_TYPE 0x2572c
+// Cart Loaded Flag: 0=Splore (No Cart), 1=Editor/Console/Game (Cart Loaded)
+#define PICORAM_INDEX_CART_LOADED 0x14
+// Strict flags
+#define PICORAM_INDEX_STRICT_EDITOR 0x255d4
+#define PICORAM_INDEX_INPUT_MODE 0x1
+
+// Devkit Flag: DAT_006516b4.
+// Offset: 0x6516b4 - 0x61af80 = 0x36734.
+#define PICORAM_INDEX_DEVKIT 0x36734
 
 #define PIDOT_EVENT_MOUSEEV 1
 #define PIDOT_EVENT_KEYEV 2
@@ -64,8 +88,56 @@ static ssize_t write_all(int fd, const void* buf, size_t len) {
     return total_sent;
 }
 
+static int header_handler(struct dl_phdr_info *info, size_t size, void *data) {
+    // printf("SHIM: dl_iterate_phdr found: '%s' at %p\n", info->dlpi_name, (void*)info->dlpi_addr);
+    
+    // The main executable often has an empty name
+    if (strlen(info->dlpi_name) == 0) {
+        printf("SHIM: Found Main Executable (Empty Name) at 0x%lx\n", info->dlpi_addr);
+        *(uintptr_t*)data = info->dlpi_addr;
+        return 1;
+    }
+    
+    // Or check for "pico8"
+    if (strstr(info->dlpi_name, "pico8")) {
+        printf("SHIM: Found PICO-8 binary by name at 0x%lx\n", info->dlpi_addr);
+        *(uintptr_t*)data = info->dlpi_addr;
+        return 1;
+    }
+    return 0;
+}
+
+// Helper to get base address
+static uintptr_t get_base_address() {
+    uintptr_t base = 0;
+    dl_iterate_phdr(header_handler, &base);
+    return base;
+}
+
+//simple check for file size for speed reasons
+static void check_pico8_version() {
+    struct stat st;
+    if (stat("/proc/self/exe", &st) == 0) {
+        if (st.st_size == PICO8_VERSION_0_2_7_SIZE) {
+            is_version_0_2_7 = true;
+            printf("SHIM: PICO-8 Version 0.2.7 DETECTED (Size: %ld bytes). Advanced features enabled.\n", st.st_size);
+        } else {
+            is_version_0_2_7 = false;
+            printf("SHIM: PICO-8 Version Mismatch (Size: %ld bytes). Expected %d for 0.2.7.\n", st.st_size, PICO8_VERSION_0_2_7_SIZE);
+            printf("SHIM: Safe Mode Enabled (Input/Video only, no Auto-Pause/Keyboard/Splore detection).\n");
+        }
+    } else {
+        perror("SHIM: Failed to stat /proc/self/exe");
+    }
+}
+
+static uintptr_t base_addr = 0;
+
 void shim_fifo_init() {
     printf("SHIM: Using Host-Created FIFOs at %s and %s\n", FIFO_IN_PATH, FIFO_VID_PATH);
+    
+    // Check version immediately
+    check_pico8_version();
     
     // Eagerly open Input FIFO so Godot (Writer) has a target
     in_fd = open(FIFO_IN_PATH, O_RDONLY | O_NONBLOCK);
@@ -74,7 +146,13 @@ void shim_fifo_init() {
     } else {
         printf("SHIM: Input FIFO opened eagerly\n");
     }
+    
+    // Find base address eagerly to fail fast if missed
+    base_addr = get_base_address();
+    printf("SHIM: Initial Base Address Scan: 0x%lx\n", base_addr);
+    fflush(stdout);
 }
+
 
 
 // Try to read a packet from the client
@@ -159,36 +237,116 @@ void pico_send_vid_data() {
             header_initialized = true;
         }
 
-        // Destination is always RGBA8888 (Godot format)
-        // Skip Header + Meta to get to pixel area
-        uint32_t* dst32 = (uint32_t*)(packet_buffer + HEADER_SIZE + META_SIZE); 
-        
-        // 32-bit stride 00RRGGBB (for RGB888) or XXRRGGBB (for XRGB8888)
-        const uint32_t* src32 = (uint32_t*)currentsurf->pixels;
-        for (int i = 0; i < 16384; i++) {
-        uint32_t pixel = src32[i];
-        *dst32++ = ((pixel & 0x00FF0000) >> 16) | 
-                    (pixel & 0x0000FF00)         | 
-                    ((pixel & 0x000000FF) << 16) | 
-                    0xFF000000;
-        }
+        uint8_t navstate = 0;
+        uint8_t state_enum = 0;
+        uint8_t cart_loaded = 0;
+        uint8_t input_mode = 0;
+        uint8_t is_editor = 0;
 
-        uint8_t navstate = 0x00;
-        if (picoram != NULL) {
-            if (picoram[PICORAM_INDEX_ISINEDITOR]) {
-                navstate |= 0x01;
+
+
+        // Gate memory reading behind version check to prevent reading garbage/crashing
+        if (picoram != NULL && is_version_0_2_7) {
+            state_enum = picoram[PICORAM_INDEX_STATE_TYPE];
+            cart_loaded = picoram[PICORAM_INDEX_CART_LOADED];
+            input_mode = picoram[PICORAM_INDEX_INPUT_MODE];
+            uint8_t splore_page = picoram[0x36da8]; // 0x36da8 == 2 is Splore Page (Confirmed via decompilation)
+            
+            // Paused Detection via App Struct (BSS)
+            // base_addr is found in shim_fifo_init via dl_iterate_phdr
+            
+            // Runtime Picoram: 0x300051af80. Runtime Base: 0x3000000000. Offset: 0x51af80.
+            // Ghidra Picoram: 0x61af80.
+            // Difference: 0x100000 (Ghidra Image Base).
+            // Ghidra App: 0x2a0e60.
+            // Real Offset: 0x2a0e60 - 0x100000 = 0x1a0e60.
+            
+            uint8_t is_paused = 0;
+            
+            if (base_addr != 0) {
+                uint8_t *app_struct = (uint8_t *)(base_addr + 0x1a0e60);
+                // Safe access assuming mapping is valid
+                // CORRECTION: 5080 and 5092 are DECIMAL offsets (from Ghidra naming app._5080_4_)
+                // 5080 = 0x13d8. 5092 = 0x13e4.
+                is_paused = (app_struct[5080] != 0 || app_struct[5092] != 0);
             }
-            if (picoram[PICORAM_INDEX_ISINGAME]) {
-                navstate |= 0x02;
+
+            is_editor = (picoram[PICORAM_INDEX_STRICT_EDITOR] > 0); // > 0 to catch Music/Sprite tabs (Value 2)
+            
+            // Global flag: Cart Loaded (0x20)
+            if (cart_loaded == 1) {
+                navstate |= 0x20;
             }
-            if (picoram[PICORAM_INDEX_DEVKIT] & 0x1) {
+            
+            // Global flag: Paused (0x40) - Independent check
+            // Used to detect Pause Menu in Game, but allows seeing it in other states too.
+            if (is_paused) {
+                navstate |= 0x40;
+            }
+
+            // Game Check (Highest Priority)
+            // If we are in Game Mode (27) OR the IsGame flag is set, we are playing.
+            if (state_enum == 27 || picoram[PICORAM_INDEX_ISINGAME]) {
+                navstate |= 0x02; // G
+            }
+            // System Mode Check (Only if not in Game)
+            else if (state_enum == 11) {
+                
+                // Editor Check
+                if (is_editor) {
+                    navstate |= 0x01; // E
+                }
+                // Splore Check
+                // Decompiled code sets 0x... = 2 when entering Splore.
+                // Dump analysis confirms 0x36da8 holds this value.
+                else if (splore_page == 2) {
+                    navstate |= 0x08; // S
+                }
+                // Console Check
+                // Fallback: If not Game, Editor, or Splore, it must be Console.
+                else {
+                    navstate |= 0x10; // C
+                }
+            }
+            
+            // Devkit Flag: Only if Game is Active (State 27 or IsGame Flag)
+            // This prevents "D" from sticking when exiting to Splore/Console.
+            bool is_ingame_active = (state_enum == 27 || picoram[PICORAM_INDEX_ISINGAME]);
+            if (is_ingame_active && (picoram[PICORAM_INDEX_DEVKIT] & 0x1)) {
                 navstate |= 0x04;
             }
         }
         
         // Write Metadata
         packet_buffer[HEADER_SIZE] = navstate;
-
+        // We reuse the last 4 bytes of the magic string "PICO8SYNC__"
+        // New Format: "PICO8SY" (7 bytes) + State(1) + Input(1) + Cart(1) + Editor(1) + NavState(1)
+        //memcpy(packet_buffer, "PICO8SY", 7);
+        //packet_buffer[7] = state_enum;
+        //packet_buffer[8] = input_mode;
+        //packet_buffer[9] = cart_loaded;
+        //packet_buffer[10] = is_editor;
+        //packet_buffer[11] = navstate;
+        
+        // Write Pixels
+        // Convert SDL Surface (RGB888) to Godot (RGBA8888)
+        uint32_t* dst32 = (uint32_t*)(packet_buffer + HEADER_SIZE + META_SIZE); 
+        const uint32_t* src32 = (uint32_t*)currentsurf->pixels;
+        
+        // Safety check
+        if (src32) {
+             for (int i = 0; i < 16384; i++) {
+                uint32_t pixel = src32[i];
+                // RGB to ABGR (or whatever Godot needs, this was working before)
+                *dst32++ = ((pixel & 0x00FF0000) >> 16) | 
+                            (pixel & 0x0000FF00)         | 
+                            ((pixel & 0x000000FF) << 16) | 
+                            0xFF000000;
+             }
+        } else {
+             memset(dst32, 0, PIXEL_SIZE);
+        }
+        
         // DIRECT FIFO SEND
         
         // 1. Lazy open Video FIFO
@@ -275,12 +433,9 @@ DECLSPEC int SDLCALL SDL_PollEvent(SDL_Event * event) {
     FINDSDL(realf, SDL_PollEvent);
     int ret = realf(event);
     if (ret == 1) {
-        printf("event %d\n", event->type);
-        if (
-            event->type == SDL_WINDOWEVENT
-        // || event->type == SDL_TEXTINPUT
-        ) {
-            printf("blocking\n");
+        // printf("event %d\n", event->type);
+        if (event->type == SDL_WINDOWEVENT) {
+            // printf("blocking\n");
             return 0;
         }
         if (event->type == SDL_KEYDOWN || event->type == SDL_KEYUP) {
@@ -288,43 +443,9 @@ DECLSPEC int SDLCALL SDL_PollEvent(SDL_Event * event) {
             if (event->key.keysym.scancode == SDLK_LCTRL) {
                 event->key.keysym.mod = 0;
             }
-            // printf(
-            //     "KEYEV\n%d %d %d %d %d %d\n",
-            //     event->key.windowID,
-            //     event->key.state,
-            //     event->key.repeat,
-            //     event->key.keysym.scancode,
-            //     event->key.keysym.sym,
-            //     event->key.keysym.mod
-            // );
-            /*
-            typedef struct SDL_KeyboardEvent
-            {
-                Uint32 type;        /**< ::SDL_KEYDOWN or ::SDL_KEYUP * /
-                Uint32 timestamp;   /**< In milliseconds, populated using SDL_GetTicks() * /
-                Uint32 windowID;    /**< The window with keyboard focus, if any * /
-                Uint8 state;        /**< ::SDL_PRESSED or ::SDL_RELEASED * /
-                Uint8 repeat;       /**< Non-zero if this is a key repeat * /
-                Uint8 padding2;
-                Uint8 padding3;
-                SDL_Keysym keysym;  /**< The key that was pressed or released * /
-            } SDL_KeyboardEvent;
-            */
-            // PICO-8, surprisingly, uses scancode
-            // // event->key.keysym.scancode = 0;
-            // // event->type = SDL_FIRSTEVENT;
         }
-
-        // if (event->type == SDL_TEXTINPUT) {
-        //     printf(
-        //         "CHAREV\n%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n%s\n",
-        //         event->text.text[0], event->text.text[1], event->text.text[2], event->text.text[3], event->text.text[4], event->text.text[5], event->text.text[6], event->text.text[7], event->text.text[8], event->text.text[9], event->text.text[10], event->text.text[11], event->text.text[12], event->text.text[13], event->text.text[14], event->text.text[15], event->text.text[16], event->text.text[17], event->text.text[18], event->text.text[19], event->text.text[20], event->text.text[21], event->text.text[22], event->text.text[23], event->text.text[24], event->text.text[25], event->text.text[26], event->text.text[27], event->text.text[28], event->text.text[29], event->text.text[30], event->text.text[31],
-        //         &event->text.text
-        //     );
-        // }
     } else {
         int result = pico_poll_event();
-        // printf("result %d\n", result);
         if (result == true) {
             switch (in_packet[0])
             {
@@ -344,27 +465,32 @@ DECLSPEC int SDLCALL SDL_PollEvent(SDL_Event * event) {
                     keystate[in_packet[1]] = in_packet[2];
                     event->key.keysym.mod = in_packet[4] + (((Uint16)in_packet[5])<<8);
                     lastmod = event->key.keysym.mod;
-                    // printf(
-                    //     "FAKE KEYEV\n%d %d %d %d %d %d\n",
-                    //     event->key.windowID,
-                    //     event->key.state,
-                    //     event->key.repeat,
-                    //     event->key.keysym.scancode,
-                    //     event->key.keysym.sym,
-                    //     event->key.keysym.mod
-                    // );
-                    // if (in_packet[1] == 57 && in_packet[2] == 1) { // uncomment if you need memdumps, then use caps lock
-                    //     static char fname[64];
+                    
+                    // 'D' key = Scancode 7
+                    // if (in_packet[1] == 7 && in_packet[2] == 1) { 
                     //     static int snapcount;
-                    //     sprintf(fname, "memdump%03d.dat", snapcount++);
-                    //     FILE *file = fopen(fname, "wb");
-                    //     if (!file) {
-                    //         perror("Failed to open file");
-                    //     } else {
-                    //         // data, size per item, item count, file
-                    //         fwrite(picoram, 1, 0x372b8, file);
-
-                    //         fclose(file);
+                    //     snapcount++;
+                    //     
+                    //     printf("Dumping RAM (Targeting 0x37000) to /home/public/...\n");
+                    //     
+                    //     for (int i = 0; i < candidate_count; i++) {
+                    //         // Only dump the one that matches the expected RAM size (225280 bytes)
+                    //         // or close to it, just in case.
+                    //         // The user confirmed 0x37000 (225280) is the one.
+                    //         if (candidates[i].size == 0x37000) {
+                    //             char fname[128];
+                    //             sprintf(fname, "/home/public/dump_%03d_size_37000.dat", snapcount);
+                    //             
+                    //             FILE *file = fopen(fname, "wb");
+                    //             if (!file) {
+                    //                 printf("Failed to open file: %s\n", fname);
+                    //             } else {
+                    //                 fwrite(candidates[i].ptr, 1, candidates[i].size, file);
+                    //                 printf("Dumped RAM to %s\n", fname);
+                    //                 fclose(file);
+                    //             }
+                    //             break; // Found it, done.
+                    //         }
                     //     }
                     // }
                     return 1;
@@ -416,9 +542,14 @@ DECLSPEC const Uint8 *SDLCALL SDL_GetKeyboardState(int *numkeys) {
 void *memset (void *__s, int __c, size_t __n) {
     static void* (*realf)(void*, int, size_t) = NULL;
     FINDSDL(realf, memset);
-    if (__c == 0 && __n == 0x372b8) {
-        // printf("PICO-8 RAM identified\n");
-        picoram = __s;
+    
+    // PICO-8 0.2.7 RAM allocation size: 0x37000 (225280 bytes)
+    if (__c == 0 && __n == 0x37000) {
+        if (picoram == NULL) {
+             picoram = __s;
+             picoram_size = __n;
+             printf("SHIM: PICO-8 RAM Locked: %p (Size %zx)\n", picoram, picoram_size);
+        }
     }
     return realf(__s, __c, __n);
 }
