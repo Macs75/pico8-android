@@ -45,6 +45,10 @@ var active_touches = {}
 var initial_pinch_dist = 0.0
 var initial_scale_modifier = 1.0
 
+# Base Textures (Saved at startup for theme rollback)
+var default_texture_normal: Texture2D = null
+var default_texture_pressed: Texture2D = null
+
 # Track if press effect is enabled (for custom textures without pressed variant)
 var has_press_effect: bool = true
 
@@ -151,6 +155,11 @@ func _ready() -> void:
 	original_position = position
 	original_scale = scale
 	editor_scale = scale
+	
+	# Cache Default Textures (Initial State from Scene)
+	default_texture_normal = texture_normal
+	default_texture_pressed = texture_pressed
+	
 	if PicoVideoStreamer.instance:
 		PicoVideoStreamer.instance.layout_reset.connect(_on_layout_reset)
 		PicoVideoStreamer.instance.bezel_layout_updated.connect(_on_bezel_layout_updated)
@@ -212,7 +221,14 @@ func _on_bezel_layout_updated(bezel_rect: Rect2, _unused_scale: Vector2):
 func reload_textures():
 	var is_landscape = _is_in_landscape_ui()
 	
-	# Reset to defaults specified in export vars
+	# Reset state to RELEASED for clean reload if stuck
+	if key_state != KeyState.RELEASED and key_state != KeyState.LOCKED:
+		key_state = KeyState.RELEASED
+	
+	# Reset to defaults (Use cached defaults, not potentially tainted current vars)
+	texture_normal = default_texture_normal
+	texture_pressed = default_texture_pressed
+	
 	self.texture = texture_normal if texture_normal else keycap_normal
 	has_press_effect = true # Reset assumption
 	%Label.visible = true
@@ -221,7 +237,7 @@ func reload_textures():
 	var custom_loaded = _load_and_apply_custom_textures(is_landscape)
 			
 	if not custom_loaded:
-		# Restore original textures
+		# Restore original textures (Which are now the defaults)
 		if texture_normal and key_state == KeyState.RELEASED:
 			self.texture = texture_normal
 			self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -233,6 +249,33 @@ func reload_textures():
 		else:
 			# Fallback to keycaps
 			_update_visuals() # This handles keycap_normal/held assignment
+			
+func reload_layout():
+	if not is_repositionable: return
+	
+	var is_landscape = _is_in_landscape_ui()
+	var user_pos = PicoVideoStreamer.get_control_pos(name, is_landscape)
+	
+	# 1. User Override
+	if user_pos != null:
+		# User override exists, respect it (or re-apply it)
+		position = user_pos
+		var saved_scale = PicoVideoStreamer.get_control_scale(name, is_landscape)
+		scale = original_scale * saved_scale
+		return
+		
+	# 2. Theme or Default
+	var layout = ThemeManager.get_theme_layout(is_landscape)
+	if layout.is_empty():
+		# Restore Default
+		position = original_position
+		scale = original_scale
+	else:
+		# Apply Theme
+		if PicoVideoStreamer.instance:
+			var rect = PicoVideoStreamer.instance.get_current_bezel_rect()
+			LayoutHelper.apply_layout(self, rect)
+
 
 func _load_and_apply_custom_textures(is_landscape: bool) -> bool:
 	var texture_name = _get_texture_name_for_button()
@@ -294,7 +337,7 @@ func _get_texture_name_for_button() -> String:
 
 var last_shift_state := false
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	# 1. Handle Key Repeats
 	if key_state == KeyState.HELD and Time.get_ticks_msec() > repeat_timer:
 		if can_lock:

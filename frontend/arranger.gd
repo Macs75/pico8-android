@@ -546,17 +546,29 @@ func _update_buttons_for_mode(is_trackpad: bool):
 	
 	if is_trackpad:
 		if x_btn:
+			# Cache original textures if not already cached
+			if not x_btn.has_meta("orig_normal"):
+				x_btn.set_meta("orig_normal", x_btn.texture_normal)
+				x_btn.set_meta("orig_pressed", x_btn.texture_pressed)
 			x_btn.set_textures(tex_mouse_l_normal, tex_mouse_l_pressed)
 				
 		if z_btn:
+			if not z_btn.has_meta("orig_normal"):
+				z_btn.set_meta("orig_normal", z_btn.texture_normal)
+				z_btn.set_meta("orig_pressed", z_btn.texture_pressed)
 			z_btn.set_textures(tex_mouse_r_normal, tex_mouse_r_pressed)
 	else:
-		if x_btn:
-			# Use button's own textures (may be custom or default)
-			x_btn.set_textures(x_btn.texture_normal, x_btn.texture_pressed)
-		if z_btn:
-			# Use button's own textures (may be custom or default)
-			z_btn.set_textures(z_btn.texture_normal, z_btn.texture_pressed)
+		if x_btn and x_btn.has_meta("orig_normal"):
+			# Restore from cache
+			x_btn.set_textures(x_btn.get_meta("orig_normal"), x_btn.get_meta("orig_pressed"))
+			# Clear cache to allow theme updates to propagate fresh textures next time
+			x_btn.remove_meta("orig_normal")
+			x_btn.remove_meta("orig_pressed")
+			
+		if z_btn and z_btn.has_meta("orig_normal"):
+			z_btn.set_textures(z_btn.get_meta("orig_normal"), z_btn.get_meta("orig_pressed"))
+			z_btn.remove_meta("orig_normal")
+			z_btn.remove_meta("orig_pressed")
 
 func _on_control_selected(_control: CanvasItem):
 	selection_outline.visible = true

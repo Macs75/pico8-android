@@ -66,6 +66,20 @@ func _ensure_bezel_loaded(is_landscape: bool):
 	# Always attempt load, which now checks timestamp internally
 	_load_bezel_from_path(needed_path)
 
+func _initial_load():
+	print("BezelOverlay: Forcing reload...")
+	_resolved_path_cache.clear()
+	var is_landscape = PicoVideoStreamer.is_system_landscape()
+	_ensure_bezel_loaded(is_landscape)
+	
+	# Also re-check the other orientation in BG
+	var other_path = _get_bezel_path_for_orientation(not is_landscape)
+	_preload_bezel(other_path)
+	
+	# Update layout now
+	if get_parent() and get_parent().has_method("get_display_rect"):
+		update_layout(get_parent().get_display_rect())
+
 func _preload_bezel(path: String):
 	if not FileAccess.file_exists(path):
 		# If file missing, clear cache entry if it existed

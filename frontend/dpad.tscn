@@ -1,11 +1,11 @@
 [gd_scene format=3 uid="uid://bgklhpsaac82q"]
 
-[ext_resource type="Texture2D" uid="uid://bsbipulwwdclu" path="res://assets/dpad.png" id="1_rsxs0"]
-[ext_resource type="Script" uid="uid://c2gfm2xphdykv" path="res://dpad.gd" id="2_rsxs0"]
+[ext_resource type="Texture2D" uid="uid://p4t3y0s2ujx5" path="res://assets/dpad.png" id="1_rsxs0"]
+[ext_resource type="Script" uid="uid://b7a5g74s0qgo8" path="res://dpad.gd" id="2_rsxs0"]
 
 [node name="dpad" type="TextureRect"]
 offset_right = 44.0
-offset_bottom = 43.0
+offset_bottom = 44.0
 mouse_filter = 0
 texture = ExtResource("1_rsxs0")
 script = ExtResource("2_rsxs0")

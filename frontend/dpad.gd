@@ -78,6 +78,30 @@ func reload_textures():
 		_setup_dpad_sprites(lit_texture)
 		z_index = 0 # Default z-index? Or whatever it was.
 
+func reload_layout():
+	# Dpad is practically always repositionable unless in specific containers, assumes yes for now or checks parent
+	var is_landscape = _is_in_landscape_ui()
+	var user_pos = PicoVideoStreamer.get_control_pos(name, is_landscape)
+	
+	# 1. User Override
+	if user_pos != null:
+		position = user_pos
+		var saved_scale = PicoVideoStreamer.get_control_scale(name, is_landscape)
+		scale = original_scale * saved_scale
+		return
+		
+	# 2. Theme or Default
+	var layout = ThemeManager.get_theme_layout(is_landscape)
+	if layout.is_empty():
+		# Restore Default
+		position = original_position
+		scale = original_scale
+	else:
+		# Apply Theme
+		if PicoVideoStreamer.instance:
+			var rect = PicoVideoStreamer.instance.get_current_bezel_rect()
+			LayoutHelper.apply_layout(self, rect)
+
 func _load_and_apply_custom_textures(is_landscape: bool) -> bool:
 	var custom_textures = CustomControlTextures.get_custom_textures("dpad", is_landscape)
 	if custom_textures[0] != null:
@@ -100,7 +124,7 @@ func _load_and_apply_custom_textures(is_landscape: bool) -> bool:
 			var dpad_size = self.size if self.size.y > 0 else (texture.get_size() if texture else Vector2(100, 100))
 			var dpad_aspect = dpad_size.x / dpad_size.y if dpad_size.y > 0 else 1.0
 			
-			if abs(tex_aspect - dpad_aspect) > 0.01:
+			if abs(tex_aspect - dpad_aspect) > 0.05:
 				var area = dpad_size.x * dpad_size.y
 				var new_width = sqrt(area * tex_aspect)
 				var new_height = new_width / tex_aspect

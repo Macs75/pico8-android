@@ -1091,6 +1091,7 @@ func _on_theme_selected(index: int):
 		
 		if has_bezel and %ToggleBezel:
 			%ToggleBezel.button_pressed = true
+			PicoBootManager.set_setting("settings", "bezel_enabled", true)
 	
 	# Trigger resource reload
 	# Bezel
@@ -1108,6 +1109,9 @@ func _reload_control_textures():
 	_recursive_reload_textures(main)
 
 func _recursive_reload_textures(node: Node):
+	if node.has_method("reload_layout"):
+		node.reload_layout()
+		
 	if node.has_method("reload_textures"):
 		node.reload_textures()
 		
