@@ -23,7 +23,7 @@ config/description="
 
 
 by @unmatchedbracket"
-config/version="1.5.1"
+config/version="1.5.2"
 run/main_scene="uid://clwlaw414wfp8"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "Mobile")

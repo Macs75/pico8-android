@@ -128,5 +128,6 @@
 	"SDL_RCTRL": 228,
 	"SDL_RSHIFT": 229,
 	"SDL_RALT": 230,
-	"SDL_RGUI": 231
+	"SDL_RGUI": 231,
+	"Pipe": 174
 }

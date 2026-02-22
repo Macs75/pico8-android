@@ -42,6 +42,14 @@ var is_intent_session: bool = false
 var is_pico_suspended: bool = false # Track if PICO-8 process is suspended
 var advanced_features_enabled: bool = false
 var is_square: bool = false
+var _prev_has_devkit: bool = false
+var _prev_is_paused_flag: bool = false
+var _prev_is_editor: bool = false
+var _prev_is_muted: bool = false
+var _icon_volume_up = preload("res://assets/volume_up.svg")
+var _icon_volume_off = preload("res://assets/volume_off.svg")
+var _icon_fill_keyboard = preload("res://assets/keyboard.svg")
+var _icon_goma_controls = preload("res://assets/dpad+ab.svg")
 
 
 var selected_control: CanvasItem = null
@@ -135,6 +143,10 @@ func _ready() -> void:
 		keyboard_btn.pressed.connect(_on_keyboard_toggle_pressed)
 		# Set initial button label based on current state
 		_update_keyboard_button_label()
+		
+	var audio_btn = get_node_or_null("Arranger/kbanchor/AudioBtn")
+	if audio_btn:
+		audio_btn.pressed.connect(_on_audio_btn_pressed)
 		
 	KBMan.subscribe(_on_external_keyboard_change)
 	
@@ -437,7 +449,7 @@ func release_input_locks():
 const SYNC_SEQ = [80, 73, 67, 79, 56, 83, 89, 78, 67, 95, 95] # "PICO8SYNC__"
 #const SYNC_SEQ = [80, 73, 67, 79, 56, 83, 89] # "PICO8SY"
 var SYNC_SEQ_PBA: PackedByteArray
-const CUSTOM_BYTE_COUNT = 1
+const CUSTOM_BYTE_COUNT = 3
 #const CUSTOM_BYTE_COUNT = 5 # State(1) + Input(1) + Cart(1) + Editor(1) + NavState(1)
 var current_custom_data := range(CUSTOM_BYTE_COUNT)
 const DISPLAY_BYTES = 128 * 128 * 4 # 64KB RGBA8888
@@ -534,19 +546,23 @@ func _process(delta: float) -> void:
 				fps_frame_count = 0
 				_mutex.unlock()
 				
-			var state_flags = ""
-			if current_navstate & 32: state_flags += "L"
-			if current_navstate & 8: state_flags += "S"
-			if current_navstate & 16: state_flags += "C"
-			if current_navstate & 1: state_flags += "E"
-			if current_navstate & 2: state_flags += "G"
-			if current_navstate & 4: state_flags += "D"
-			if current_navstate & 64: state_flags += "P"
-			if state_flags == "": state_flags = "IDLE"
+			var ns_state = "E" if (current_navstate & 0x01) else "-"
+			ns_state += "G" if (current_navstate & 0x02) else "-"
+			ns_state += "D" if (current_navstate & 0x04) else "-" # Devkit
+			ns_state += "S" if (current_navstate & 0x08) else "-" # Splore
+			ns_state += "C" if (current_navstate & 0x10) else "-" # Console
+			ns_state += "L" if (current_navstate & 0x20) else "-" # Loaded
+			ns_state += "P" if (current_navstate & 0x40) else "-" # Paused
+			ns_state += "M" if (current_navstate & 0x80) else "-" # Muted
 			
-			debug_fps_label.text = "FPS: " + str(current_frames) + " | " + state_flags # + \
-			#"\nSt:" + str(raw_state_enum) + " In:" + str(raw_input_mode) + \
-			#" Ct:" + str(raw_cart_loaded) + " Ed:" + str(raw_is_editor)
+			var mx = last_mouse_state[0] if last_mouse_state.size() > 0 else 0
+			var my = last_mouse_state[1] if last_mouse_state.size() > 1 else 0
+			
+			var dev_str = ""
+			if _prev_has_devkit:
+				dev_str = " | DEV"
+			
+			debug_fps_label.text = "FPS: %d | MS:%d | VOL:%d | %s%s | M:%d,%d" % [current_frames, raw_master_state, raw_volume, ns_state, dev_str, mx, my]
 			fps_timer -= 1.0
 	
 	# Auto-Trackpad Logic for Devkit Carts
@@ -554,22 +570,40 @@ func _process(delta: float) -> void:
 	if advanced_features_enabled:
 		var has_devkit = (current_navstate & 0x04) != 0
 		var is_paused_flag = (current_navstate & 0x40) != 0
+		var is_editor = (current_navstate & 0x01) != 0
 		
-		if has_devkit:
-			if is_paused_flag:
-				# Paused -> Mouse Mode (Menu Navigation)
-				if input_mode == InputMode.TRACKPAD:
-					_sync_input_mode_ui(false)
-			else:
-				# Active Devkit Game -> Trackpad Mode (Precision)
-				# ONLY if screen is not 1:1 (Square screens have no room for trackpad)
-				if not is_square and input_mode == InputMode.MOUSE:
-					_sync_input_mode_ui(true)
-		else:
-			# No Devkit (Splore/Console/Normal Game) -> Mouse Mode
-			if input_mode == InputMode.TRACKPAD:
-				_sync_input_mode_ui(false)
+		var state_changed = (has_devkit != _prev_has_devkit) or (is_paused_flag != _prev_is_paused_flag) or (is_editor != _prev_is_editor)
+		
+		if state_changed:
+			if has_devkit or is_editor:
+				if is_paused_flag:
+					# Paused -> Mouse Mode (Menu Navigation)
+					if input_mode == InputMode.TRACKPAD:
+						_sync_input_mode_ui(false)
+				else:
+					# Active Devkit Game -> Trackpad Mode (Precision)
+					if input_mode == InputMode.MOUSE:
+						_sync_input_mode_ui(true)
 			
+			# Pop the full keyboard ONLY the FIRST time the editor appears
+			if is_editor and not _prev_is_editor:
+				var is_full_kb = (KBMan.get_current_keyboard_type() == KBMan.KBType.FULL)
+				if not is_full_kb:
+					_on_keyboard_toggle_pressed()
+					
+			_prev_has_devkit = has_devkit
+			_prev_is_paused_flag = is_paused_flag
+			_prev_is_editor = is_editor
+			
+	# Update AudioBtn label dynamically
+	var is_muted = (current_navstate & 0x80) != 0
+	if is_muted != _prev_is_muted:
+		_prev_is_muted = is_muted
+		var audio_btn = get_node_or_null("Arranger/kbanchor/AudioBtn")
+		if audio_btn:
+			audio_btn.icon = _icon_volume_off if is_muted else _icon_volume_up
+
+
 	# Input polling and queueing
 	var screen_pos: Vector2i = Vector2i.ZERO
 	
@@ -587,11 +621,39 @@ func _process(delta: float) -> void:
 					Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 					Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	else:
-		# Trackpad Mode
+		# Trackpad Mode or Devkit Gamepad Mode
+		# If we are in active devkit mode with a gamepad connected, poll the stick for smooth movement
+		var active_devkit = _prev_has_devkit and not _prev_is_paused_flag
+		if active_devkit:
+			var joypads = Input.get_connected_joypads()
+			if joypads.size() > 0:
+				var dev = joypads[0] # Assuming P1 is index 0 for now
+				var lx = Input.get_joy_axis(dev, JoyAxis.JOY_AXIS_LEFT_X)
+				var ly = Input.get_joy_axis(dev, JoyAxis.JOY_AXIS_LEFT_Y)
+				
+				# Deadzone
+				if abs(lx) < 0.1: lx = 0
+				if abs(ly) < 0.1: ly = 0
+				
+				if lx != 0 or ly != 0:
+					# Needs to be framerate independent for consistency
+					var speed = 200.0 * trackpad_sensitivity * delta
+					virtual_cursor_pos += Vector2(lx, ly) * speed
+					virtual_cursor_pos = virtual_cursor_pos.clamp(Vector2.ZERO, Vector2(127, 127))
+
 		screen_pos = virtual_cursor_pos
 		if Input.mouse_mode != Input.MOUSE_MODE_VISIBLE:
 			Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+	# Prevent out of bounds coordinates that wrap to 255 in C and break PICO-8 memory flags
+	# Reverted to 0-127. 
+	screen_pos = screen_pos.clamp(Vector2i.ZERO, Vector2i(127, 127))
+	
+	# PICO-8 has an internal bug/gesture where exactly x=1 triggers the Splore flag.
+	# We jump over pixel 1 to prevent this.
+	if screen_pos.x == 1:
+		screen_pos.x = 0
 
 	var current_mouse_state = [screen_pos.x, screen_pos.y, current_mouse_mask]
 	if current_mouse_state != last_mouse_state:
@@ -651,23 +713,20 @@ var current_navstate: int = 0
 var raw_state_enum: int = 0
 var raw_input_mode: int = 0
 var raw_cart_loaded: int = 0
-var raw_is_editor: int = 0
+var raw_master_state: int = 0
+var raw_volume: int = 256
 
 func _process_packet_thread(data: PackedByteArray):
 	# Data Structure for debug:
-	# 0-6: "PICO8SY" (7 bytes)
-	# 7: State Enum
-	# 8: Input Mode
-	# 9: Cart Loaded
-	# 10: Is Editor
+	# 0-10: "PICO8SYNC__" (11 bytes)
 	# 11: NavState (Classic Flags)
-	# 12+: Video Data (8192 bytes)
-	if data.size() >= 12:
-		#raw_state_enum = data[7]
-		#raw_input_mode = data[8]
-		#raw_cart_loaded = data[9]
-		#raw_is_editor = data[10]
+	# 12: MasterState (Editor View / Run State)
+	# 13: Volume (0-144, multiplied by 2 for real value)
+	# 14+: Video Data (8192 bytes)
+	if data.size() >= 14:
 		current_navstate = data[11]
+		raw_master_state = data[12]
+		raw_volume = data[13] * 2
 
 	# Image starts after SYNC + CUSTOM
 	var im_start = len(SYNC_SEQ) + CUSTOM_BYTE_COUNT
@@ -810,6 +869,21 @@ func send_input(char: int):
 		0, 0, 0, 0, 0, 0
 	])
 
+func _on_audio_btn_pressed():
+	var SDL_SCANCODE_LCTRL = 224
+	var SDL_SCANCODE_M = 16
+	var KMOD_LCTRL = 0x0040
+	
+	# Send CTRL Down
+	send_key(SDL_SCANCODE_LCTRL, true, false, KMOD_LCTRL)
+	# Send M Down (with CTRL Mod)
+	send_key(SDL_SCANCODE_M, true, false, KMOD_LCTRL)
+	# Send M Up
+	send_key(SDL_SCANCODE_M, false, false, KMOD_LCTRL)
+	# Send CTRL Up
+	send_key(SDL_SCANCODE_LCTRL, false, false, 0)
+
+
 var quit_overlay: Control
 # Controller Navigation
 var btn_quit_yes: Button
@@ -928,13 +1002,13 @@ func vkb_setstate(id: String, down: bool, unicode: int = 0, echo = false):
 		if id not in held_keys:
 			held_keys.append(id)
 			
-		if input_mode == InputMode.TRACKPAD:
-			if id == "X":
-				_virtual_mouse_mask |= 1 # Left Click
-				return
-			if id == "Z":
-				_virtual_mouse_mask |= 4 # Right Click (SDL Mask 4, Godot Middle Mask 4)
-				return
+		# if input_mode == InputMode.TRACKPAD:
+		# 	if id == "X":
+		# 		_virtual_mouse_mask |= 1 # Left Click
+		# 		return
+		# 	if id == "Z":
+		# 		_virtual_mouse_mask |= 4 # Right Click (SDL Mask 4, Godot Middle Mask 4)
+		# 		return
 
 		send_key(SDL_KEYMAP[id], true, echo, keys2sdlmod(held_keys))
 		if unicode and unicode < 256:
@@ -942,13 +1016,13 @@ func vkb_setstate(id: String, down: bool, unicode: int = 0, echo = false):
 	else:
 		held_keys.erase(id)
 		
-		if input_mode == InputMode.TRACKPAD:
-			if id == "X":
-				_virtual_mouse_mask &= ~1
-				return
-			if id == "Z":
-				_virtual_mouse_mask &= ~4
-				return
+		# if input_mode == InputMode.TRACKPAD:
+		# 	if id == "X":
+		# 		_virtual_mouse_mask &= ~1
+		# 		return
+		# 	if id == "Z":
+		# 		_virtual_mouse_mask &= ~4
+		# 		return
 
 		send_key(SDL_KEYMAP[id], false, false, keys2sdlmod(held_keys))
 	
@@ -1213,10 +1287,7 @@ func _update_mouse_from_event(event_pos: Vector2):
 	# Update inside state for _process to handle
 	is_mouse_inside_display = displayContainer.get_rect().has_point(displayContainer.to_local(event_pos))
 
-const TAP_MAX_DURATION = 350 # ms
-var _trackpad_click_pending = false
-var _trackpad_tap_start_time = 0
-var _trackpad_total_move = 0.0
+var _trackpad_second_touch_is_right_click = false
 var _virtual_mouse_mask: int = 0:
 	set(value):
 		_virtual_mouse_mask = value
@@ -1230,6 +1301,25 @@ var is_touching: bool = false
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
+		if event.index > 0:
+			if input_mode == InputMode.TRACKPAD:
+				if event.index == 1: # Second touch evaluates for right/left click
+					if event.pressed:
+						var screen_height = get_viewport().get_visible_rect().size.y
+						# In Godot, Y increases downwards. So if 2nd touch is physically higher on screen by > 10% of screen height
+						if event.position.y < touch_last_pos.y - (screen_height * 0.1):
+							_trackpad_second_touch_is_right_click = true
+							_virtual_mouse_mask |= 4
+						else:
+							_trackpad_second_touch_is_right_click = false
+							_virtual_mouse_mask |= 1
+					else:
+						if _trackpad_second_touch_is_right_click:
+							_virtual_mouse_mask &= ~4
+						else:
+							_virtual_mouse_mask &= ~1
+			return
+			
 		if event.pressed:
 			touch_start_pos = event.position
 			touch_last_pos = event.position
@@ -1244,32 +1334,21 @@ func _unhandled_input(event: InputEvent) -> void:
 				if event.position.y < (screen_height - kb_height):
 					DisplayServer.virtual_keyboard_hide()
 			
-			if input_mode == InputMode.TRACKPAD:
-				_trackpad_click_pending = true
-				_trackpad_tap_start_time = touch_down_time
-				_trackpad_total_move = 0.0
 		else:
 			is_touching = false
 			_check_swipe(event.position)
-			
-			# Trackpad Tap Logic
-			if input_mode == InputMode.TRACKPAD and _trackpad_click_pending:
-				var duration = Time.get_ticks_msec() - _trackpad_tap_start_time
-				if duration < TAP_MAX_DURATION:
-					_send_trackpad_click()
-				_trackpad_click_pending = false
-	
+				
 	elif event is InputEventScreenDrag:
+		if event.index > 0:
+			return
+		touch_last_pos = event.position
+			
 		if input_mode == InputMode.TRACKPAD:
 			var delta = event.relative * trackpad_sensitivity
 			# Scale delta if needed, for now 1:1 pixel movement
 			virtual_cursor_pos += delta
-			virtual_cursor_pos = virtual_cursor_pos.clamp(Vector2.ZERO, Vector2(127, 127))
-			
-			_trackpad_total_move += delta.length()
-			if _trackpad_total_move > 15.0: # Relaxed from 5.0
-				_trackpad_click_pending = false
-			
+			virtual_cursor_pos = virtual_cursor_pos.clamp(Vector2(1, 1), Vector2(126, 126))
+						
 	# Also accept Mouse Button for robustness (and Desktop testing)
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if input_mode == InputMode.MOUSE:
@@ -1290,11 +1369,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif input_mode == InputMode.TRACKPAD and is_touching:
 			var delta = event.relative * trackpad_sensitivity
 			virtual_cursor_pos += delta
-			virtual_cursor_pos = virtual_cursor_pos.clamp(Vector2.ZERO, Vector2(127, 127))
+			virtual_cursor_pos = virtual_cursor_pos.clamp(Vector2(1, 1), Vector2(126, 126))
 			
-			_trackpad_total_move += delta.length()
-			if _trackpad_total_move > 15.0:
-				_trackpad_click_pending = false
 
 	# print(event)
 	if event is InputEventKey:
@@ -1345,22 +1421,24 @@ func _unhandled_input(event: InputEvent) -> void:
 			if idx == 1:
 				is_p2 = true
 				
-		if input_mode == InputMode.TRACKPAD and not is_p2:
+		var active_devkit = _prev_has_devkit and not _prev_is_paused_flag
+		
+		if (input_mode == InputMode.TRACKPAD and not is_p2) or (active_devkit and not is_p2):
 			# Controller Mouse Click Mapping (P1 Only)
-			# Map PICO-8 O (A/Y) -> Right Click (Mask 4)
+			# Map PICO-8 O (A/Y) -> Left Click (User Request)
 			if event.button_index == JoyButton.JOY_BUTTON_A or event.button_index == JoyButton.JOY_BUTTON_Y:
-				if event.pressed:
-					_virtual_mouse_mask |= 4
-				else:
-					_virtual_mouse_mask &= ~4
-				return # Consume
-				
-			# Map PICO-8 X (B/X) -> Left Click (Mask 1)
-			if event.button_index == JoyButton.JOY_BUTTON_B or event.button_index == JoyButton.JOY_BUTTON_X:
 				if event.pressed:
 					_virtual_mouse_mask |= 1
 				else:
 					_virtual_mouse_mask &= ~1
+				return # Consume
+				
+			# Map PICO-8 X (B/X) -> Right Click (User Request)
+			if event.button_index == JoyButton.JOY_BUTTON_B or event.button_index == JoyButton.JOY_BUTTON_X:
+				if event.pressed:
+					_virtual_mouse_mask |= 4
+				else:
+					_virtual_mouse_mask &= ~4
 				return # Consume
 				
 		var key_id = ""
@@ -1382,6 +1460,7 @@ func _unhandled_input(event: InputEvent) -> void:
 						_toggle_options_menu()
 		else:
 			# Player 1 Mapping (Standard)
+			# If active_devkit is true, A and B are consumed above, so they won't reach here.
 			match event.button_index:
 				JoyButton.JOY_BUTTON_A, JoyButton.JOY_BUTTON_Y: key_id = "X" if swap_zx_enabled else "Z" # Pico-8 O (or X if swapped)
 				JoyButton.JOY_BUTTON_B, JoyButton.JOY_BUTTON_X: key_id = "Z" if swap_zx_enabled else "X" # Pico-8 X (or O if swapped)
@@ -1426,13 +1505,21 @@ func _unhandled_input(event: InputEvent) -> void:
 			if idx == 1:
 				is_p2 = true
 		
-		# Map Axes
+		var active_devkit = _prev_has_devkit and not _prev_is_paused_flag
+		
+		# Gamepad Mouse Control (Left Stick)
+		var axis_threshold = 0.5
+		
+		if active_devkit and not is_p2:
+			if event.axis == JoyAxis.JOY_AXIS_LEFT_X or event.axis == JoyAxis.JOY_AXIS_LEFT_Y:
+				pass
+				
+		# Map Axes to D-Pad (Standard)
 		var key_left = "S" if is_p2 else "Left"
 		var key_right = "F" if is_p2 else "Right"
 		var key_up = "E" if is_p2 else "Up"
 		var key_down = "D" if is_p2 else "Down"
 
-		var axis_threshold = 0.5
 		# Handle Left Stick X (Left/Right)
 		if event.axis == JoyAxis.JOY_AXIS_LEFT_X:
 			if event.axis_value < -axis_threshold:
@@ -1487,7 +1574,7 @@ func _update_keyboard_button_label():
 	if not keyboard_btn:
 		return
 	var current_type = KBMan.get_current_keyboard_type()
-	keyboard_btn.text = "fULL kEYBOARD" if current_type == KBMan.KBType.GAMING else "gAMING kEYBOARD"
+	keyboard_btn.icon = _icon_fill_keyboard if current_type == KBMan.KBType.GAMING else _icon_goma_controls
 
 
 func _check_swipe(end_pos: Vector2):

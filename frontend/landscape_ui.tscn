@@ -11,6 +11,7 @@
 [ext_resource type="Texture2D" uid="uid://dgcgu5h435dwx" path="res://assets/btn_esc_pressed.png" id="9_esc_press"]
 [ext_resource type="Texture2D" uid="uid://dlu77ynuh6dl1" path="res://assets/btn_menu_normal.png" id="10_menu_norm"]
 [ext_resource type="Texture2D" uid="uid://cts6512y2afit" path="res://assets/btn_menu_pressed.png" id="11_menu_press"]
+[ext_resource type="Script" uid="uid://3yarkysfetgu" path="res://kb_toggler.gd" id="12_igxmf"]
 
 [node name="LandscapeUI" type="Control" unique_id=434712748]
 layout_mode = 3
@@ -30,6 +31,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+script = ExtResource("12_igxmf")
+type = 0
 
 [node name="LeftPad" type="Control" parent="Control" unique_id=1199169515]
 layout_mode = 1
@@ -70,23 +73,11 @@ offset_right = 109.0
 offset_bottom = -77.5
 grow_horizontal = 2
 grow_vertical = 2
-scale = Vector2(1, 1)
 texture = ExtResource("6_o_norm")
-patch_margin_left = 0
-patch_margin_top = 0
-patch_margin_right = 0
-patch_margin_bottom = 0
 key_id = "Z"
-key_id_shift_override = null
 cap_type = 1
 cap_text = "06"
-cap_type_shift = null
-cap_text_shift = null
 font_type = 4
-can_lock = null
-unicode = null
-unicode_override = null
-shift_unicode_override = null
 special_behaviour = 1
 texture_normal = ExtResource("6_o_norm")
 texture_pressed = ExtResource("7_o_press")
@@ -104,23 +95,11 @@ offset_right = 83.0
 offset_bottom = -61.0
 grow_horizontal = 2
 grow_vertical = 2
-scale = Vector2(1, 1)
 texture = ExtResource("4_x_norm")
-patch_margin_left = 0
-patch_margin_top = 0
-patch_margin_right = 0
-patch_margin_bottom = 0
 key_id = "X"
-key_id_shift_override = null
 cap_type = 1
 cap_text = "05"
-cap_type_shift = null
-cap_text_shift = null
 font_type = 4
-can_lock = null
-unicode = null
-unicode_override = null
-shift_unicode_override = null
 special_behaviour = 1
 texture_normal = ExtResource("4_x_norm")
 texture_pressed = ExtResource("5_x_press")
@@ -147,24 +126,10 @@ offset_top = 5.9186993
 offset_right = 54.839996
 offset_bottom = 15.918699
 grow_horizontal = 2
-scale = Vector2(1, 1)
 texture = ExtResource("8_esc_norm")
-patch_margin_left = 0
-patch_margin_top = 0
-patch_margin_right = 0
-patch_margin_bottom = 0
 key_id = "Escape"
-key_id_shift_override = null
-cap_type = null
 cap_text = "eSC"
-cap_type_shift = null
-cap_text_shift = null
-font_type = null
-can_lock = null
 unicode = false
-unicode_override = null
-shift_unicode_override = null
-special_behaviour = null
 texture_normal = ExtResource("8_esc_norm")
 texture_pressed = ExtResource("9_esc_press")
 metadata/_edit_use_anchors_ = true
@@ -178,24 +143,1200 @@ offset_left = 37.0
 offset_top = 8.0
 offset_right = 59.0
 offset_bottom = 18.0
-scale = Vector2(1, 1)
 texture = ExtResource("10_menu_norm")
-patch_margin_left = 0
-patch_margin_top = 0
-patch_margin_right = 0
-patch_margin_bottom = 0
 key_id = "P"
-key_id_shift_override = null
-cap_type = null
 cap_text = "pAUSE"
-cap_type_shift = null
-cap_text_shift = null
-font_type = null
-can_lock = null
 unicode = false
-unicode_override = null
-shift_unicode_override = null
-special_behaviour = null
 texture_normal = ExtResource("10_menu_norm")
 texture_pressed = ExtResource("11_menu_press")
+metadata/_edit_use_anchors_ = true
+
+[node name="kb_pocketchip_left" type="Control" parent="." unique_id=293231695]
+z_index = 150
+anchors_preset = 0
+offset_right = 66.0
+offset_bottom = 72.0
+script = ExtResource("12_igxmf")
+
+[node name="Key" parent="kb_pocketchip_left" unique_id=1141303876 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 9.0
+offset_top = 45.0
+offset_right = 21.0
+offset_bottom = 56.0
+key_id = "Q"
+cap_text = "q"
+cap_type_shift = 0
+cap_text_shift = "…"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key37" parent="kb_pocketchip_left" unique_id=1309881368 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_top = 21.0
+offset_right = 14.0
+offset_bottom = 32.0
+key_id = "Escape"
+cap_text = "esc"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key2" parent="kb_pocketchip_left" unique_id=962611483 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 22.0
+offset_top = 45.0
+offset_right = 34.0
+offset_bottom = 56.0
+key_id = "W"
+cap_text = "w"
+cap_type_shift = 0
+cap_text_shift = "∧"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key3" parent="kb_pocketchip_left" unique_id=109653366 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 35.0
+offset_top = 45.0
+offset_right = 47.0
+offset_bottom = 56.0
+key_id = "E"
+cap_text = "e"
+cap_type_shift = 0
+cap_text_shift = "░"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key4" parent="kb_pocketchip_left" unique_id=1532681181 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 48.0
+offset_top = 45.0
+offset_right = 60.0
+offset_bottom = 56.0
+key_id = "R"
+cap_text = "r"
+cap_type_shift = 0
+cap_text_shift = "➡"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key12" parent="kb_pocketchip_left" unique_id=577523760 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 12.0
+offset_top = 57.0
+offset_right = 24.0
+offset_bottom = 68.0
+key_id = "A"
+cap_type_shift = 0
+cap_text_shift = "█"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key13" parent="kb_pocketchip_left" unique_id=1611541828 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 25.0
+offset_top = 57.0
+offset_right = 37.0
+offset_bottom = 68.0
+key_id = "S"
+cap_text = "s"
+cap_type_shift = 0
+cap_text_shift = "★"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key14" parent="kb_pocketchip_left" unique_id=316680267 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 38.0
+offset_top = 57.0
+offset_right = 50.0
+offset_bottom = 68.0
+key_id = "D"
+cap_text = "d"
+cap_type_shift = 0
+cap_text_shift = "⬇"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key15" parent="kb_pocketchip_left" unique_id=923482909 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 51.0
+offset_top = 57.0
+offset_right = 63.0
+offset_bottom = 68.0
+key_id = "F"
+cap_text = "f"
+cap_type_shift = 0
+cap_text_shift = "✽"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key38" parent="kb_pocketchip_left" unique_id=1240814494 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_top = 33.0
+offset_bottom = 44.0
+key_id = "1"
+cap_text = "1"
+cap_type_shift = 0
+cap_text_shift = "!"
+shift_unicode_override = "!"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key39" parent="kb_pocketchip_left" unique_id=387875550 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 26.0
+offset_top = 33.0
+offset_right = 38.0
+offset_bottom = 44.0
+key_id = "3"
+cap_text = "3"
+cap_type_shift = 0
+cap_text_shift = "#"
+shift_unicode_override = "#"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key40" parent="kb_pocketchip_left" unique_id=327231622 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 52.0
+offset_top = 33.0
+offset_right = 64.0
+offset_bottom = 44.0
+key_id = "5"
+cap_text = "5"
+cap_type_shift = 0
+cap_text_shift = "%"
+shift_unicode_override = "%"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key62" parent="kb_pocketchip_left" unique_id=2053078538 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 15.0
+offset_top = 21.0
+offset_right = 27.0
+offset_bottom = 32.0
+key_id = "F1"
+key_id_shift_override = "F7"
+cap_text = "f1"
+cap_type_shift = 0
+cap_text_shift = "f7"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key63" parent="kb_pocketchip_left" unique_id=725291864 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 28.0
+offset_top = 21.0
+offset_right = 40.0
+offset_bottom = 32.0
+key_id = "F2"
+key_id_shift_override = "F8"
+cap_text = "f2"
+cap_type_shift = 0
+cap_text_shift = "f8"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key64" parent="kb_pocketchip_left" unique_id=14240940 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 41.0
+offset_top = 21.0
+offset_right = 53.0
+offset_bottom = 32.0
+key_id = "F3"
+key_id_shift_override = "F9"
+cap_text = "f3"
+cap_type_shift = 0
+cap_text_shift = "f9"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key65" parent="kb_pocketchip_left" unique_id=1663276290 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 54.0
+offset_top = 21.0
+offset_right = 66.0
+offset_bottom = 32.0
+key_id = "F4"
+key_id_shift_override = "F10"
+cap_text = "f4"
+cap_type_shift = 0
+cap_text_shift = "f10"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key44" parent="kb_pocketchip_left" unique_id=1160995891 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 13.0
+offset_top = 33.0
+offset_right = 25.0
+offset_bottom = 44.0
+key_id = "2"
+cap_text = "2"
+cap_type_shift = 0
+cap_text_shift = "@"
+shift_unicode_override = "@"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key45" parent="kb_pocketchip_left" unique_id=1702581462 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 39.0
+offset_top = 33.0
+offset_right = 51.0
+offset_bottom = 44.0
+key_id = "4"
+cap_text = "4"
+cap_type_shift = 0
+cap_text_shift = "$"
+shift_unicode_override = "$"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key11" parent="kb_pocketchip_left" unique_id=2127368731 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_top = 69.0
+offset_right = 14.0
+offset_bottom = 80.0
+key_id = "Shift"
+cap_text = "🔼"
+font_type = 5
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+can_lock = true
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key32" parent="kb_pocketchip_left" unique_id=1506689341 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 23.0
+offset_top = 81.0
+offset_right = 35.0
+offset_bottom = 92.0
+key_id = "Alt"
+cap_text = "ALT"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+can_lock = true
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key33" parent="kb_pocketchip_left" unique_id=1407901091 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 45.0
+offset_top = 81.0
+offset_right = 66.0
+offset_bottom = 92.0
+key_id = "Space"
+cap_text = " "
+font_type = 3
+metadata/_edit_use_anchors_ = true
+
+[node name="Key31" parent="kb_pocketchip_left" unique_id=101593297 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_top = 81.0
+offset_right = 22.0
+offset_bottom = 92.0
+key_id = "Ctrl"
+cap_text = "ctrl"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+can_lock = true
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key21" parent="kb_pocketchip_left" unique_id=1163547133 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_top = 57.0
+offset_right = 11.0
+offset_bottom = 68.0
+key_id = "Tab"
+cap_text = "tab"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key22" parent="kb_pocketchip_left" unique_id=1849179000 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 15.0
+offset_top = 69.0
+offset_right = 27.0
+offset_bottom = 80.0
+key_id = "Z"
+cap_text = "z"
+cap_type_shift = 0
+cap_text_shift = "▥"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key23" parent="kb_pocketchip_left" unique_id=1620825603 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 28.0
+offset_top = 69.0
+offset_right = 40.0
+offset_bottom = 80.0
+key_id = "X"
+cap_text = "x"
+cap_type_shift = 0
+cap_text_shift = "❎"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key24" parent="kb_pocketchip_left" unique_id=188198160 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 41.0
+offset_top = 69.0
+offset_right = 53.0
+offset_bottom = 80.0
+key_id = "C"
+cap_text = "c"
+cap_type_shift = 0
+cap_text_shift = "🐱"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key25" parent="kb_pocketchip_left" unique_id=1699235100 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 54.0
+offset_top = 69.0
+offset_right = 66.0
+offset_bottom = 80.0
+key_id = "V"
+cap_text = "v"
+cap_type_shift = 0
+cap_text_shift = "ˇ"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key57" parent="kb_pocketchip_left" unique_id=1469352188 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_left = 36.0
+offset_top = 81.0
+offset_right = 44.0
+offset_bottom = 92.0
+key_id = "BackSlash"
+key_id_shift_override = "Pipe"
+cap_text = "\\"
+cap_type_shift = 0
+cap_text_shift = "|"
+shift_unicode_override = "|"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key30" parent="kb_pocketchip_left" unique_id=1673297531 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = -0.29166666
+anchor_bottom = -0.29166666
+offset_top = 45.0
+offset_right = 8.0
+offset_bottom = 56.0
+key_id = "QuoteLeft"
+cap_text = "`"
+cap_type_shift = 0
+cap_text_shift = "~"
+shift_unicode_override = "~"
+metadata/_edit_use_anchors_ = true
+
+[node name="kb_pocketchip_right" type="Control" parent="." unique_id=297572910]
+z_index = 150
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -79.0
+offset_bottom = 72.0
+grow_horizontal = 0
+script = ExtResource("12_igxmf")
+
+[node name="Key50" parent="kb_pocketchip_right" unique_id=504752465 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -21.0
+offset_top = 81.0
+offset_right = -11.0
+offset_bottom = 92.0
+key_id = "Down"
+cap_text = "⬇︎"
+cap_type_shift = 0
+cap_text_shift = "⬇︎"
+font_type = 5
+font_color = Color(0.30980393, 0.21568628, 0.23921569, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key52" parent="kb_pocketchip_right" unique_id=2081170869 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -32.0
+offset_top = 81.0
+offset_right = -22.0
+offset_bottom = 92.0
+cap_text = "⬅︎"
+cap_type_shift = 0
+cap_text_shift = "⬅︎"
+font_type = 5
+font_color = Color(0.30980393, 0.21568628, 0.23921569, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key53" parent="kb_pocketchip_right" unique_id=1921362051 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -21.0
+offset_top = 69.0
+offset_right = -11.0
+offset_bottom = 80.0
+key_id = "Up"
+cap_text = "⬆︎"
+cap_type_shift = 0
+cap_text_shift = "⬆︎"
+font_type = 5
+font_color = Color(0.30980393, 0.21568628, 0.23921569, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key51" parent="kb_pocketchip_right" unique_id=1459427987 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -10.0
+offset_top = 81.0
+offset_right = 0.0
+offset_bottom = 92.0
+key_id = "Right"
+cap_text = "➡︎"
+cap_type_shift = 0
+cap_text_shift = "➡︎"
+font_type = 5
+font_color = Color(0.30980393, 0.21568628, 0.23921569, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key5" parent="kb_pocketchip_right" unique_id=1804545041 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -77.0
+offset_top = 45.0
+offset_right = -65.0
+offset_bottom = 56.0
+key_id = "T"
+cap_text = "t"
+cap_type_shift = 0
+cap_text_shift = "⧗"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key6" parent="kb_pocketchip_right" unique_id=1145171469 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -64.0
+offset_top = 45.0
+offset_right = -52.0
+offset_bottom = 56.0
+key_id = "Y"
+cap_text = "y"
+cap_type_shift = 0
+cap_text_shift = "▤"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key7" parent="kb_pocketchip_right" unique_id=1459859518 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -51.0
+offset_top = 45.0
+offset_right = -39.0
+offset_bottom = 56.0
+key_id = "U"
+cap_text = "u"
+cap_type_shift = 0
+cap_text_shift = "⬆"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key8" parent="kb_pocketchip_right" unique_id=1637509099 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -38.0
+offset_top = 45.0
+offset_right = -26.0
+offset_bottom = 56.0
+key_id = "I"
+cap_text = "i"
+cap_type_shift = 0
+cap_text_shift = "☉"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key9" parent="kb_pocketchip_right" unique_id=1077574342 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -25.0
+offset_top = 45.0
+offset_right = -13.0
+offset_bottom = 56.0
+key_id = "O"
+cap_text = "o"
+cap_type_shift = 0
+cap_text_shift = "🅾️"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key10" parent="kb_pocketchip_right" unique_id=959804386 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -12.0
+offset_top = 45.0
+offset_right = 0.0
+offset_bottom = 56.0
+key_id = "P"
+cap_text = "p"
+cap_type_shift = 0
+cap_text_shift = "◆"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key16" parent="kb_pocketchip_right" unique_id=62005083 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -79.0
+offset_top = 57.0
+offset_right = -67.0
+offset_bottom = 68.0
+key_id = "G"
+cap_text = "g"
+cap_type_shift = 0
+cap_text_shift = "●"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key17" parent="kb_pocketchip_right" unique_id=1662542954 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -66.0
+offset_top = 57.0
+offset_right = -54.0
+offset_bottom = 68.0
+key_id = "H"
+cap_text = "h"
+cap_type_shift = 0
+cap_text_shift = "♥"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key18" parent="kb_pocketchip_right" unique_id=246359271 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -53.0
+offset_top = 57.0
+offset_right = -41.0
+offset_bottom = 68.0
+key_id = "J"
+cap_text = "j"
+cap_type_shift = 0
+cap_text_shift = "웃"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key19" parent="kb_pocketchip_right" unique_id=1488447388 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -40.0
+offset_top = 57.0
+offset_right = -28.0
+offset_bottom = 68.0
+key_id = "K"
+cap_text = "k"
+cap_type_shift = 0
+cap_text_shift = "⌂"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key20" parent="kb_pocketchip_right" unique_id=2028720627 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -27.0
+offset_top = 57.0
+offset_right = -15.0
+offset_bottom = 68.0
+key_id = "L"
+cap_text = "l"
+cap_type_shift = 0
+cap_text_shift = "⬅"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key41" parent="kb_pocketchip_right" unique_id=761916714 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -66.0
+offset_top = 33.0
+offset_right = -54.0
+offset_bottom = 44.0
+key_id = "7"
+cap_text = "7"
+cap_type_shift = 0
+cap_text_shift = "&"
+shift_unicode_override = "&"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key42" parent="kb_pocketchip_right" unique_id=2139174968 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -40.0
+offset_top = 33.0
+offset_right = -28.0
+offset_bottom = 44.0
+key_id = "9"
+cap_text = "9"
+cap_type_shift = 0
+cap_text_shift = "("
+shift_unicode_override = "("
+metadata/_edit_use_anchors_ = true
+
+[node name="Key43" parent="kb_pocketchip_right" unique_id=1716547729 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -51.0
+offset_top = 21.0
+offset_right = -39.0
+offset_bottom = 32.0
+key_id = "Minus"
+cap_text = "-"
+cap_type_shift = 0
+cap_text_shift = "_"
+shift_unicode_override = "_"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key66" parent="kb_pocketchip_right" unique_id=142699049 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -77.0
+offset_top = 21.0
+offset_right = -65.0
+offset_bottom = 32.0
+key_id = "F5"
+key_id_shift_override = "F11"
+cap_text = "f5"
+cap_type_shift = 0
+cap_text_shift = "f11"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key67" parent="kb_pocketchip_right" unique_id=57878595 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -64.0
+offset_top = 21.0
+offset_right = -52.0
+offset_bottom = 32.0
+key_id = "F6"
+key_id_shift_override = "F12"
+cap_text = "f6"
+cap_type_shift = 0
+cap_text_shift = "f12"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key49" parent="kb_pocketchip_right" unique_id=1000406833 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -38.0
+offset_top = 21.0
+offset_right = -26.0
+offset_bottom = 32.0
+key_id = "Equal"
+cap_text = "="
+cap_type_shift = 0
+cap_text_shift = "+"
+shift_unicode_override = "+"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key46" parent="kb_pocketchip_right" unique_id=1830949932 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -79.0
+offset_top = 33.0
+offset_right = -67.0
+offset_bottom = 44.0
+key_id = "6"
+cap_text = "6"
+cap_type_shift = 0
+cap_text_shift = "^"
+shift_unicode_override = "^"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key47" parent="kb_pocketchip_right" unique_id=1693568706 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -53.0
+offset_top = 33.0
+offset_right = -41.0
+offset_bottom = 44.0
+key_id = "8"
+cap_text = "8"
+cap_type_shift = 0
+cap_text_shift = "*"
+shift_unicode_override = "*"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key48" parent="kb_pocketchip_right" unique_id=1578501759 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -27.0
+offset_top = 33.0
+offset_right = -15.0
+offset_bottom = 44.0
+key_id = "0"
+cap_text = "0"
+cap_type_shift = 0
+cap_text_shift = ")"
+shift_unicode_override = ")"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key58" parent="kb_pocketchip_right" unique_id=2032539345 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -10.0
+offset_top = 69.0
+offset_right = 0.0
+offset_bottom = 80.0
+key_id = "Shift"
+cap_text = "🔼"
+font_type = 5
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+can_lock = true
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key26" parent="kb_pocketchip_right" unique_id=1296908548 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -78.0
+offset_top = 69.0
+offset_right = -66.0
+offset_bottom = 80.0
+key_id = "B"
+cap_text = "b"
+cap_type_shift = 0
+cap_text_shift = "▒"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key27" parent="kb_pocketchip_right" unique_id=694375928 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -65.0
+offset_top = 69.0
+offset_right = -53.0
+offset_bottom = 80.0
+key_id = "N"
+cap_text = "n"
+cap_type_shift = 0
+cap_text_shift = "♪"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key28" parent="kb_pocketchip_right" unique_id=1041335373 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -52.0
+offset_top = 69.0
+offset_right = -40.0
+offset_bottom = 80.0
+key_id = "M"
+cap_text = "m"
+cap_type_shift = 0
+cap_text_shift = "😐"
+font_type = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Key29" parent="kb_pocketchip_right" unique_id=2107448315 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -39.0
+offset_top = 69.0
+offset_right = -31.0
+offset_bottom = 80.0
+key_id = "Semicolon"
+cap_text = ";"
+cap_type_shift = 0
+cap_text_shift = ":"
+shift_unicode_override = ":"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key54" parent="kb_pocketchip_right" unique_id=2118098359 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -14.0
+offset_top = 57.0
+offset_right = 0.0
+offset_bottom = 68.0
+key_id = "Enter"
+cap_text = "ret"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key55" parent="kb_pocketchip_right" unique_id=1448583525 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -14.0
+offset_top = 33.0
+offset_right = 0.0
+offset_bottom = 44.0
+key_id = "Backspace"
+key_id_shift_override = "Delete"
+cap_text = "bksp"
+cap_type_shift = 0
+cap_text_shift = "del"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+texture_pressed = null
+metadata/_edit_use_anchors_ = true
+
+[node name="Key34" parent="kb_pocketchip_right" unique_id=596237432 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -59.0
+offset_top = 81.0
+offset_right = -51.0
+offset_bottom = 92.0
+key_id = "Comma"
+cap_text = ","
+cap_type_shift = 0
+cap_text_shift = "<"
+shift_unicode_override = "<"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key35" parent="kb_pocketchip_right" unique_id=176426623 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -50.0
+offset_top = 81.0
+offset_right = -42.0
+offset_bottom = 92.0
+key_id = "Period"
+cap_text = "."
+cap_type_shift = 0
+cap_text_shift = ">"
+shift_unicode_override = ">"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key36" parent="kb_pocketchip_right" unique_id=548416458 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -41.0
+offset_top = 81.0
+offset_right = -33.0
+offset_bottom = 92.0
+key_id = "Slash"
+cap_text = "/"
+cap_type_shift = 0
+cap_text_shift = "?"
+shift_unicode_override = "?"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key56" parent="kb_pocketchip_right" unique_id=1557351129 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -30.0
+offset_top = 69.0
+offset_right = -22.0
+offset_bottom = 80.0
+key_id = "Apostrophe"
+cap_text = "'"
+cap_type_shift = 0
+cap_text_shift = "\""
+shift_unicode_override = "\""
+metadata/_edit_use_anchors_ = true
+
+[node name="Key60" parent="kb_pocketchip_right" unique_id=1312119250 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -25.0
+offset_top = 21.0
+offset_right = -13.0
+offset_bottom = 32.0
+key_id = "BracketLeft"
+key_id_shift_override = "SDL_KP_LEFTBRACE"
+cap_text = "["
+cap_type_shift = 0
+cap_text_shift = "{"
+shift_unicode_override = "{"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key61" parent="kb_pocketchip_right" unique_id=2008929358 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -12.0
+offset_top = 21.0
+offset_right = 0.0
+offset_bottom = 32.0
+key_id = "BracketRight"
+key_id_shift_override = "SDL_KP_RIGHTBRACE"
+cap_text = "]"
+cap_type_shift = 0
+cap_text_shift = "}"
+shift_unicode_override = "}"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key37" parent="kb_pocketchip_right" unique_id=1405061704 instance=ExtResource("3_key")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = -0.29166666
+anchor_right = 1.0
+anchor_bottom = -0.29166666
+offset_left = -79.0
+offset_top = 81.0
+offset_right = -60.0
+offset_bottom = 92.0
+key_id = "Space"
+cap_text = " "
+font_type = 3
 metadata/_edit_use_anchors_ = true

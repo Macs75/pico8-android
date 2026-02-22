@@ -49,7 +49,7 @@ static bool is_version_0_2_7 = false;
 // 0.2.7 Memory locations
 // Found via 4-way memdump analysis (Take 2)
 #define PICORAM_INDEX_ISINEDITOR 0x25700
-#define PICORAM_INDEX_ISINGAME 0x257d4
+#define PICORAM_INDEX_ISINGAME 0x255d0
 // 11 = Editor/Menu, 27 = Game
 #define PICORAM_INDEX_STATE_TYPE 0x2572c
 // Cart Loaded Flag: 0=Splore (No Cart), 1=Editor/Console/Game (Cart Loaded)
@@ -68,10 +68,14 @@ static bool is_version_0_2_7 = false;
 
 #define IN_PACKET_SIZE 8 // Event(1) + X(2) + Y(2) + Mask(1) + Pad(2)
 static uint8_t in_packet[IN_PACKET_SIZE];
+#define FB_WIDTH 128
+#define FB_HEIGHT 128
+#define PIXEL_SIZE (FB_WIDTH * FB_HEIGHT * 4)
 #define HEADER_SIZE 11 // "PICO8SYNC__"
-#define META_SIZE 1
-#define PIXEL_SIZE (128*128*4)
-#define TOTAL_PACKET_SIZE (HEADER_SIZE + META_SIZE + PIXEL_SIZE)
+#define META_SIZE 3 // NavState + MasterState + Volume
+#define PACKET_SIZE (HEADER_SIZE + META_SIZE + PIXEL_SIZE) 
+
+#define FIFO_NAME_VID "/tmp/pico8.vid" 
 
 // Helper to ensure all bytes are written to a potentially blocking FD
 static ssize_t write_all(int fd, const void* buf, size_t len) {
@@ -222,7 +226,7 @@ DECLSPEC SDL_Window* SDLCALL SDL_CreateWindow(const char *title,
 static Uint64 last_frame = 0;
 
 // Single static buffer to avoid stack allocation and allow single-syscall writing
-static uint8_t packet_buffer[TOTAL_PACKET_SIZE];
+static uint8_t packet_buffer[PACKET_SIZE];
 static bool header_initialized = false;
 static int vid_open_attempts = 0;
 
@@ -243,10 +247,13 @@ void pico_send_vid_data() {
         uint8_t input_mode = 0;
         uint8_t is_editor = 0;
 
-
+        uint8_t master_state = 0;
+        uint8_t raw_volume = 128; // Default 256 / 2
 
         // Gate memory reading behind version check to prevent reading garbage/crashing
         if (picoram != NULL && is_version_0_2_7) {
+            // DAT_00640554 (Editor screen index: 0=Code, 1=Sprite, 2=Map, 3=Sfx, 4=Music)
+            master_state = picoram[0x255d4]; 
             state_enum = picoram[PICORAM_INDEX_STATE_TYPE];
             cart_loaded = picoram[PICORAM_INDEX_CART_LOADED];
             input_mode = picoram[PICORAM_INDEX_INPUT_MODE];
@@ -262,6 +269,8 @@ void pico_send_vid_data() {
             // Real Offset: 0x2a0e60 - 0x100000 = 0x1a0e60.
             
             uint8_t is_paused = 0;
+            uint8_t has_syntax_error = 0;
+            uint8_t is_muted = 0;
             
             if (base_addr != 0) {
                 uint8_t *app_struct = (uint8_t *)(base_addr + 0x1a0e60);
@@ -269,6 +278,25 @@ void pico_send_vid_data() {
                 // CORRECTION: 5080 and 5092 are DECIMAL offsets (from Ghidra naming app._5080_4_)
                 // 5080 = 0x13d8. 5092 = 0x13e4.
                 is_paused = (app_struct[5080] != 0 || app_struct[5092] != 0);
+                
+                // app._5076_4_ tracks whether a syntax error prevented the cart from running
+                has_syntax_error = (app_struct[5076] != 0);
+                
+                // cconfig is a global struct at Ghidra 0x4d86c0
+                // (The .got entry at 0x27cd50 points to it)
+                // Runtime Offset: 0x4d86c0 - 0x100000 = 0x3d86c0
+                uint8_t *cconfig_struct = (uint8_t *)(base_addr + 0x3d86c0);
+                
+                // cconfig._28_4_ is a 4-byte int. 0 means Muted, > 0 is Volume (e.g., 0x100)
+                uint32_t volume = *(uint32_t *)(cconfig_struct + 28);
+                is_muted = (volume == 0);
+                
+                // Track actual volume, scale down to fit in 1 byte (0-144 range since max is 288)
+                if (volume > 0) {
+                    raw_volume = (uint8_t)(volume / 2);
+                } else {
+                    raw_volume = 0;
+                }
             }
 
             is_editor = (picoram[PICORAM_INDEX_STRICT_EDITOR] > 0); // > 0 to catch Music/Sprite tabs (Value 2)
@@ -285,8 +313,8 @@ void pico_send_vid_data() {
             }
 
             // Game Check (Highest Priority)
-            // If we are in Game Mode (27) OR the IsGame flag is set, we are playing.
-            if (state_enum == 27 || picoram[PICORAM_INDEX_ISINGAME]) {
+            // 0x255d0 (DAT_00640550) is 1 when Game is running, 0 otherwise.
+            if (picoram[PICORAM_INDEX_ISINGAME] == 1) {
                 navstate |= 0x02; // G
             }
             // System Mode Check (Only if not in Game)
@@ -309,18 +337,25 @@ void pico_send_vid_data() {
                 }
             }
             
-            // Devkit Flag: Only if Game is Active (State 27 or IsGame Flag)
+            // Devkit Flag: Only if Game is Active
             // This prevents "D" from sticking when exiting to Splore/Console.
-            bool is_ingame_active = (state_enum == 27 || picoram[PICORAM_INDEX_ISINGAME]);
+            bool is_ingame_active = (picoram[PICORAM_INDEX_ISINGAME] == 1);
             if (is_ingame_active && (picoram[PICORAM_INDEX_DEVKIT] & 0x1)) {
                 navstate |= 0x04;
+            }
+            
+            // Audio Mute Flag (0x80)
+            if (is_muted) {
+                navstate |= 0x80;
             }
         }
         
         // Write Metadata
         packet_buffer[HEADER_SIZE] = navstate;
+        packet_buffer[HEADER_SIZE + 1] = master_state;
+        packet_buffer[HEADER_SIZE + 2] = raw_volume;
         // We reuse the last 4 bytes of the magic string "PICO8SYNC__"
-        // New Format: "PICO8SY" (7 bytes) + State(1) + Input(1) + Cart(1) + Editor(1) + NavState(1)
+        // New Format: "PICO8SY" (7 bytes) + NaVSate(1) + MasterState(1) + Volume(1)
         //memcpy(packet_buffer, "PICO8SY", 7);
         //packet_buffer[7] = state_enum;
         //packet_buffer[8] = input_mode;
@@ -381,7 +416,7 @@ void pico_send_vid_data() {
 
         // 2. Write Data
         if (vid_fd >= 0) {
-            ssize_t sent = write_all(vid_fd, packet_buffer, TOTAL_PACKET_SIZE);
+            ssize_t sent = write_all(vid_fd, packet_buffer, PACKET_SIZE);
             if (sent < 0) {
                  if (errno == EPIPE) {
                      // Reader Closed

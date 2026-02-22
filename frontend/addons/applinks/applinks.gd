@@ -5,16 +5,24 @@ signal data_received(data: String)
 const CUSTOM_MANIFEST_ACTIVITY_ELEMENT = '''
 
 	<!-- Strategy: Share Link and Share Image -->
+	<!-- PICO-8 PNG Carts Share -->
 	<intent-filter>
 		<action android:name="android.intent.action.SEND" />
 		<category android:name="android.intent.category.DEFAULT" />
-		<data android:mimeType="application/octet-stream" />
-		<data android:mimeType="application/pkcs8" />
-		<data android:mimeType="text/plain" />
 		<data android:mimeType="image/png" />
+		<data android:mimeType="application/octet-stream" />
 		<data android:pathPattern=".*\\.p8\\.png" />
-		<data android:pathPattern=".*\\.p8" />
 		<data android:pathSuffix=".p8.png" />
+	</intent-filter>
+
+	<!-- PICO-8 Text/Blob Carts Share -->
+	<intent-filter>
+		<action android:name="android.intent.action.SEND" />
+		<category android:name="android.intent.category.DEFAULT" />
+		<data android:mimeType="text/plain" />
+		<data android:mimeType="application/pkcs8" />
+		<data android:mimeType="application/octet-stream" />
+		<data android:pathPattern=".*\\.p8" />
 		<data android:pathSuffix=".p8" />
 	</intent-filter>
 
@@ -32,20 +40,32 @@ const CUSTOM_MANIFEST_ACTIVITY_ELEMENT = '''
 	</intent-filter>
 	
 	<!-- Strategy: File Handling (Downloads/Local)-->
+	<!-- PICO-8 PNG Carts View -->
 	<intent-filter>
 		<action android:name="android.intent.action.VIEW" />
 		<category android:name="android.intent.category.DEFAULT" />
 		<category android:name="android.intent.category.BROWSABLE" />
 		<category android:name="android.intent.category.OPENABLE" />
-		<data android:scheme="file" />
-		<data android:scheme="content" />
-		<data android:mimeType="application/octet-stream" />
-		<data android:mimeType="application/pkcs8" />
-		<data android:mimeType="text/plain" />
+		<data android:scheme="file" android:host="*" />
+		<data android:scheme="content" android:host="*" />
 		<data android:mimeType="image/png" />
+		<data android:mimeType="application/octet-stream" />
 		<data android:pathPattern=".*\\.p8\\.png" />
-		<data android:pathPattern=".*\\.p8" />
 		<data android:pathSuffix=".p8.png" />
+	</intent-filter>
+
+	<!-- PICO-8 Text/Blob Carts View -->
+	<intent-filter>
+		<action android:name="android.intent.action.VIEW" />
+		<category android:name="android.intent.category.DEFAULT" />
+		<category android:name="android.intent.category.BROWSABLE" />
+		<category android:name="android.intent.category.OPENABLE" />
+		<data android:scheme="file" android:host="*" />
+		<data android:scheme="content" android:host="*" />
+		<data android:mimeType="text/plain" />
+		<data android:mimeType="application/pkcs8" />
+		<data android:mimeType="application/octet-stream" />
+		<data android:pathPattern=".*\\.p8" />
 		<data android:pathSuffix=".p8" />
 	</intent-filter>
 '''

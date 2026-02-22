@@ -20,7 +20,10 @@
 [ext_resource type="PackedScene" uid="uid://c5k0xmbhdlmaw" path="res://key.tscn" id="20_82xsv"]
 [ext_resource type="Texture2D" uid="uid://6g8vp7jto4p1" path="res://assets/cartdl/cartdl_16.png" id="20_abqjc"]
 [ext_resource type="FontFile" uid="uid://c2jlc3nt8y38q" path="res://assets/font/atlas-0.png" id="20_d13ii"]
+[ext_resource type="Texture2D" uid="uid://11n44wksyvn" path="res://assets/keyboard.svg" id="22_b1qrp"]
 [ext_resource type="Texture2D" uid="uid://shpx84pg158k" path="res://assets/pico8_logo_vector.png" id="23_1u8w0"]
+[ext_resource type="FontFile" uid="uid://4obp7w7mooth" path="res://assets/font/Elusive-Icons.ttf" id="23_ok6jj"]
+[ext_resource type="Texture2D" uid="uid://bjtcvcurk0xpg" path="res://assets/volume_up.svg" id="24_facbu"]
 [ext_resource type="Script" uid="uid://3yarkysfetgu" path="res://kb_toggler.gd" id="37_come4"]
 [ext_resource type="PackedScene" uid="uid://bgklhpsaac82q" path="res://dpad.tscn" id="41_0cp0l"]
 [ext_resource type="Script" uid="uid://c7rts7fcblaav" path="res://run_pico_cmd.gd" id="41_4lmeg"]
@@ -229,288 +232,491 @@ centered = false
 position = Vector2(0, 300)
 
 [node name="Keyboard Btn" type="Button" parent="Arranger/kbanchor" unique_id=585888594]
-offset_top = -150.0
-offset_right = 50.0
-offset_bottom = -137.0
+offset_top = -149.0
+offset_right = 18.0
+offset_bottom = -131.0
 focus_mode = 0
 theme_override_fonts/font = ExtResource("20_d13ii")
 theme_override_font_sizes/font_size = 5
 theme_override_styles/focus = SubResource("StyleBoxEmpty_d13ii")
-text = "fULL kEYBOARD"
+icon = ExtResource("22_b1qrp")
+expand_icon = true
 script = ExtResource("171_repo")
 
-[node name="kb_pocketchip" type="Node2D" parent="Arranger/kbanchor" unique_id=521324979]
+[node name="AudioBtn" type="Button" parent="Arranger/kbanchor" unique_id=2130156724]
+unique_name_in_owner = true
+offset_left = 109.0
+offset_top = -149.0
+offset_right = 127.0
+offset_bottom = -131.0
+focus_mode = 0
+theme_override_fonts/font = ExtResource("23_ok6jj")
+theme_override_font_sizes/font_size = 10
+theme_override_styles/focus = SubResource("StyleBoxEmpty_d13ii")
+icon = ExtResource("24_facbu")
+expand_icon = true
+script = ExtResource("171_repo")
+
+[node name="kb_pocketchip" type="Control" parent="Arranger/kbanchor" unique_id=521324979]
 visible = false
-position = Vector2(0, -125)
+z_index = 150
+layout_mode = 3
+anchors_preset = 0
+offset_left = -8.0
+offset_top = -137.0
+offset_right = 137.0
+offset_bottom = -61.0
 script = ExtResource("37_come4")
 
 [node name="Key" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1785778886 instance=ExtResource("20_82xsv")]
-offset_top = 44.0
-offset_right = 5.5
-offset_bottom = 53.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077924
+anchor_right = 0.08965516
+anchor_bottom = -0.22077923
+offset_left = -4.0
+offset_top = 43.0
+offset_right = 8.0
+offset_bottom = 54.0
 key_id = "Q"
 cap_text = "q"
+cap_type_shift = 0
+cap_text_shift = "…"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key37" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1690140182 instance=ExtResource("20_82xsv")]
-offset_top = 2.0
-offset_right = 5.5
-offset_bottom = 11.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077924
+anchor_right = 0.08965516
+anchor_bottom = -0.22077924
+offset_left = -13.0
+offset_top = 19.0
+offset_right = 2.0
+offset_bottom = 30.0
 key_id = "Escape"
-cap_text = "ESC"
+cap_text = "esc"
 font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
 unicode = false
 metadata/_edit_use_anchors_ = true
 
 [node name="Key2" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1923395999 instance=ExtResource("20_82xsv")]
-offset_left = 13.0
-offset_top = 44.0
-offset_right = 18.5
-offset_bottom = 53.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 9.0
+offset_top = 43.0
+offset_right = 21.0
+offset_bottom = 54.0
 key_id = "W"
 cap_text = "w"
+cap_type_shift = 0
+cap_text_shift = "∧"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key50" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1440343591 instance=ExtResource("20_82xsv")]
-offset_left = 23.0
-offset_top = 28.0
-offset_right = 29.0
-offset_bottom = 35.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 111.0
+offset_top = 79.0
+offset_right = 121.0
+offset_bottom = 90.0
 key_id = "Down"
-cap_type = 1
-cap_text = "02"
-font_type = 4
+cap_text = "⬇︎"
+cap_type_shift = 0
+cap_text_shift = "⬇︎"
+font_type = 5
+font_color = Color(0.30980393, 0.21568628, 0.23921569, 1)
 unicode = false
 metadata/_edit_use_anchors_ = true
 
 [node name="Key52" parent="Arranger/kbanchor/kb_pocketchip" unique_id=120242106 instance=ExtResource("20_82xsv")]
-offset_left = 13.0
-offset_top = 15.0
-offset_right = 19.0
-offset_bottom = 22.0
-cap_type = 1
-cap_text = "03"
-font_type = 4
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 100.0
+offset_top = 79.0
+offset_right = 110.0
+offset_bottom = 90.0
+cap_text = "⬅︎"
+cap_type_shift = 0
+cap_text_shift = "⬅︎"
+font_type = 5
+font_color = Color(0.30980393, 0.21568628, 0.23921569, 1)
 unicode = false
 metadata/_edit_use_anchors_ = true
 
 [node name="Key53" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1886112621 instance=ExtResource("20_82xsv")]
-offset_left = 23.0
-offset_top = 2.0
-offset_right = 29.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 111.0
+offset_top = 67.0
+offset_right = 121.0
+offset_bottom = 78.0
 key_id = "Up"
-cap_type = 1
-cap_text = "01"
-font_type = 4
+cap_text = "⬆︎"
+cap_type_shift = 0
+cap_text_shift = "⬆︎"
+font_type = 5
+font_color = Color(0.30980393, 0.21568628, 0.23921569, 1)
 unicode = false
 metadata/_edit_use_anchors_ = true
 
 [node name="Key51" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1354759766 instance=ExtResource("20_82xsv")]
-offset_left = 33.0
-offset_top = 15.0
-offset_right = 39.0
-offset_bottom = 22.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 122.0
+offset_top = 79.0
+offset_right = 132.0
+offset_bottom = 90.0
 key_id = "Right"
-cap_type = 1
-cap_text = "04"
-font_type = 4
+cap_text = "➡︎"
+cap_type_shift = 0
+cap_text_shift = "➡︎"
+font_type = 5
+font_color = Color(0.30980393, 0.21568628, 0.23921569, 1)
 unicode = false
 metadata/_edit_use_anchors_ = true
 
 [node name="Key3" parent="Arranger/kbanchor/kb_pocketchip" unique_id=178255220 instance=ExtResource("20_82xsv")]
-offset_left = 26.0
-offset_top = 44.0
-offset_right = 31.5
-offset_bottom = 53.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 22.0
+offset_top = 43.0
+offset_right = 34.0
+offset_bottom = 54.0
 key_id = "E"
 cap_text = "e"
+cap_type_shift = 0
+cap_text_shift = "░"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key4" parent="Arranger/kbanchor/kb_pocketchip" unique_id=534576176 instance=ExtResource("20_82xsv")]
-offset_left = 39.0
-offset_top = 44.0
-offset_right = 44.5
-offset_bottom = 53.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 35.0
+offset_top = 43.0
+offset_right = 47.0
+offset_bottom = 54.0
 key_id = "R"
 cap_text = "r"
+cap_type_shift = 0
+cap_text_shift = "➡"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key5" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1215865022 instance=ExtResource("20_82xsv")]
-offset_left = 52.0
-offset_top = 44.0
-offset_right = 57.5
-offset_bottom = 53.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 48.0
+offset_top = 43.0
+offset_right = 60.0
+offset_bottom = 54.0
 key_id = "T"
 cap_text = "t"
+cap_type_shift = 0
+cap_text_shift = "⧗"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key6" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1204841487 instance=ExtResource("20_82xsv")]
-offset_left = 65.0
-offset_top = 44.0
-offset_right = 70.5
-offset_bottom = 53.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 61.0
+offset_top = 43.0
+offset_right = 73.0
+offset_bottom = 54.0
 key_id = "Y"
 cap_text = "y"
+cap_type_shift = 0
+cap_text_shift = "▤"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key7" parent="Arranger/kbanchor/kb_pocketchip" unique_id=155265572 instance=ExtResource("20_82xsv")]
-offset_left = 78.0
-offset_top = 44.0
-offset_right = 83.5
-offset_bottom = 53.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 74.0
+offset_top = 43.0
+offset_right = 86.0
+offset_bottom = 54.0
 key_id = "U"
 cap_text = "u"
+cap_type_shift = 0
+cap_text_shift = "⬆"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key8" parent="Arranger/kbanchor/kb_pocketchip" unique_id=151651340 instance=ExtResource("20_82xsv")]
-offset_left = 91.0
-offset_top = 44.0
-offset_right = 96.5
-offset_bottom = 53.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 87.0
+offset_top = 43.0
+offset_right = 99.0
+offset_bottom = 54.0
 key_id = "I"
 cap_text = "i"
+cap_type_shift = 0
+cap_text_shift = "☉"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key9" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1155798871 instance=ExtResource("20_82xsv")]
-offset_left = 104.0
-offset_top = 44.0
-offset_right = 109.5
-offset_bottom = 53.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 100.0
+offset_top = 43.0
+offset_right = 112.0
+offset_bottom = 54.0
 key_id = "O"
 cap_text = "o"
+cap_type_shift = 0
+cap_text_shift = "🅾️"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key10" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1447123635 instance=ExtResource("20_82xsv")]
-offset_left = 117.0
-offset_top = 44.0
-offset_right = 122.5
-offset_bottom = 53.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 113.0
+offset_top = 43.0
+offset_right = 125.0
+offset_bottom = 54.0
 key_id = "P"
 cap_text = "p"
+cap_type_shift = 0
+cap_text_shift = "◆"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key12" parent="Arranger/kbanchor/kb_pocketchip" unique_id=52582595 instance=ExtResource("20_82xsv")]
-offset_top = 64.0
-offset_right = 5.5
-offset_bottom = 73.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077923
+anchor_right = 0.08965516
+anchor_bottom = -0.22077923
+offset_left = -1.0
+offset_top = 55.0
+offset_right = 11.0
+offset_bottom = 66.0
 key_id = "A"
+cap_type_shift = 0
+cap_text_shift = "█"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key13" parent="Arranger/kbanchor/kb_pocketchip" unique_id=803389355 instance=ExtResource("20_82xsv")]
-offset_left = 13.0
-offset_top = 64.0
-offset_right = 18.5
-offset_bottom = 73.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 12.0
+offset_top = 55.0
+offset_right = 24.0
+offset_bottom = 66.0
 key_id = "S"
 cap_text = "s"
+cap_type_shift = 0
+cap_text_shift = "★"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key14" parent="Arranger/kbanchor/kb_pocketchip" unique_id=524635344 instance=ExtResource("20_82xsv")]
-offset_left = 26.0
-offset_top = 64.0
-offset_right = 31.5
-offset_bottom = 73.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 25.0
+offset_top = 55.0
+offset_right = 37.0
+offset_bottom = 66.0
 key_id = "D"
 cap_text = "d"
+cap_type_shift = 0
+cap_text_shift = "⬇"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key15" parent="Arranger/kbanchor/kb_pocketchip" unique_id=286844365 instance=ExtResource("20_82xsv")]
-offset_left = 39.0
-offset_top = 64.0
-offset_right = 44.5
-offset_bottom = 73.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 38.0
+offset_top = 55.0
+offset_right = 50.0
+offset_bottom = 66.0
 key_id = "F"
 cap_text = "f"
+cap_type_shift = 0
+cap_text_shift = "✽"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key16" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1808677909 instance=ExtResource("20_82xsv")]
-offset_left = 52.0
-offset_top = 64.0
-offset_right = 57.5
-offset_bottom = 73.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 51.0
+offset_top = 55.0
+offset_right = 63.0
+offset_bottom = 66.0
 key_id = "G"
 cap_text = "g"
+cap_type_shift = 0
+cap_text_shift = "●"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key17" parent="Arranger/kbanchor/kb_pocketchip" unique_id=177449874 instance=ExtResource("20_82xsv")]
-offset_left = 65.0
-offset_top = 64.0
-offset_right = 70.5
-offset_bottom = 73.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 64.0
+offset_top = 55.0
+offset_right = 76.0
+offset_bottom = 66.0
 key_id = "H"
 cap_text = "h"
+cap_type_shift = 0
+cap_text_shift = "♥"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key18" parent="Arranger/kbanchor/kb_pocketchip" unique_id=710742142 instance=ExtResource("20_82xsv")]
-offset_left = 78.0
-offset_top = 64.0
-offset_right = 83.5
-offset_bottom = 73.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 77.0
+offset_top = 55.0
+offset_right = 89.0
+offset_bottom = 66.0
 key_id = "J"
 cap_text = "j"
+cap_type_shift = 0
+cap_text_shift = "웃"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key19" parent="Arranger/kbanchor/kb_pocketchip" unique_id=786070233 instance=ExtResource("20_82xsv")]
-offset_left = 91.0
-offset_top = 64.0
-offset_right = 96.5
-offset_bottom = 73.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 90.0
+offset_top = 55.0
+offset_right = 102.0
+offset_bottom = 66.0
 key_id = "K"
 cap_text = "k"
+cap_type_shift = 0
+cap_text_shift = "⌂"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key20" parent="Arranger/kbanchor/kb_pocketchip" unique_id=634768688 instance=ExtResource("20_82xsv")]
-offset_left = 104.0
-offset_top = 64.0
-offset_right = 109.5
-offset_bottom = 73.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 103.0
+offset_top = 55.0
+offset_right = 115.0
+offset_bottom = 66.0
 key_id = "L"
 cap_text = "l"
+cap_type_shift = 0
+cap_text_shift = "⬅"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key38" parent="Arranger/kbanchor/kb_pocketchip" unique_id=52699292 instance=ExtResource("20_82xsv")]
-offset_left = 46.0
-offset_top = 2.0
-offset_right = 51.5
-offset_bottom = 11.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077924
+anchor_right = 0.08965516
+anchor_bottom = -0.22077924
+offset_left = -13.0
+offset_top = 31.0
+offset_right = -1.0
+offset_bottom = 42.0
 key_id = "1"
 cap_text = "1"
 cap_type_shift = 0
@@ -519,10 +725,16 @@ shift_unicode_override = "!"
 metadata/_edit_use_anchors_ = true
 
 [node name="Key39" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1620518947 instance=ExtResource("20_82xsv")]
-offset_left = 59.0
-offset_top = 2.0
-offset_right = 64.5
-offset_bottom = 11.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 13.0
+offset_top = 31.0
+offset_right = 25.0
+offset_bottom = 42.0
 key_id = "3"
 cap_text = "3"
 cap_type_shift = 0
@@ -531,10 +743,16 @@ shift_unicode_override = "#"
 metadata/_edit_use_anchors_ = true
 
 [node name="Key40" parent="Arranger/kbanchor/kb_pocketchip" unique_id=2049869537 instance=ExtResource("20_82xsv")]
-offset_left = 72.0
-offset_top = 2.0
-offset_right = 77.5
-offset_bottom = 11.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 39.0
+offset_top = 31.0
+offset_right = 51.0
+offset_bottom = 42.0
 key_id = "5"
 cap_text = "5"
 cap_type_shift = 0
@@ -543,10 +761,16 @@ shift_unicode_override = "%"
 metadata/_edit_use_anchors_ = true
 
 [node name="Key41" parent="Arranger/kbanchor/kb_pocketchip" unique_id=117655230 instance=ExtResource("20_82xsv")]
-offset_left = 85.0
-offset_top = 2.0
-offset_right = 90.5
-offset_bottom = 11.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 65.0
+offset_top = 31.0
+offset_right = 77.0
+offset_bottom = 42.0
 key_id = "7"
 cap_text = "7"
 cap_type_shift = 0
@@ -555,10 +779,16 @@ shift_unicode_override = "&"
 metadata/_edit_use_anchors_ = true
 
 [node name="Key42" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1150718353 instance=ExtResource("20_82xsv")]
-offset_left = 98.0
-offset_top = 2.0
-offset_right = 103.5
-offset_bottom = 11.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 91.0
+offset_top = 31.0
+offset_right = 103.0
+offset_bottom = 42.0
 key_id = "9"
 cap_text = "9"
 cap_type_shift = 0
@@ -567,10 +797,16 @@ shift_unicode_override = "("
 metadata/_edit_use_anchors_ = true
 
 [node name="Key43" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1867299538 instance=ExtResource("20_82xsv")]
-offset_left = 111.0
-offset_top = 2.0
-offset_right = 116.5
-offset_bottom = 11.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 81.0
+offset_top = 19.0
+offset_right = 93.0
+offset_bottom = 30.0
 key_id = "Minus"
 cap_text = "-"
 cap_type_shift = 0
@@ -578,11 +814,143 @@ cap_text_shift = "_"
 shift_unicode_override = "_"
 metadata/_edit_use_anchors_ = true
 
+[node name="Key62" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1141303876 instance=ExtResource("20_82xsv")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077924
+anchor_right = 0.08965516
+anchor_bottom = -0.22077924
+offset_left = 3.0
+offset_top = 19.0
+offset_right = 15.0
+offset_bottom = 30.0
+key_id = "F1"
+key_id_shift_override = "F7"
+cap_text = "f1"
+cap_type_shift = 0
+cap_text_shift = "f7"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key63" parent="Arranger/kbanchor/kb_pocketchip" unique_id=205328858 instance=ExtResource("20_82xsv")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 16.0
+offset_top = 19.0
+offset_right = 28.0
+offset_bottom = 30.0
+key_id = "F2"
+key_id_shift_override = "F8"
+cap_text = "f2"
+cap_type_shift = 0
+cap_text_shift = "f8"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key64" parent="Arranger/kbanchor/kb_pocketchip" unique_id=2130481994 instance=ExtResource("20_82xsv")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 29.0
+offset_top = 19.0
+offset_right = 41.0
+offset_bottom = 30.0
+key_id = "F3"
+key_id_shift_override = "F9"
+cap_text = "f3"
+cap_type_shift = 0
+cap_text_shift = "f9"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key65" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1316830792 instance=ExtResource("20_82xsv")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 42.0
+offset_top = 19.0
+offset_right = 54.0
+offset_bottom = 30.0
+key_id = "F4"
+key_id_shift_override = "F10"
+cap_text = "f4"
+cap_type_shift = 0
+cap_text_shift = "f10"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key66" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1515470897 instance=ExtResource("20_82xsv")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 55.0
+offset_top = 19.0
+offset_right = 67.0
+offset_bottom = 30.0
+key_id = "F5"
+key_id_shift_override = "F11"
+cap_text = "f5"
+cap_type_shift = 0
+cap_text_shift = "f11"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key67" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1722642293 instance=ExtResource("20_82xsv")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 68.0
+offset_top = 19.0
+offset_right = 80.0
+offset_bottom = 30.0
+key_id = "F6"
+key_id_shift_override = "F12"
+cap_text = "f6"
+cap_type_shift = 0
+cap_text_shift = "f12"
+font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+unicode = false
+metadata/_edit_use_anchors_ = true
+
 [node name="Key49" parent="Arranger/kbanchor/kb_pocketchip" unique_id=559665423 instance=ExtResource("20_82xsv")]
-offset_left = 117.0
-offset_top = 22.0
-offset_right = 122.5
-offset_bottom = 31.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 94.0
+offset_top = 19.0
+offset_right = 106.0
+offset_bottom = 30.0
 key_id = "Equal"
 cap_text = "="
 cap_type_shift = 0
@@ -591,10 +959,14 @@ shift_unicode_override = "+"
 metadata/_edit_use_anchors_ = true
 
 [node name="Key44" parent="Arranger/kbanchor/kb_pocketchip" unique_id=158705450 instance=ExtResource("20_82xsv")]
-offset_left = 52.0
-offset_top = 22.0
-offset_right = 57.5
-offset_bottom = 31.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077924
+anchor_right = 0.08965516
+anchor_bottom = -0.22077924
+offset_top = 31.0
+offset_bottom = 42.0
 key_id = "2"
 cap_text = "2"
 cap_type_shift = 0
@@ -603,10 +975,16 @@ shift_unicode_override = "@"
 metadata/_edit_use_anchors_ = true
 
 [node name="Key45" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1380667480 instance=ExtResource("20_82xsv")]
-offset_left = 65.0
-offset_top = 22.0
-offset_right = 70.5
-offset_bottom = 31.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 26.0
+offset_top = 31.0
+offset_right = 38.0
+offset_bottom = 42.0
 key_id = "4"
 cap_text = "4"
 cap_type_shift = 0
@@ -615,10 +993,16 @@ shift_unicode_override = "$"
 metadata/_edit_use_anchors_ = true
 
 [node name="Key46" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1621537370 instance=ExtResource("20_82xsv")]
-offset_left = 78.0
-offset_top = 22.0
-offset_right = 83.5
-offset_bottom = 31.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 52.0
+offset_top = 31.0
+offset_right = 64.0
+offset_bottom = 42.0
 key_id = "6"
 cap_text = "6"
 cap_type_shift = 0
@@ -627,10 +1011,16 @@ shift_unicode_override = "^"
 metadata/_edit_use_anchors_ = true
 
 [node name="Key47" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1594545544 instance=ExtResource("20_82xsv")]
-offset_left = 91.0
-offset_top = 22.0
-offset_right = 96.5
-offset_bottom = 31.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 78.0
+offset_top = 31.0
+offset_right = 90.0
+offset_bottom = 42.0
 key_id = "8"
 cap_text = "8"
 cap_type_shift = 0
@@ -639,10 +1029,16 @@ shift_unicode_override = "*"
 metadata/_edit_use_anchors_ = true
 
 [node name="Key48" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1361653530 instance=ExtResource("20_82xsv")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
 offset_left = 104.0
-offset_top = 22.0
-offset_right = 109.5
-offset_bottom = 31.0
+offset_top = 31.0
+offset_right = 116.0
+offset_bottom = 42.0
 key_id = "0"
 cap_text = "0"
 cap_type_shift = 0
@@ -651,144 +1047,252 @@ shift_unicode_override = ")"
 metadata/_edit_use_anchors_ = true
 
 [node name="Key11" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1953660663 instance=ExtResource("20_82xsv")]
-offset_left = 13.0
-offset_top = 104.0
-offset_right = 18.5
-offset_bottom = 113.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077923
+anchor_right = 0.08965516
+anchor_bottom = -0.22077923
+offset_left = -13.0
+offset_top = 67.0
+offset_right = 1.0
+offset_bottom = 78.0
 key_id = "Shift"
-cap_text = "SH
-FT"
-font_type = 3
+cap_text = "🔼"
+font_type = 5
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
+can_lock = true
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key58" parent="Arranger/kbanchor/kb_pocketchip" unique_id=783809275 instance=ExtResource("20_82xsv")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 122.0
+offset_top = 67.0
+offset_right = 132.0
+offset_bottom = 78.0
+key_id = "Shift"
+cap_text = "🔼"
+font_type = 5
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
 can_lock = true
 unicode = false
 metadata/_edit_use_anchors_ = true
 
 [node name="Key32" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1336458809 instance=ExtResource("20_82xsv")]
-offset_left = 26.0
-offset_top = 104.0
-offset_right = 31.5
-offset_bottom = 113.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 10.0
+offset_top = 79.0
+offset_right = 22.0
+offset_bottom = 90.0
 key_id = "Alt"
 cap_text = "ALT"
 font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
 can_lock = true
 unicode = false
 metadata/_edit_use_anchors_ = true
 
 [node name="Key33" parent="Arranger/kbanchor/kb_pocketchip" unique_id=633970276 instance=ExtResource("20_82xsv")]
-offset_left = 39.0
-offset_top = 104.0
-offset_right = 57.5
-offset_bottom = 113.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 32.0
+offset_top = 79.0
+offset_right = 72.0
+offset_bottom = 90.0
 key_id = "Space"
 cap_text = " "
 font_type = 3
 metadata/_edit_use_anchors_ = true
 
 [node name="Key31" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1246462200 instance=ExtResource("20_82xsv")]
-offset_top = 104.0
-offset_right = 5.5
-offset_bottom = 113.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077923
+anchor_right = 0.08965516
+anchor_bottom = -0.22077923
+offset_left = -13.0
+offset_top = 79.0
+offset_right = 9.0
+offset_bottom = 90.0
 key_id = "Ctrl"
-cap_text = "CT
-RL"
+cap_text = "ctrl"
 font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
 can_lock = true
 unicode = false
 metadata/_edit_use_anchors_ = true
 
 [node name="Key21" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1048305194 instance=ExtResource("20_82xsv")]
-offset_top = 84.0
-offset_right = 5.5
-offset_bottom = 93.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077923
+anchor_right = 0.08965516
+anchor_bottom = -0.22077923
+offset_left = -13.0
+offset_top = 55.0
+offset_right = -2.0
+offset_bottom = 66.0
 key_id = "Tab"
-cap_text = "TAB"
+cap_text = "tab"
 font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
 unicode = false
 metadata/_edit_use_anchors_ = true
 
 [node name="Key22" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1133177524 instance=ExtResource("20_82xsv")]
-offset_left = 13.0
-offset_top = 84.0
-offset_right = 18.5
-offset_bottom = 93.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077923
+anchor_right = 0.08965516
+anchor_bottom = -0.22077923
+offset_left = 2.0
+offset_top = 67.0
+offset_right = 14.0
+offset_bottom = 78.0
 key_id = "Z"
 cap_text = "z"
+cap_type_shift = 0
+cap_text_shift = "▥"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key23" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1713966697 instance=ExtResource("20_82xsv")]
-offset_left = 26.0
-offset_top = 84.0
-offset_right = 31.5
-offset_bottom = 93.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 15.0
+offset_top = 67.0
+offset_right = 27.0
+offset_bottom = 78.0
 key_id = "X"
 cap_text = "x"
+cap_type_shift = 0
+cap_text_shift = "❎"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key24" parent="Arranger/kbanchor/kb_pocketchip" unique_id=656931569 instance=ExtResource("20_82xsv")]
-offset_left = 39.0
-offset_top = 84.0
-offset_right = 44.5
-offset_bottom = 93.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 28.0
+offset_top = 67.0
+offset_right = 40.0
+offset_bottom = 78.0
 key_id = "C"
 cap_text = "c"
+cap_type_shift = 0
+cap_text_shift = "🐱"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key25" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1175923147 instance=ExtResource("20_82xsv")]
-offset_left = 52.0
-offset_top = 84.0
-offset_right = 57.5
-offset_bottom = 93.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 41.0
+offset_top = 67.0
+offset_right = 53.0
+offset_bottom = 78.0
 key_id = "V"
 cap_text = "v"
+cap_type_shift = 0
+cap_text_shift = "ˇ"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key26" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1558498830 instance=ExtResource("20_82xsv")]
-offset_left = 65.0
-offset_top = 84.0
-offset_right = 70.5
-offset_bottom = 93.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 54.0
+offset_top = 67.0
+offset_right = 66.0
+offset_bottom = 78.0
 key_id = "B"
 cap_text = "b"
+cap_type_shift = 0
+cap_text_shift = "▒"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key27" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1101648280 instance=ExtResource("20_82xsv")]
-offset_left = 78.0
-offset_top = 84.0
-offset_right = 83.5
-offset_bottom = 93.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 67.0
+offset_top = 67.0
+offset_right = 79.0
+offset_bottom = 78.0
 key_id = "N"
 cap_text = "n"
+cap_type_shift = 0
+cap_text_shift = "♪"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key28" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1707711206 instance=ExtResource("20_82xsv")]
-offset_left = 91.0
-offset_top = 84.0
-offset_right = 96.5
-offset_bottom = 93.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 80.0
+offset_top = 67.0
+offset_right = 92.0
+offset_bottom = 78.0
 key_id = "M"
 cap_text = "m"
+cap_type_shift = 0
+cap_text_shift = "😐"
 font_type = 2
-special_behaviour = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="Key29" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1810632880 instance=ExtResource("20_82xsv")]
-offset_left = 104.0
-offset_top = 84.0
-offset_right = 109.5
-offset_bottom = 93.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 93.0
+offset_top = 67.0
+offset_right = 101.0
+offset_bottom = 78.0
 key_id = "Semicolon"
 cap_text = ";"
 cap_type_shift = 0
@@ -797,36 +1301,56 @@ shift_unicode_override = ":"
 metadata/_edit_use_anchors_ = true
 
 [node name="Key54" parent="Arranger/kbanchor/kb_pocketchip" unique_id=204761682 instance=ExtResource("20_82xsv")]
-offset_left = 117.0
-offset_top = 84.0
-offset_right = 122.5
-offset_bottom = 93.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 116.0
+offset_top = 55.0
+offset_right = 132.0
+offset_bottom = 66.0
 key_id = "Enter"
-cap_text = "RET"
+cap_text = "ret"
 font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
 unicode = false
 metadata/_edit_use_anchors_ = true
 
 [node name="Key55" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1871265940 instance=ExtResource("20_82xsv")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
 offset_left = 117.0
-offset_top = 64.0
-offset_right = 122.5
-offset_bottom = 73.0
+offset_top = 31.0
+offset_right = 132.0
+offset_bottom = 42.0
 key_id = "Backspace"
 key_id_shift_override = "Delete"
-cap_text = "BK
-SP"
+cap_text = "bksp"
 cap_type_shift = 0
-cap_text_shift = "DEL"
+cap_text_shift = "del"
 font_type = 3
+font_color = Color(0.5176471, 0.47058824, 0.63529414, 1)
 unicode = false
+texture_pressed = null
 metadata/_edit_use_anchors_ = true
 
 [node name="Key34" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1343007684 instance=ExtResource("20_82xsv")]
-offset_left = 78.0
-offset_top = 104.0
-offset_right = 83.5
-offset_bottom = 113.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 73.0
+offset_top = 79.0
+offset_right = 81.0
+offset_bottom = 90.0
 key_id = "Comma"
 cap_text = ","
 cap_type_shift = 0
@@ -834,11 +1358,36 @@ cap_text_shift = "<"
 shift_unicode_override = "<"
 metadata/_edit_use_anchors_ = true
 
+[node name="Key57" parent="Arranger/kbanchor/kb_pocketchip" unique_id=580534261 instance=ExtResource("20_82xsv")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 23.0
+offset_top = 79.0
+offset_right = 31.0
+offset_bottom = 90.0
+key_id = "BackSlash"
+key_id_shift_override = "Pipe"
+cap_text = "\\"
+cap_type_shift = 0
+cap_text_shift = "|"
+shift_unicode_override = "|"
+metadata/_edit_use_anchors_ = true
+
 [node name="Key35" parent="Arranger/kbanchor/kb_pocketchip" unique_id=518483315 instance=ExtResource("20_82xsv")]
-offset_left = 91.0
-offset_top = 104.0
-offset_right = 96.5
-offset_bottom = 113.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 82.0
+offset_top = 79.0
+offset_right = 90.0
+offset_bottom = 90.0
 key_id = "Period"
 cap_text = "."
 cap_type_shift = 0
@@ -847,10 +1396,16 @@ shift_unicode_override = ">"
 metadata/_edit_use_anchors_ = true
 
 [node name="Key36" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1060517370 instance=ExtResource("20_82xsv")]
-offset_left = 104.0
-offset_top = 104.0
-offset_right = 109.5
-offset_bottom = 113.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 91.0
+offset_top = 79.0
+offset_right = 99.0
+offset_bottom = 90.0
 key_id = "Slash"
 cap_text = "/"
 cap_type_shift = 0
@@ -859,10 +1414,16 @@ shift_unicode_override = "?"
 metadata/_edit_use_anchors_ = true
 
 [node name="Key56" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1338261211 instance=ExtResource("20_82xsv")]
-offset_left = 117.0
-offset_top = 104.0
-offset_right = 122.5
-offset_bottom = 113.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077923
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 102.0
+offset_top = 67.0
+offset_right = 110.0
+offset_bottom = 78.0
 key_id = "Apostrophe"
 cap_text = "'"
 cap_type_shift = 0
@@ -871,9 +1432,16 @@ shift_unicode_override = "\""
 metadata/_edit_use_anchors_ = true
 
 [node name="Key30" parent="Arranger/kbanchor/kb_pocketchip" unique_id=715938769 instance=ExtResource("20_82xsv")]
-offset_top = 22.0
-offset_right = 5.5
-offset_bottom = 31.0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08965516
+anchor_top = -0.22077924
+anchor_right = 0.08965516
+anchor_bottom = -0.22077923
+offset_left = -13.0
+offset_top = 43.0
+offset_right = -5.0
+offset_bottom = 54.0
 key_id = "QuoteLeft"
 cap_text = "`"
 cap_type_shift = 0
@@ -881,8 +1449,68 @@ cap_text_shift = "~"
 shift_unicode_override = "~"
 metadata/_edit_use_anchors_ = true
 
-[node name="kb_gaming" type="Node2D" parent="Arranger/kbanchor" unique_id=1882534109]
-position = Vector2(0, -126)
+[node name="Key59" parent="Arranger/kbanchor/kb_pocketchip" unique_id=1562908246 instance=ExtResource("20_82xsv")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077923
+offset_left = 126.0
+offset_top = 43.0
+offset_right = 132.0
+offset_bottom = 54.0
+key_id = ""
+cap_text = ""
+cap_type_shift = 0
+cap_text_shift = ""
+font_type = 5
+unicode = false
+metadata/_edit_use_anchors_ = true
+
+[node name="Key60" parent="Arranger/kbanchor/kb_pocketchip" unique_id=382264244 instance=ExtResource("20_82xsv")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 107.0
+offset_top = 19.0
+offset_right = 119.0
+offset_bottom = 30.0
+key_id = "BracketLeft"
+key_id_shift_override = "SDL_KP_LEFTBRACE"
+cap_text = "["
+cap_type_shift = 0
+cap_text_shift = "{"
+shift_unicode_override = "{"
+metadata/_edit_use_anchors_ = true
+
+[node name="Key61" parent="Arranger/kbanchor/kb_pocketchip" unique_id=959993547 instance=ExtResource("20_82xsv")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.089655176
+anchor_top = -0.22077924
+anchor_right = 0.089655176
+anchor_bottom = -0.22077924
+offset_left = 120.0
+offset_top = 19.0
+offset_right = 132.0
+offset_bottom = 30.0
+key_id = "BracketRight"
+key_id_shift_override = "SDL_KP_RIGHTBRACE"
+cap_text = "]"
+cap_type_shift = 0
+cap_text_shift = "}"
+shift_unicode_override = "}"
+metadata/_edit_use_anchors_ = true
+
+[node name="kb_gaming" type="Control" parent="Arranger/kbanchor" unique_id=1882534109]
+layout_mode = 3
+anchors_preset = 0
+offset_top = -126.0
+offset_bottom = -126.0
 script = ExtResource("37_come4")
 type = 0
 
@@ -892,14 +1520,12 @@ scale = Vector2(0.21, 0.21)
 texture = ExtResource("23_1u8w0")
 
 [node name="Escape" parent="Arranger/kbanchor/kb_gaming" unique_id=767368110 instance=ExtResource("20_82xsv")]
-offset_left = 77.0
+layout_mode = 0
+offset_left = 76.0
 offset_top = 4.0
-offset_right = 88.0
+offset_right = 98.0
+offset_bottom = 14.0
 texture = ExtResource("47_esc_norm")
-patch_margin_left = 0
-patch_margin_top = 0
-patch_margin_right = 0
-patch_margin_bottom = 0
 key_id = "Escape"
 cap_text = "eSC"
 font_type = 3
@@ -909,14 +1535,12 @@ texture_pressed = ExtResource("48_esc_press")
 metadata/_edit_use_anchors_ = true
 
 [node name="Pause" parent="Arranger/kbanchor/kb_gaming" unique_id=491652354 instance=ExtResource("20_82xsv")]
+layout_mode = 0
 offset_left = 103.0
 offset_top = 4.0
-offset_right = 114.0
+offset_right = 125.0
+offset_bottom = 14.0
 texture = ExtResource("49_menu_norm")
-patch_margin_left = 0
-patch_margin_top = 0
-patch_margin_right = 0
-patch_margin_bottom = 0
 key_id = "P"
 cap_text = "pAUSE"
 font_type = 3
@@ -926,15 +1550,12 @@ texture_pressed = ExtResource("50_menu_press")
 metadata/_edit_use_anchors_ = true
 
 [node name="O" parent="Arranger/kbanchor/kb_gaming" unique_id=2134662063 instance=ExtResource("20_82xsv")]
-offset_left = 103.0
+layout_mode = 0
+offset_left = 104.0
 offset_top = 24.0
-offset_right = 114.0
-offset_bottom = 35.0
+offset_right = 126.0
+offset_bottom = 46.0
 texture = ExtResource("45_o_norm")
-patch_margin_left = 0
-patch_margin_top = 0
-patch_margin_right = 0
-patch_margin_bottom = 0
 key_id = "Z"
 cap_type = 1
 cap_text = "06"
@@ -945,15 +1566,12 @@ texture_pressed = ExtResource("46_o_press")
 metadata/_edit_use_anchors_ = true
 
 [node name="X" parent="Arranger/kbanchor/kb_gaming" unique_id=1932826476 instance=ExtResource("20_82xsv")]
-offset_left = 77.0
-offset_top = 39.0
-offset_right = 88.0
-offset_bottom = 50.0
+layout_mode = 0
+offset_left = 76.0
+offset_top = 40.0
+offset_right = 98.0
+offset_bottom = 62.0
 texture = ExtResource("43_x_norm")
-patch_margin_left = 0
-patch_margin_top = 0
-patch_margin_right = 0
-patch_margin_bottom = 0
 key_id = "X"
 cap_type = 1
 cap_text = "05"
@@ -964,11 +1582,11 @@ texture_pressed = ExtResource("44_x_press")
 metadata/_edit_use_anchors_ = true
 
 [node name="dpad" parent="Arranger/kbanchor/kb_gaming" unique_id=827209010 instance=ExtResource("41_0cp0l")]
+layout_mode = 0
 offset_left = 3.0
 offset_top = 4.0
-offset_right = 47.0
-offset_bottom = 47.0
-scale = Vector2(0.85, 0.85)
+offset_right = 51.0
+offset_bottom = 52.0
 expand_mode = 1
 metadata/_edit_use_anchors_ = true
 

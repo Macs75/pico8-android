@@ -3,13 +3,13 @@ extends NinePatchRect
 enum KeycapType {TEXT, HEX, NONE}
 enum FontType {NORMAL, WIDE, WIDE_W_SHIFT, SMALL, CUSTOM, CUSTOM_SMALL}
 enum SpecialBehaviour {NONE, LTRKEY}
-static var font_normal = preload("res://assets/font/atlas-0.png") as FontFile
-static var font_wide = preload("res://assets/font/atlas.png") as FontFile
-static var font_custom = preload("res://assets/font_custom.png") as FontFile
+static var font_normal = preload("res://assets/font/Pico8-Keyboard-RegularV1.otf") as FontFile
+static var font_wide = preload("res://assets/font/Pico8-Keyboard-RegularV1.otf") as FontFile
+static var font_custom = preload("res://assets/font/NotoEmoji-Regular.ttf") as FontFile
 
 static var keycap_normal = preload("res://assets/keycap.png")
 static var keycap_held = preload("res://assets/keycap_pressed.png")
-static var keycap_locked = preload("res://assets/keycap_locked.png")
+static var keycap_locked = preload("res://assets/key_locked.png")
 
 const CustomControlTextures = preload("res://custom_control_textures.gd")
 
@@ -20,6 +20,7 @@ const CustomControlTextures = preload("res://custom_control_textures.gd")
 @export var cap_type_shift: KeycapType = KeycapType.NONE
 @export var cap_text_shift: String = "A"
 @export var font_type: FontType = FontType.NORMAL
+@export var font_color: Color = Color(0.105882354, 0.16862746, 0.30980393, 1)
 @export var can_lock: bool = false
 @export var unicode: bool = true
 @export var unicode_override: String = ""
@@ -145,7 +146,7 @@ func _ready() -> void:
 	elif cap_type == KeycapType.NONE:
 		cap_text = ""
 	if special_behaviour == SpecialBehaviour.LTRKEY:
-		cap_text_shift = String.chr(cap_text.to_ascii_buffer()[0] + 31)
+		cap_text_shift = String.chr(cap_text.to_ascii_buffer()[0] + 75)
 	elif cap_type_shift == KeycapType.HEX:
 		cap_text_shift = cap_text_shift.hex_decode().get_string_from_ascii()
 	elif cap_type_shift == KeycapType.NONE:
@@ -169,7 +170,7 @@ func _ready() -> void:
 	
 	# Restrict repositioning for specific containers (e.g. PocketCHIP layout)
 	var p = get_parent()
-	if p and p.name == "kb_pocketchip":
+	if p and p.name.begins_with("kb_pocketchip"):
 		is_repositionable = false
 		
 	if is_repositionable:
@@ -193,11 +194,11 @@ func _ready() -> void:
 	if not custom_loaded:
 		if texture_normal and key_state == KeyState.RELEASED:
 			self.texture = texture_normal
-			self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-			%Label.visible = false
 		elif texture_pressed and key_state == KeyState.HELD:
 			self.texture = texture_pressed
-			self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+
+		self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		if p and not p.name.begins_with("kb_pocketchip"):
 			%Label.visible = false
 	
 	if (%Label.visible):
@@ -210,7 +211,7 @@ func _save_layout():
 	LayoutHelper.save_layout(self, original_scale.x)
 
 func _on_layout_reset(target_is_landscape: bool):
-	if target_is_landscape == _is_in_landscape_ui():
+	if is_visible_in_tree() and target_is_landscape == _is_in_landscape_ui():
 		position = original_position
 		scale = original_scale
 
@@ -349,7 +350,9 @@ func _process(_delta: float) -> void:
 			send_ev(true, true)
 	
 	# 2. Check for Shift Toggle
-	var shift_held = "Shift" in PicoVideoStreamer.instance.held_keys
+	var shift_held = false
+	if PicoVideoStreamer.instance and "Shift" in PicoVideoStreamer.instance.held_keys:
+		shift_held = true
 	if shift_held != last_shift_state:
 		last_shift_state = shift_held
 		_update_visuals()
@@ -363,17 +366,13 @@ func _update_visuals() -> void:
 	else:
 		%Label.text = cap_text
 		
-	# Update Font settings
-	var myrect = self.get_rect().size / 2
-	var lblrect = %Label.get_rect().size
-
 	var regular_font_on = (
 		(font_type != FontType.WIDE)
 		and (font_type != FontType.CUSTOM)
 		and (font_type != FontType.CUSTOM_SMALL)
 		and (font_type != FontType.WIDE_W_SHIFT or not shift_held)
 	)
-	var small_font_on = (not regular_font_on or font_type == FontType.SMALL) and font_type != FontType.CUSTOM
+	var small_font_on = font_type == FontType.SMALL and font_type != FontType.CUSTOM
 	
 	if regular_font_on:
 		%Label.label_settings.font = font_normal
@@ -383,22 +382,33 @@ func _update_visuals() -> void:
 		%Label.label_settings.font = font_wide
 	
 	if small_font_on:
-		%Label.label_settings.font_size = 5
+		%Label.label_settings.font_size = 25
+	elif font_type == FontType.CUSTOM_SMALL:
+		%Label.label_settings.font_size = 25
 	else:
-		%Label.label_settings.font_size = 10
-		
+		%Label.label_settings.font_size = 42
+
+	%Label.label_settings.font_color = font_color
+
 	# Calculate Position
-	var pos = (myrect - lblrect) / 2
+	# 1. Force Label to cover the entire Key area (taking scale into account)
+	var target_label_size = self.get_rect().size / %Label.scale
+	%Label.size = target_label_size
 	
-	if regular_font_on:
-		pos += Vector2(0.5, -1)
+	# 2. Position at origin (0,0) horizontally
+	var pos = Vector2.ZERO
+	# Adjust vertical offset to center on the key face (higher up)
+	# -1px Y offset looks correct for 11px height keys
+	if font_type == FontType.CUSTOM_SMALL:
+		pos.y = -1.0
 	else:
-		pos += Vector2(0, -1)
+		pos.x = 0.5
+		pos.y = -1.0
 		
 	if key_state != KeyState.RELEASED:
-		pos += Vector2(0, 1)
+		pos.y += 1.0
 		
-	%Label.position = pos.round()
+	%Label.position = pos
 		
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_VISIBILITY_CHANGED:

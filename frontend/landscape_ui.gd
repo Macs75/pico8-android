@@ -33,7 +33,16 @@ func _ready() -> void:
 			
 	# Optimize: Listen for resize instead of polling
 	get_tree().root.size_changed.connect(_on_resize)
+	
+	if streamer:
+		if streamer.has_signal("layout_reset"):
+			streamer.layout_reset.connect(_on_layout_reset)
+			
 	# Initial Layout
+	_on_resize()
+
+func _on_layout_reset(_is_landscape: bool):
+	# Even if it's not our orientation, we might need to reset dirty state
 	_on_resize()
 
 func _on_intent_session_started():
@@ -65,6 +74,34 @@ func _on_resize():
 	var is_landscape = PicoVideoStreamer.is_system_landscape()
 	var should_be_visible = is_landscape and not arranger.cached_controller_connected
 	
+	if is_landscape:
+		var chip_l = get_node_or_null("kb_pocketchip_left")
+		var chip_r = get_node_or_null("kb_pocketchip_right")
+		
+		if chip_l:
+			var saved_pos_l = PicoVideoStreamer.get_control_pos("kb_pocketchip_left", is_landscape)
+			if saved_pos_l == null:
+				chip_l.position.x = 0 # Flush left
+				chip_l.position.y = (size.y / 2.0) - (chip_l.size.y / 2.0)
+			else:
+				chip_l.position = saved_pos_l
+				var saved_scale_l = PicoVideoStreamer.get_control_scale("kb_pocketchip_left", is_landscape)
+				if "original_scale" in chip_l:
+					chip_l.scale = chip_l.original_scale * saved_scale_l
+		
+		if chip_r:
+			var saved_pos_r = PicoVideoStreamer.get_control_pos("kb_pocketchip_right", is_landscape)
+			if saved_pos_r == null:
+				# kb_pocketchip_right is anchored to the top-right
+				# The `position` property is always relative to the parent's top-left (0,0).
+				# To make it flush with the right edge, we set X to parent's width minus control's width.
+				chip_r.position = Vector2(size.x - chip_r.size.x, (size.y / 2.0) - (chip_r.size.y / 2.0))
+			else:
+				chip_r.position = saved_pos_r
+				var saved_scale_r = PicoVideoStreamer.get_control_scale("kb_pocketchip_right", is_landscape)
+				if "original_scale" in chip_r:
+					chip_r.scale = chip_r.original_scale * saved_scale_r
+	
 	visible = should_be_visible
 
 func _process(_delta: float) -> void:
@@ -72,16 +109,16 @@ func _process(_delta: float) -> void:
 		_on_resize()
 
 
-func _update_buttons_for_mode(is_trackpad: bool):
-	if is_trackpad:
-		if x_btn:
-			x_btn.set_textures(tex_mouse_l_normal, tex_mouse_l_pressed)
-		if z_btn:
-			z_btn.set_textures(tex_mouse_r_normal, tex_mouse_r_pressed)
-	else:
-		if x_btn:
-			# Use button's own textures (may be custom or default)
-			x_btn.set_textures(x_btn.texture_normal, x_btn.texture_pressed)
-		if z_btn:
-			# Use button's own textures (may be custom or default)
-			z_btn.set_textures(z_btn.texture_normal, z_btn.texture_pressed)
+func _update_buttons_for_mode(_is_trackpad: bool):
+	# if is_	:
+	# 	if x_btn:
+	# 		x_btn.set_textures(tex_mouse_l_normal, tex_mouse_l_pressed)
+	# 	if z_btn:
+	# 		z_btn.set_textures(tex_mouse_r_normal, tex_mouse_r_pressed)
+	# else:
+	if x_btn:
+		# Use button's own textures (may be custom or default)
+		x_btn.set_textures(x_btn.texture_normal, x_btn.texture_pressed)
+	if z_btn:
+		# Use button's own textures (may be custom or default)
+		z_btn.set_textures(z_btn.texture_normal, z_btn.texture_pressed)

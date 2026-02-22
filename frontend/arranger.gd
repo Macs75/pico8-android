@@ -17,6 +17,7 @@ var display_container: Node2D = null
 
 var cached_kb_active: bool = false
 var cached_controller_connected: bool = false
+var cached_internal_kb_type: int = -1
 
 var dirty: bool = true
 var last_screensize: Vector2i = Vector2i.ZERO
@@ -37,10 +38,10 @@ const ZOOM_REPEAT_ACCEL = 0.8
 
 signal layout_updated()
 
-var tex_mouse_l_normal = preload("res://assets/btn_mouse_left_normal.png")
-var tex_mouse_l_pressed = preload("res://assets/btn_mouse_left_pressed.png")
-var tex_mouse_r_normal = preload("res://assets/btn_mouse_right_normal.png")
-var tex_mouse_r_pressed = preload("res://assets/btn_mouse_right_pressed.png")
+#var tex_mouse_l_normal = preload("res://assets/btn_mouse_left_normal.png")
+#var tex_mouse_l_pressed = preload("res://assets/btn_mouse_left_pressed.png")
+#var tex_mouse_r_normal = preload("res://assets/btn_mouse_right_normal.png")
+#var tex_mouse_r_pressed = preload("res://assets/btn_mouse_right_pressed.png")
 
 func set_keyboard_active(active: bool):
 	if cached_kb_active != active:
@@ -107,6 +108,7 @@ func _ready() -> void:
 	selection_outline.mouse_filter = MouseFilter.MOUSE_FILTER_IGNORE
 	selection_outline.visible = false
 	selection_outline.top_level = true # Draw in global pixels
+	selection_outline.z_index = 200 # Force it to draw above hovered controls like kb_pocketchip (Z: 150)
 	add_child(selection_outline)
 	
 	if PicoVideoStreamer.instance:
@@ -304,6 +306,11 @@ func _process(_delta: float) -> void:
 				PicoVideoStreamer.instance.release_input_locks()
 		_update_layout()
 		
+	var internal_kb_type = KBMan.get_current_keyboard_type()
+	if internal_kb_type != cached_internal_kb_type:
+		cached_internal_kb_type = internal_kb_type
+		dirty = true
+
 	if dirty:
 		_update_layout()
 
@@ -324,13 +331,7 @@ func _update_layout():
 	if active_area:
 		target_size = active_area.size
 		target_pos = active_area.position
-	else:
-		# Fallback if unassigned
-		if has_node("ActiveArea"):
-			active_area = get_node("ActiveArea")
-			target_size = active_area.size
-			target_pos = active_area.position
-	
+
 	# Reserve space for side controls:
 	var available_size = Vector2(screensize)
 
@@ -342,9 +343,10 @@ func _update_layout():
 	var baselineScale: float = 1.0
 	var zoomScale: float = 1.0
 	
+	var raw_scale
 	if (is_landscape or is_controller_connected) and display_container:
 		target_size = Vector2(128, 128)
-		target_pos = Vector2(0, 0)
+		target_pos = Vector2.ZERO
 		var scale_calc_size = Vector2(128, 128)
 		
 		if is_landscape and not is_controller_connected:
@@ -352,37 +354,24 @@ func _update_layout():
 		
 		var ratio_x = available_size.x / scale_calc_size.x
 		var ratio_y = available_size.y / scale_calc_size.y
-		var raw_scale = min(ratio_x, ratio_y)
+		raw_scale = min(ratio_x, ratio_y)
 		
-		# Baseline Fit
-		if PicoVideoStreamer.get_integer_scaling_enabled():
-			baselineScale = max(1.0, floor(raw_scale))
-		else:
-			baselineScale = max(1.0, raw_scale)
-			
-		# Effective Zoom
-		var modifier = PicoVideoStreamer.get_display_scale_modifier(is_landscape)
-		var raw_zoom = raw_scale * modifier
-		if PicoVideoStreamer.get_integer_scaling_enabled():
-			zoomScale = max(1.0, floor(raw_zoom))
-		else:
-			zoomScale = max(1.0, raw_zoom)
 	else:
 		var ratio_x = available_size.x / target_size.x
 		var ratio_y = available_size.y / target_size.y
-		var raw_scale = min(ratio_x, ratio_y)
+		raw_scale = min(ratio_x, ratio_y)
 		
-		if PicoVideoStreamer.get_integer_scaling_enabled():
-			baselineScale = max(1.0, floor(raw_scale))
-		else:
-			baselineScale = max(1.0, raw_scale)
-			
-		var modifier = PicoVideoStreamer.get_display_scale_modifier(is_landscape)
-		var raw_zoom = raw_scale * modifier
-		if PicoVideoStreamer.get_integer_scaling_enabled():
-			zoomScale = max(1.0, floor(raw_zoom))
-		else:
-			zoomScale = max(1.0, raw_zoom)
+	if PicoVideoStreamer.get_integer_scaling_enabled():
+		baselineScale = max(1.0, floor(raw_scale))
+	else:
+		baselineScale = max(1.0, raw_scale)
+		
+	var modifier = PicoVideoStreamer.get_display_scale_modifier(is_landscape)
+	var raw_zoom = raw_scale * modifier
+	if PicoVideoStreamer.get_integer_scaling_enabled():
+		zoomScale = max(1.0, floor(raw_zoom))
+	else:
+		zoomScale = max(1.0, raw_zoom)
 
 	# 1. UI Baseline Scale (Buttons, etc.)
 	self.scale = Vector2(baselineScale, baselineScale)
@@ -401,13 +390,8 @@ func _update_layout():
 	# Compensate for Arranger zoom to keep high-res D-pad at constant physical size
 	var dpad = get_node_or_null("kbanchor/kb_gaming/dpad")
 	if dpad:
-		var baseline = 8.5 / float(maxScale)
-		if "original_scale" in dpad:
-			dpad.original_scale = Vector2(baseline, baseline)
-			
 		var saved_scale = PicoVideoStreamer.get_control_scale(dpad.name, is_landscape)
-		var target_scale = baseline * saved_scale
-		dpad.scale = Vector2(target_scale, target_scale)
+		dpad.scale = Vector2(saved_scale, saved_scale)
 
 	if auto_show and not visible:
 		visible = true
@@ -448,10 +432,26 @@ func _update_layout():
 		# 3. Controls Forced -> ALWAYS SHOW
 		# 4. Auto -> Hide if controller connected
 		
+		var pocketchip = kb_anchor.get_node_or_null("kb_pocketchip")
+		
 		if is_landscape:
 			kb_anchor.visible = false # Always hide portrait anchor in landscape
 		elif is_full_kb:
 			kb_anchor.visible = true
+			# Scale keyboard to fit screen width in portrait mode
+			if pocketchip:
+				var saved_pos = PicoVideoStreamer.get_control_pos("kb_pocketchip", is_landscape)
+				if saved_pos == null:
+					var target_kb_width = screensize.x * 0.98
+					var base_kb_width = pocketchip.size.x
+					var desired_scale = target_kb_width / (base_kb_width * maxScale)
+					pocketchip.scale = Vector2(desired_scale, desired_scale)
+					pocketchip.position = Vector2(64.0 - (pocketchip.size.x / 2.0) * desired_scale, -81.5 - (pocketchip.size.y / 2.0) * desired_scale)
+				else:
+					pocketchip.position = saved_pos
+					var saved_scale = PicoVideoStreamer.get_control_scale("kb_pocketchip", is_landscape)
+					if "original_scale" in pocketchip:
+						pocketchip.scale = pocketchip.original_scale * saved_scale
 		elif mode == PicoVideoStreamer.ControlsMode.DISABLED:
 			kb_anchor.visible = false
 		elif mode == PicoVideoStreamer.ControlsMode.FORCE:
@@ -471,6 +471,7 @@ func _update_layout():
 				landscape_ui.visible = true
 			else: # Auto
 				landscape_ui.visible = not is_controller_connected
+
 		# Perfect Centering for Landscape Game Display
 		self.position = (Vector2(screensize) / 2).floor()
 	else:
@@ -520,15 +521,7 @@ func _update_layout():
 		# Add a tiny bit of padding if desired, but 0 is strict screen edges
 		var clamped_global_x = clamp(drag_offset.x, min_offset.x, max_offset.x)
 		var clamped_global_y = clamp(drag_offset.y, min_offset.y, max_offset.y)
-		
-		if not is_landscape and PicoVideoStreamer.display_drag_enabled:
-			print("PORTRAIT DRAG DEBUG:")
-			print("  ScreenSize: ", Vector2(screensize))
-			print("  Baseline: ", baseline_global)
-			print("  DisplaySize: ", display_size_global)
-			print("  MinOffset: ", min_offset, " MaxOffset: ", max_offset)
-			print("  CurrentDrag: ", drag_offset, " Clamped: ", Vector2(clamped_global_x, clamped_global_y))
-		
+			
 		# Write back clamped value to global state so it doesn't drift
 		if drag_offset.x != clamped_global_x or drag_offset.y != clamped_global_y:
 			PicoVideoStreamer.set_display_drag_offset(Vector2(clamped_global_x, clamped_global_y), is_landscape)
@@ -544,31 +537,31 @@ func _update_buttons_for_mode(is_trackpad: bool):
 	var x_btn = get_node_or_null("kbanchor/kb_gaming/X")
 	var z_btn = get_node_or_null("kbanchor/kb_gaming/O")
 	
-	if is_trackpad:
-		if x_btn:
-			# Cache original textures if not already cached
-			if not x_btn.has_meta("orig_normal"):
-				x_btn.set_meta("orig_normal", x_btn.texture_normal)
-				x_btn.set_meta("orig_pressed", x_btn.texture_pressed)
-			x_btn.set_textures(tex_mouse_l_normal, tex_mouse_l_pressed)
+	# if is_trackpad:
+	# 	if x_btn:
+	# 		# Cache original textures if not already cached
+	# 		if not x_btn.has_meta("orig_normal"):
+	# 			x_btn.set_meta("orig_normal", x_btn.texture_normal)
+	# 			x_btn.set_meta("orig_pressed", x_btn.texture_pressed)
+	# 		x_btn.set_textures(tex_mouse_l_normal, tex_mouse_l_pressed)
 				
-		if z_btn:
-			if not z_btn.has_meta("orig_normal"):
-				z_btn.set_meta("orig_normal", z_btn.texture_normal)
-				z_btn.set_meta("orig_pressed", z_btn.texture_pressed)
-			z_btn.set_textures(tex_mouse_r_normal, tex_mouse_r_pressed)
-	else:
-		if x_btn and x_btn.has_meta("orig_normal"):
-			# Restore from cache
-			x_btn.set_textures(x_btn.get_meta("orig_normal"), x_btn.get_meta("orig_pressed"))
-			# Clear cache to allow theme updates to propagate fresh textures next time
-			x_btn.remove_meta("orig_normal")
-			x_btn.remove_meta("orig_pressed")
-			
-		if z_btn and z_btn.has_meta("orig_normal"):
-			z_btn.set_textures(z_btn.get_meta("orig_normal"), z_btn.get_meta("orig_pressed"))
-			z_btn.remove_meta("orig_normal")
-			z_btn.remove_meta("orig_pressed")
+	# 	if z_btn:
+	# 		if not z_btn.has_meta("orig_normal"):
+	# 			z_btn.set_meta("orig_normal", z_btn.texture_normal)
+	# 			z_btn.set_meta("orig_pressed", z_btn.texture_pressed)
+	# 		z_btn.set_textures(tex_mouse_r_normal, tex_mouse_r_pressed)
+	# else:
+	if x_btn and x_btn.has_meta("orig_normal"):
+		# Restore from cache
+		x_btn.set_textures(x_btn.get_meta("orig_normal"), x_btn.get_meta("orig_pressed"))
+		# Clear cache to allow theme updates to propagate fresh textures next time
+		x_btn.remove_meta("orig_normal")
+		x_btn.remove_meta("orig_pressed")
+		
+	if z_btn and z_btn.has_meta("orig_normal"):
+		z_btn.set_textures(z_btn.get_meta("orig_normal"), z_btn.get_meta("orig_pressed"))
+		z_btn.remove_meta("orig_normal")
+		z_btn.remove_meta("orig_pressed")
 
 func _on_control_selected(_control: CanvasItem):
 	selection_outline.visible = true

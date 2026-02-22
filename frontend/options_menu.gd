@@ -211,9 +211,9 @@ func _ready() -> void:
 	# Listen for screen resize to update layout/orientation
 	get_tree().root.size_changed.connect(_update_layout)
 	
-	# Edge Handler - Connect for Swipe-to-Open
+	# Edge Handler - Use for geometry bounds checking only
 	if edge_handler:
-		edge_handler.gui_input.connect(_on_edge_handler_input)
+		edge_handler.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 	# Initial Layout Update
@@ -295,12 +295,6 @@ func _update_layout():
 		# Make sure threshold isn't larger than the handler itself (or unreasonably large)
 		swipe_threshold = max(50.0, viewport_size.x * 0.05)
 
-	# Disable Full Keyboard option in landscape (pocketchip not visible)
-	var is_landscape = PicoVideoStreamer.is_system_landscape()
-	%ToggleKeyboard.disabled = is_landscape
-	%ButtonKeyboard.disabled = is_landscape
-	# Visually indicate disabled state if needed, but standard disabled style should suffice
-	
 	# Calculate dynamic font size
 	# IMPROVED: Use min dimension to keep text readable in landscape
 	# Base on 5% of smaller dimension, clamped to at least 24px
@@ -708,7 +702,6 @@ func _recursive_set_modulate(node: Node, target_row: Node):
 
 func open_menu():
 	is_open = true
-	edge_handler.mouse_filter = Control.MOUSE_FILTER_IGNORE # Disable edge handler while open
 	var tween = create_tween()
 	tween.tween_property(panel, "position:x", 0.0, ANIM_DURATION).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	
@@ -724,7 +717,6 @@ func open_menu():
 
 func close_menu():
 	is_open = false
-	edge_handler.mouse_filter = Control.MOUSE_FILTER_STOP # Re-enable edge handler
 	var tween = create_tween()
 	tween.tween_property(panel, "position:x", -panel.size.x, ANIM_DURATION).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	
@@ -738,28 +730,25 @@ func close_menu():
 		PicoVideoStreamer.instance.set_process_unhandled_input(true)
 		PicoVideoStreamer.instance.set_process_input(true)
 
-func _on_edge_handler_input(event: InputEvent):
-	# Disable slide if Favourites Editor is open
-	if get_tree().root.has_node("FavouritesEditor"):
-		return
-		
-	if event is InputEventScreenTouch:
-		if event.pressed:
-			edge_drag_start = event.position
-			is_edge_dragging = true
-			get_viewport().set_input_as_handled()
-		else:
-			is_edge_dragging = false
-	
-	elif event is InputEventScreenDrag:
-		if is_edge_dragging:
-			if (event.position.x - edge_drag_start.x) > swipe_threshold:
-				open_menu()
-				is_edge_dragging = false
-				get_viewport().set_input_as_handled()
-
 func _input(event: InputEvent) -> void:
 	if not is_open:
+		# Passive edge swipe detection (allows pass-through of touch to underlying buttons)
+		if get_tree().root.has_node("FavouritesEditor"):
+			return
+		
+		if event is InputEventScreenTouch:
+			if event.pressed:
+				if edge_handler and edge_handler.get_global_rect().has_point(event.position):
+					edge_drag_start = event.position
+					is_edge_dragging = true
+			else:
+				is_edge_dragging = false
+		elif event is InputEventScreenDrag:
+			if is_edge_dragging:
+				if (event.position.x - edge_drag_start.x) > swipe_threshold:
+					open_menu()
+					is_edge_dragging = false
+					get_viewport().set_input_as_handled()
 		return
 
 	if event is InputEventScreenTouch:

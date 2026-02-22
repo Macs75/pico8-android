@@ -179,7 +179,7 @@ func _save_layout():
 	LayoutHelper.save_layout(self, original_scale.x)
 
 func _on_layout_reset(target_is_landscape: bool):
-	if target_is_landscape == _is_in_landscape_ui():
+	if is_visible_in_tree() and target_is_landscape == _is_in_landscape_ui():
 		position = original_position
 		scale = original_scale
 

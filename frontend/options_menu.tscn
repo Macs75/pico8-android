@@ -142,11 +142,11 @@ text = "📶 PLAY STATS"
 flat = true
 alignment = 0
 
-[node name="AdvancedFeaturesRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools/ContentTools" unique_id=3344556677]
+[node name="AdvancedFeaturesRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools/ContentTools" unique_id=-950410619]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ButtonAdvancedFeaturesLabel" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools/ContentTools/AdvancedFeaturesRow" unique_id=4455667788]
+[node name="ButtonAdvancedFeaturesLabel" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools/ContentTools/AdvancedFeaturesRow" unique_id=160700492]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -161,13 +161,13 @@ text = "✨ ADVANCED FEATURES"
 flat = true
 alignment = 0
 
-[node name="WrapperAdvancedFeatures" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools/ContentTools/AdvancedFeaturesRow" unique_id=5566778899]
+[node name="WrapperAdvancedFeatures" type="Control" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools/ContentTools/AdvancedFeaturesRow" unique_id=1271811603]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 4
 
-[node name="ToggleAdvancedFeatures" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools/ContentTools/AdvancedFeaturesRow/WrapperAdvancedFeatures" unique_id=6677889900]
+[node name="ToggleAdvancedFeatures" type="CheckButton" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools/ContentTools/AdvancedFeaturesRow/WrapperAdvancedFeatures" unique_id=-1912044692]
 unique_name_in_owner = true
 layout_mode = 0
 focus_mode = 0
@@ -1153,9 +1153,6 @@ expand_icon = true
 layout_mode = 3
 anchors_preset = 9
 anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = -24.0
-offset_right = 37.0
-offset_bottom = -24.0
+offset_right = 30.0
 grow_vertical = 2
 mouse_default_cursor_shape = 10
