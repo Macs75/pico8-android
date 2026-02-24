@@ -13,6 +13,8 @@ var tex_power_pressed = preload("res://assets/btn_poweroff_pressed.png")
 @onready var x_btn = get_node_or_null("Control/RightPad/X")
 @onready var z_btn = get_node_or_null("Control/RightPad/O")
 @onready var esc_btn = get_node_or_null("Control/SystemButtons/Escape")
+@onready var chip_l = get_node_or_null("kb_pocketchip_left")
+@onready var chip_r = get_node_or_null("kb_pocketchip_right")
 
 func _ready() -> void:
 	# LandscapeUI is a child of Main (where PicoVideoStreamer script is attached)
@@ -57,9 +59,6 @@ func _on_intent_session_started():
 			esc_btn.text = ""
 
 func _on_resize():
-	# Reset anchors to Top-Left so we can manually set size without conflicting with parent anchors
-	set_anchors_preset(Control.PRESET_TOP_LEFT)
-	
 	if arranger:
 		# Always update scale to ensure synchronization with Arranger
 		# Force uniform scaling to prevent distortion (use X scale for both axes)
@@ -72,12 +71,17 @@ func _on_resize():
 		size = get_viewport_rect().size
 
 	var is_landscape = PicoVideoStreamer.is_system_landscape()
-	var should_be_visible = is_landscape and not arranger.cached_controller_connected
+	var mode = PicoVideoStreamer.get_controls_mode()
+	var should_be_visible = true
+	
+	if mode == PicoVideoStreamer.ControlsMode.DISABLED:
+		should_be_visible = false
+	elif mode == PicoVideoStreamer.ControlsMode.FORCE:
+		should_be_visible = true
+	else: # AUTO
+		should_be_visible = not arranger.cached_controller_connected
 	
 	if is_landscape:
-		var chip_l = get_node_or_null("kb_pocketchip_left")
-		var chip_r = get_node_or_null("kb_pocketchip_right")
-		
 		if chip_l:
 			var saved_pos_l = PicoVideoStreamer.get_control_pos("kb_pocketchip_left", is_landscape)
 			if saved_pos_l == null:
@@ -93,7 +97,6 @@ func _on_resize():
 			var saved_pos_r = PicoVideoStreamer.get_control_pos("kb_pocketchip_right", is_landscape)
 			if saved_pos_r == null:
 				# kb_pocketchip_right is anchored to the top-right
-				# The `position` property is always relative to the parent's top-left (0,0).
 				# To make it flush with the right edge, we set X to parent's width minus control's width.
 				chip_r.position = Vector2(size.x - chip_r.size.x, (size.y / 2.0) - (chip_r.size.y / 2.0))
 			else:
