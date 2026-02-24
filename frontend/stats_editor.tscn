@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://d3y4568aa012"]
+[gd_scene format=3 uid="uid://cihnqbpmojcg0"]
 
-[ext_resource type="Script" uid="uid://b4263elnncyko" path="res://favourites_editor.gd" id="1_editor"]
+[ext_resource type="Script" uid="uid://bhgfe8mj1nbwm" path="res://stats_editor.gd" id="1_editor"]
 [ext_resource type="FontFile" uid="uid://btr5i3t6k3xdx" path="res://assets/font/NotoEmoji-Regular.ttf" id="2_emoji"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_opaque"]
@@ -33,11 +33,12 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[node name="FavouritesEditor" type="CanvasLayer" unique_id=1922155292]
+[node name="StatsEditor" type="CanvasLayer" unique_id=1922155292]
 layer = 15
 script = ExtResource("1_editor")
 
 [node name="Panel" type="Panel" parent="." unique_id=1747027266]
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -78,7 +79,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
 theme_override_font_sizes/font_size = 16
-text = "💟 Favourites"
+text = "📶 Play Stats"
 vertical_alignment = 1
 
 [node name="SortButtons" type="HBoxContainer" parent="Panel/MarginContainer/VBox/Header" unique_id=1691524185]

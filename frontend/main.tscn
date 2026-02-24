@@ -22,7 +22,6 @@
 [ext_resource type="FontFile" uid="uid://c2jlc3nt8y38q" path="res://assets/font/atlas-0.png" id="20_d13ii"]
 [ext_resource type="Texture2D" uid="uid://11n44wksyvn" path="res://assets/keyboard.svg" id="22_b1qrp"]
 [ext_resource type="Texture2D" uid="uid://shpx84pg158k" path="res://assets/pico8_logo_vector.png" id="23_1u8w0"]
-[ext_resource type="FontFile" uid="uid://4obp7w7mooth" path="res://assets/font/Elusive-Icons.ttf" id="23_ok6jj"]
 [ext_resource type="Texture2D" uid="uid://bjtcvcurk0xpg" path="res://assets/volume_up.svg" id="24_facbu"]
 [ext_resource type="Script" uid="uid://3yarkysfetgu" path="res://kb_toggler.gd" id="37_come4"]
 [ext_resource type="PackedScene" uid="uid://bgklhpsaac82q" path="res://dpad.tscn" id="41_0cp0l"]
@@ -250,7 +249,6 @@ offset_top = -149.0
 offset_right = 127.0
 offset_bottom = -131.0
 focus_mode = 0
-theme_override_fonts/font = ExtResource("23_ok6jj")
 theme_override_font_sizes/font_size = 10
 theme_override_styles/focus = SubResource("StyleBoxEmpty_d13ii")
 icon = ExtResource("24_facbu")
@@ -1513,6 +1511,7 @@ offset_top = -126.0
 offset_bottom = -126.0
 script = ExtResource("37_come4")
 type = 0
+is_repositionable = false
 
 [node name="Pico8LogoVector" type="Sprite2D" parent="Arranger/kbanchor/kb_gaming" unique_id=185300059]
 position = Vector2(65, 110)

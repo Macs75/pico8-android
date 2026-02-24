@@ -242,10 +242,10 @@ func _print_report(data: Dictionary):
 	var list = []
 	for name in data.carts:
 		var entry = data.carts[name]
-		list.append({"name": name, "seconds": entry.seconds, "launches": entry.launches})
+		list.append({"name": name, "seconds": int(entry.get("seconds", 0)), "launches": int(entry.get("launches", 0))})
 	
 	# Sort by Seconds descending
-	list.sort_custom(func(a, b): return a.seconds > b.seconds)
+	list.sort_custom(func(a, b): return int(a.get("seconds", 0)) > int(b.get("seconds", 0)))
 	
 	#print("%-30s | %-10s | %s" % ["Cart Name", "Time", "Launches"])
 	#print("----------------------------------------------------------")

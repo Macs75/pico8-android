@@ -164,3 +164,112 @@ static func get_theme_layout(is_landscape: bool) -> Dictionary:
 	_cached_layout_theme = current_theme
 	_cached_layout_orientation = is_landscape
 	return {}
+
+static func validate_theme(theme_name: String) -> Dictionary:
+	var theme_dir = get_themes_dir() + "/" + theme_name
+	var zip_path = get_themes_dir() + "/" + theme_name + ".zip"
+	var is_zip = not DirAccess.dir_exists_absolute(theme_dir) and FileAccess.file_exists(zip_path)
+	
+	var reader: ZIPReader = null
+	if is_zip:
+		reader = ZIPReader.new()
+		var err = reader.open(zip_path)
+		if err != OK:
+			return {"is_valid": false, "error": "Could not open ZIP: " + error_string(err)}
+			
+	var results = []
+	
+	# Check Landscape
+	var err_l = _validate_orientation(theme_name, true, is_zip, reader)
+	if not err_l.is_empty():
+		results.append(err_l)
+		
+	# Check Portrait
+	var err_p = _validate_orientation(theme_name, false, is_zip, reader)
+	if not err_p.is_empty():
+		results.append(err_p)
+		
+	if reader:
+		reader.close()
+		
+	if results.is_empty():
+		return {"is_valid": true, "error": ""}
+	else:
+		return {"is_valid": false, "error": "\n".join(results)}
+
+static func _validate_orientation(theme_name: String, is_landscape: bool, is_zip: bool, reader: ZIPReader) -> String:
+	var layout_file = "layout_landscape.json" if is_landscape else "layout_portrait.json"
+	var bezel_files = []
+	if is_landscape:
+		bezel_files = ["bezel_landscape.png", "bezel.png"]
+	else:
+		bezel_files = ["bezel_portrait.png", "bezel.png"]
+		
+	var layout_data = _get_layout_data(theme_name, layout_file, is_zip, reader)
+	if layout_data.is_empty():
+		return "" # No layout file for this orientation, skipping validation
+		
+	if not layout_data.has("bezel_size"):
+		return "" # No bezel_size specified in layout, skipping validation
+		
+	var expected_size = Vector2(layout_data["bezel_size"][0], layout_data["bezel_size"][1])
+	
+	# Find first available bezel file
+	var actual_size = Vector2.ZERO
+	var found_bezel = ""
+	for bf in bezel_files:
+		actual_size = _get_bezel_size(theme_name, bf, is_zip, reader)
+		if actual_size != Vector2.ZERO:
+			found_bezel = bf
+			break
+			
+	if found_bezel.is_empty():
+		# This might be an error or just a theme without a bezel but with a layout
+		# If it has bezel_size, it probably EXPECTS a bezel.
+		return ""
+
+	if actual_size != expected_size:
+		var orient_str = "Landscape" if is_landscape else "Portrait"
+		return "Theme '%s' (%s): Bezel size mismatch.\nSpecified: %dx%d, Actual: %dx%d (%s)" % [
+			theme_name, orient_str, int(expected_size.x), int(expected_size.y),
+			int(actual_size.x), int(actual_size.y), found_bezel
+		]
+		
+	return ""
+
+static func _get_layout_data(theme_name: String, filename: String, is_zip: bool, reader: ZIPReader) -> Dictionary:
+	var content = ""
+	if is_zip:
+		if reader.get_files().has(filename):
+			var buffer = reader.read_file(filename)
+			if buffer:
+				content = buffer.get_string_from_utf8()
+	else:
+		var path = get_themes_dir() + "/" + theme_name + "/" + filename
+		if FileAccess.file_exists(path):
+			content = FileAccess.get_file_as_string(path)
+			
+	if not content.is_empty():
+		var json = JSON.new()
+		if json.parse(content) == OK:
+			if json.data is Dictionary:
+				return json.data
+	return {}
+
+static func _get_bezel_size(theme_name: String, filename: String, is_zip: bool, reader: ZIPReader) -> Vector2:
+	var image = Image.new()
+	var err = ERR_FILE_NOT_FOUND
+	
+	if is_zip:
+		if reader.get_files().has(filename):
+			var buffer = reader.read_file(filename)
+			if buffer:
+				err = image.load_png_from_buffer(buffer)
+	else:
+		var path = get_themes_dir() + "/" + theme_name + "/" + filename
+		if FileAccess.file_exists(path):
+			err = image.load(path)
+			
+	if err == OK:
+		return Vector2(image.get_width(), image.get_height())
+	return Vector2.ZERO

@@ -136,3 +136,7 @@ func pipe_close(id: int) -> void:
 func create_shortcut(label: String, cart_path: String) -> void:
 	if applinks:
 		applinks.create_shortcut(label, cart_path)
+
+func hide_keyboard() -> void:
+	if applinks:
+		applinks.hide_keyboard()

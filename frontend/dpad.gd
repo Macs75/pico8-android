@@ -256,11 +256,6 @@ func _gui_input(event: InputEvent) -> void:
 			if active_touches.size() == 1:
 				# Single touch: Drag logic
 				position += event.position - drag_offset_start
-				var p = get_parent()
-				if p is Control:
-					var min_pos = Vector2.ZERO
-					var max_pos = p.size - (size * scale)
-					position = position.clamp(min_pos, max_pos)
 				accept_event()
 			elif active_touches.size() == 2:
 				# Multi-touch: CONSUME but don't handle locally

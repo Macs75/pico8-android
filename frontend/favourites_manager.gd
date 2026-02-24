@@ -13,6 +13,10 @@ class FavouriteItem:
 	var filename: String = "" # Col 5
 	var name: String = "" # Last Col
 	
+	# do not remove those, they are used for sorting
+	var _sort_launches: float = 0.0
+	var _sort_seconds: float = 0.0
+	
 	func _init(line: String):
 		raw_line = line
 		var parts = line.split("|")

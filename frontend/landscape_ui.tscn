@@ -33,12 +33,11 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("12_igxmf")
 type = 0
+is_repositionable = false
 
 [node name="LeftPad" type="Control" parent="Control" unique_id=1199169515]
 layout_mode = 1
 anchors_preset = 0
-offset_right = 256.0
-offset_bottom = 256.0
 mouse_filter = 2
 
 [node name="dpad" parent="Control/LeftPad" unique_id=514930858 instance=ExtResource("2_pad")]
@@ -152,6 +151,7 @@ texture_pressed = ExtResource("11_menu_press")
 metadata/_edit_use_anchors_ = true
 
 [node name="kb_pocketchip_left" type="Control" parent="." unique_id=293231695]
+visible = false
 z_index = 150
 anchors_preset = 0
 offset_right = 66.0
@@ -629,6 +629,7 @@ shift_unicode_override = "~"
 metadata/_edit_use_anchors_ = true
 
 [node name="kb_pocketchip_right" type="Control" parent="." unique_id=297572910]
+visible = false
 z_index = 150
 layout_mode = 1
 anchors_preset = 1

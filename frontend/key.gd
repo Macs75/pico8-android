@@ -40,7 +40,7 @@ var original_position: Vector2
 var original_scale: Vector2
 var editor_scale: Vector2 # Base scale from editor/tscn
 var drag_offset_start: Vector2
-var is_repositionable: bool = true
+@export var is_repositionable: bool = true
 
 var active_touches = {}
 var initial_pinch_dist = 0.0
@@ -97,11 +97,6 @@ func _gui_input(event: InputEvent) -> void:
 			if active_touches.size() == 1:
 				# Single touch: Drag logic
 				position += event.position - drag_offset_start
-				var p = get_parent()
-				if p is Control:
-					var min_pos = Vector2.ZERO
-					var max_pos = p.size - (size * scale)
-					position = position.clamp(min_pos, max_pos)
 				accept_event()
 			elif active_touches.size() == 2:
 				# Multi-touch: CONSUME but don't handle locally
@@ -242,11 +237,15 @@ func reload_textures():
 		if texture_normal and key_state == KeyState.RELEASED:
 			self.texture = texture_normal
 			self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-			%Label.visible = false
+			var p = get_parent()
+			if p and not p.name.begins_with("kb_pocketchip"):
+				%Label.visible = false
 		elif texture_pressed and key_state == KeyState.HELD:
 			self.texture = texture_pressed
 			self.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-			%Label.visible = false
+			var p = get_parent()
+			if p and not p.name.begins_with("kb_pocketchip"):
+				%Label.visible = false
 		else:
 			# Fallback to keycaps
 			_update_visuals() # This handles keycap_normal/held assignment

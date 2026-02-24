@@ -4,7 +4,7 @@ class_name RepositionableControl
 var original_position: Vector2
 var original_scale: Vector2
 var drag_offset_start: Vector2
-var is_repositionable: bool = true
+@export var is_repositionable: bool = true
 
 var active_touches = {}
 var initial_pinch_dist = 0.0
@@ -71,14 +71,6 @@ func _gui_input(event: InputEvent) -> void:
 			if active_touches.size() == 1:
 				# Single touch: Drag logic
 				position += event.position - drag_offset_start
-				
-				# Clamp to parent
-				var p = get_parent()
-				if p is Control:
-					var min_pos = Vector2.ZERO
-					var max_pos = p.size - (size * scale)
-					position = position.clamp(min_pos, max_pos)
-				
 				accept_event()
 			elif active_touches.size() == 2:
 				# Multi-touch: CONSUME but don't handle locally (let Arranger handle global pinch)

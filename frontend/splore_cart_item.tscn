@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://splore_cart_item_01"]
+
+[ext_resource type="Script" path="res://splore_cart_item.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_normal"]
+bg_color = Color(0.05, 0.05, 0.05, 0.65)
+border_width_bottom = 1
+border_color = Color(0.22, 0.22, 0.22, 0.8)
+
+[node name="SploreCartItem" type="PanelContainer" unique_id=100000001]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 50.0
+grow_horizontal = 2
+size_flags_horizontal = 3
+focus_mode = 2
+mouse_filter = 1
+theme_override_styles/panel = SubResource("StyleBoxFlat_normal")
+script = ExtResource("1_script")
+
+[node name="Content" type="HBoxContainer" parent="." unique_id=100000002]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CheckboxLabel" type="Label" parent="Content" unique_id=100000007]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(36, 0)
+layout_mode = 2
+size_flags_vertical = 4
+text = "☐"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="InfoBox" type="VBoxContainer" parent="Content" unique_id=100000004]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 2
+
+[node name="LabelName" type="Label" parent="Content/InfoBox" unique_id=100000005]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cart Name"
+clip_text = true
+
+[node name="LabelAuthor" type="Label" parent="Content/InfoBox" unique_id=100000006]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+text = "Author"
+clip_text = true

@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://d3y4568aa012"]
+[gd_scene format=3 uid="uid://brryf54mqxwqa"]
 
-[ext_resource type="Script" uid="uid://b4263elnncyko" path="res://favourites_editor.gd" id="1_editor"]
+[ext_resource type="Script" uid="uid://wx1shnwy7u8i" path="res://splore_importer.gd" id="1_editor"]
 [ext_resource type="FontFile" uid="uid://btr5i3t6k3xdx" path="res://assets/font/NotoEmoji-Regular.ttf" id="2_emoji"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_opaque"]
@@ -17,23 +17,7 @@ fallbacks = Array[Font]([SubResource("FontVariation_emoji_offset")])
 base_font = SubResource("FontVariation_default")
 spacing_space = -4
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_reset"]
-content_margin_left = 10.0
-content_margin_top = 12.0
-content_margin_right = 10.0
-content_margin_bottom = 5.0
-bg_color = Color(0, 0, 0, 0.5)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.3882353, 0, 0, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[node name="FavouritesEditor" type="CanvasLayer" unique_id=1922155292]
+[node name="SploreImporter" type="CanvasLayer" unique_id=1922155292]
 layer = 15
 script = ExtResource("1_editor")
 
@@ -78,39 +62,50 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
 theme_override_font_sizes/font_size = 16
-text = "💟 Favourites"
+text = "🌐 Import from BBS"
 vertical_alignment = 1
 
-[node name="SortButtons" type="HBoxContainer" parent="Panel/MarginContainer/VBox/Header" unique_id=1691524185]
+[node name="HSeparator" type="HSeparator" parent="Panel/MarginContainer/VBox" unique_id=1083263750]
 layout_mode = 2
-theme_override_constants/separation = 8
 
-[node name="LabelSort" type="Label" parent="Panel/MarginContainer/VBox/Header/SortButtons" unique_id=1585851666]
+[node name="SearchContainer" type="HBoxContainer" parent="Panel/MarginContainer/VBox" unique_id=1691524185]
 layout_mode = 2
-text = "   Sort:"
-vertical_alignment = 1
+theme_override_constants/separation = 15
+alignment = 1
 
-[node name="OptionSort" type="OptionButton" parent="Panel/MarginContainer/VBox/Header/SortButtons" unique_id=44846579]
+[node name="LabelUser" type="Label" parent="Panel/MarginContainer/VBox/SearchContainer" unique_id=1585851666]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "User:"
+vertical_alignment = 1
+
+[node name="InputUsername" type="LineEdit" parent="Panel/MarginContainer/VBox/SearchContainer" unique_id=987654321]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+placeholder_text = "Username"
+
+[node name="OptionType" type="OptionButton" parent="Panel/MarginContainer/VBox/SearchContainer" unique_id=44846579]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 selected = 0
 item_count = 3
-popup/item_0/text = "Manual"
+popup/item_0/text = "⭐"
 popup/item_0/id = 0
-popup/item_1/text = "Name"
+popup/item_1/text = "💗"
 popup/item_1/id = 1
-popup/item_2/text = "Author"
+popup/item_2/text = "👾"
 popup/item_2/id = 2
 
-[node name="BtnAscDesc" type="Button" parent="Panel/MarginContainer/VBox/Header/SortButtons" unique_id=599435137]
+[node name="BtnSearch" type="Button" parent="Panel/MarginContainer/VBox/SearchContainer" unique_id=599435137]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(40, 0)
+custom_minimum_size = Vector2(45, 0)
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_emoji")
-text = "⬆️"
+theme_override_fonts/font = SubResource("FontVariation_bqpnx")
+text = "🔍"
 
-[node name="HSeparator" type="HSeparator" parent="Panel/MarginContainer/VBox" unique_id=1083263750]
+[node name="HSeparator2" type="HSeparator" parent="Panel/MarginContainer/VBox" unique_id=123456789]
 layout_mode = 2
 
 [node name="ScrollContainer" type="ScrollContainer" parent="Panel/MarginContainer/VBox" unique_id=1848395223]
@@ -124,7 +119,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 4
 
-[node name="HSeparator2" type="HSeparator" parent="Panel/MarginContainer/VBox" unique_id=1848119324]
+[node name="HSeparator3" type="HSeparator" parent="Panel/MarginContainer/VBox" unique_id=1848119324]
 layout_mode = 2
 
 [node name="Footer" type="HBoxContainer" parent="Panel/MarginContainer/VBox" unique_id=2134186056]
@@ -142,28 +137,11 @@ text = "✖ Close"
 custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 
-[node name="BtnReset" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=987654321]
+[node name="BtnImportSelected" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=57242822]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(80, 0)
+custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.3882353, 0, 0, 1)
-theme_override_colors/font_focus_color = Color(0.85490197, 0, 0, 1)
-theme_override_colors/font_hover_color = Color(0.47156096, 9.866804e-07, 3.128499e-07, 1)
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
-theme_override_styles/normal = SubResource("StyleBoxFlat_reset")
-theme_override_styles/hover = SubResource("StyleBoxFlat_reset")
-text = "🔄 Reset"
+text = "� Import Selected"
 
-[node name="BtnSave" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=57242822]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(80, 0)
-layout_mode = 2
-theme_override_fonts/font = SubResource("FontVariation_bqpnx")
-text = "💾 Save"
-
-[node name="BtnShortcut" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=57242823]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(80, 0)
-layout_mode = 2
-theme_override_fonts/font = SubResource("FontVariation_bqpnx")
-text = "🔗 New Shortcut"
+[node name="SploreRequest" type="HTTPRequest" parent="." unique_id=748392105]

@@ -26,16 +26,18 @@ var tex_esc_pressed = preload("res://assets/btn_esc_pressed.png")
 var tex_power_normal = preload("res://assets/btn_poweroff_normal.png")
 var tex_power_pressed = preload("res://assets/btn_poweroff_pressed.png")
 var _has_updated_power = false
+var managed_names = ["kb_pocketchip_left", "kb_pocketchip_right", "kb_pocketchip"]
 
 var drag_overlay: Control
 
 func _ready() -> void:
 	super._ready() # Initialize RepositionableControl
 	
-	drag_overlay = Control.new()
-	drag_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	drag_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(drag_overlay)
+	if name in managed_names:
+		drag_overlay = Control.new()
+		drag_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		drag_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(drag_overlay)
 	
 	var runcmd = get_tree().root.get_node_or_null("Main/runcmd")
 	if runcmd:
@@ -62,7 +64,6 @@ func _on_layout_reset(target_is_landscape: bool):
 		
 	if target_is_landscape == _is_in_landscape_ui():
 		# Special Case: Pocketchips are centrally managed by their parents
-		var managed_names = ["kb_pocketchip_left", "kb_pocketchip_right", "kb_pocketchip"]
 		if name in managed_names:
 			scale = original_scale # Must manually restore scale since we bypass super()
 			var p = get_parent()

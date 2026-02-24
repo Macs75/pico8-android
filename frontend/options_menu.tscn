@@ -142,6 +142,26 @@ text = "📶 PLAY STATS"
 flat = true
 alignment = 0
 
+[node name="ImportBBSRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools/ContentTools" unique_id=918273646]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ButtonImportBBS" type="Button" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools/ContentTools/ImportBBSRow" unique_id=192837466]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Import games directly from Lexaloffle BBS favorites"
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_constants/h_separation = 4
+theme_override_fonts/font = SubResource("FontVariation_bqpnx")
+text = "🌐 IMPORT FROM BBS"
+flat = true
+alignment = 0
+
 [node name="AdvancedFeaturesRow" type="HBoxContainer" parent="SlidePanel/ScrollContainer/VBoxContainer/SectionTools/ContainerTools/ContentTools" unique_id=-950410619]
 layout_mode = 2
 size_flags_horizontal = 3

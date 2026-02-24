@@ -15,6 +15,8 @@ var touch_start_x = 0.0
 var is_dragging = false
 var connected_controllers_dialog_scene = preload("res://connected_controllers_dialog.tscn")
 var favourites_editor_scene = preload("res://favourites_editor.tscn")
+var stats_editor_scene = preload("res://stats_editor.tscn")
+var splore_importer_scene = preload("res://splore_importer.tscn")
 
 # Swipe to Open Variables
 var edge_drag_start = Vector2.ZERO
@@ -85,6 +87,9 @@ func _ready() -> void:
 	
 	if %ButtonFavourites:
 		%ButtonFavourites.pressed.connect(_on_favourites_pressed)
+		
+	if %ButtonPlayStats:
+		%ButtonPlayStats.pressed.connect(_on_play_stats_pressed)
 	
 	%ButtonInputMode.pressed.connect(_on_label_pressed.bind(%ToggleInputMode))
 	
@@ -148,6 +153,9 @@ func _ready() -> void:
 	
 	if %ButtonPlayStats:
 		%ButtonPlayStats.pressed.connect(_on_play_stats_pressed)
+		
+	if get_node_or_null("%ButtonImportBBS"):
+		%ButtonImportBBS.pressed.connect(_on_import_bbs_pressed)
 
 
 	# Connect Audio Backend Label
@@ -482,6 +490,9 @@ func _update_layout():
 	
 	if %ButtonPlayStats:
 		%ButtonPlayStats.add_theme_font_size_override("font_size", dynamic_font_size)
+		
+	if get_node_or_null("%ButtonImportBBS"):
+		%ButtonImportBBS.add_theme_font_size_override("font_size", dynamic_font_size)
 
 	# 7f. Tools Section Styles
 	%BtnToolsToggle.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
@@ -1271,9 +1282,25 @@ func load_config():
 	var themes = ThemeManager.get_theme_list()
 	%ThemeSelect.add_item("Default", 0)
 	var id_counter = 1
+	var validation_errors = []
+	
 	for t in themes:
-		%ThemeSelect.add_item(t, id_counter)
-		id_counter += 1
+		var result = ThemeManager.validate_theme(t)
+		if result["is_valid"]:
+			%ThemeSelect.add_item(t, id_counter)
+			id_counter += 1
+		else:
+			validation_errors.append(result["error"])
+			# If explicitly set as current theme, revert to default
+			if t == current_theme:
+				print("OptionsMenu: Current theme '", t, "' is invalid. Reverting to Default.")
+				current_theme = ""
+				ThemeManager.set_theme("")
+	
+	if not validation_errors.is_empty():
+		var error_msg = "The following themes have bezel dimension mismatches and will be excluded:\n\n" + "\n".join(validation_errors)
+		# We use call_deferred to avoid UI issues during boot/load sequence
+		UIUtils.create_message_dialog.call_deferred(get_tree().root, "Theme Warning", error_msg)
 		
 	if current_theme.is_empty() or current_theme == "Default":
 		%ThemeSelect.select(0)
@@ -1434,11 +1461,32 @@ func _on_favourites_pressed():
 	close_menu()
 
 func _on_play_stats_pressed():
-	var editor = favourites_editor_scene.instantiate()
-	# Set mode to STATS (Enum value 1)
-	editor.current_mode = 1 # EditorMode.STATS
+	# Check if already open
+	if has_node("/root/StatsEditor"):
+		return
+		
+	# Disable Layout Customization if active
+	if PicoVideoStreamer.display_drag_enabled:
+		PicoVideoStreamer.set_display_drag_enabled(false)
+		if %ToggleReposition:
+			%ToggleReposition.set_pressed_no_signal(false)
+			
+	var editor = stats_editor_scene.instantiate()
 	get_tree().root.add_child(editor)
 	
+	close_menu()
+
+func _on_import_bbs_pressed():
+	if has_node("/root/SploreImporter"):
+		return
+		
+	if PicoVideoStreamer.display_drag_enabled:
+		PicoVideoStreamer.set_display_drag_enabled(false)
+		if %ToggleReposition:
+			%ToggleReposition.set_pressed_no_signal(false)
+			
+	var importer = splore_importer_scene.instantiate()
+	get_tree().root.add_child(importer)
 	close_menu()
 
 
