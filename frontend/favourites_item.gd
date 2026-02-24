@@ -368,7 +368,11 @@ func _is_action_held() -> bool:
 		
 	# Explicitly check Controller Face Button Bottom (A / Cross)
 	# Check all connected joypads? usually 0 is fine, or check generic
-	if Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_A):
-		return true
+	if PicoVideoStreamer.get_swap_zx_enabled():
+		if Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_B):
+			return true
+	else:
+		if Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_A):
+			return true
 		
 	return false

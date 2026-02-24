@@ -835,7 +835,7 @@ theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-text = "Swap O/X on gamepads"
+text = "Swap A/X buttons"
 flat = true
 alignment = 0
 

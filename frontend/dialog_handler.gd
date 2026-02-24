@@ -7,6 +7,7 @@ func _input(event: InputEvent) -> void:
 		return
 		
 	if event is InputEventJoypadButton and event.pressed:
+		event = PicoVideoStreamer.swap_event_button_AB(event)
 		if event.button_index == JoyButton.JOY_BUTTON_A:
 			var focus = get_viewport().gui_get_focus_owner()
 			if focus and is_ancestor_of(focus) and focus is BaseButton:

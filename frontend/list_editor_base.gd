@@ -16,8 +16,8 @@ var _is_dirty: bool = false
 var _manual_order_cache: Array = []
 
 var is_dragging_item: bool = false
-var was_joy_a_pressed: bool = false
-var was_joy_b_pressed: bool = false
+var was_confirm_pressed: bool = false
+var was_cancel_pressed: bool = false
 var popup_was_visible: bool = false
 
 var _scroll_tween: Tween
@@ -389,16 +389,21 @@ func _process(delta):
 
 	var is_popup_visible = option_sort.get_popup().visible if option_sort else false
 	if is_popup_visible:
-		var joy_a = false
-		var joy_b = false
+		var joy_confirm_button = false
+		var joy_cancel_button = false
 		if Input.get_connected_joypads().size() > 0:
-			joy_a = Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_A)
-			joy_b = Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_B)
+			var swap_zx = PicoVideoStreamer.get_swap_zx_enabled()
+			if swap_zx:
+				joy_confirm_button = Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_B)
+				joy_cancel_button = Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_A)
+			else:
+				joy_confirm_button = Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_A)
+				joy_cancel_button = Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_B)
 			
-		if not popup_was_visible and joy_a:
-			was_joy_a_pressed = true
+		if not popup_was_visible and joy_confirm_button:
+			was_confirm_pressed = true
 			
-		if joy_a and not was_joy_a_pressed:
+		if joy_confirm_button and not was_confirm_pressed:
 			var ev = InputEventKey.new()
 			ev.keycode = KEY_ENTER
 			ev.pressed = true
@@ -409,11 +414,11 @@ func _process(delta):
 			ev_release.pressed = false
 			Input.parse_input_event(ev_release)
 			
-		if joy_b and not was_joy_b_pressed:
+		if joy_cancel_button and not was_cancel_pressed:
 			option_sort.get_popup().hide()
 			
-		was_joy_a_pressed = joy_a
-		was_joy_b_pressed = joy_b
+		was_confirm_pressed = joy_confirm_button
+		was_cancel_pressed = joy_cancel_button
 		
 	popup_was_visible = is_popup_visible
 	
@@ -434,7 +439,10 @@ func _process(delta):
 					_on_item_request_move_step(move_dir, focus_item)
 
 func _get_polling_action_held() -> bool:
-	return Input.is_action_pressed("ui_accept") or _is_joy_button_pressed(JoyButton.JOY_BUTTON_A)
+	var button_to_check = JoyButton.JOY_BUTTON_A
+	if PicoVideoStreamer.get_swap_zx_enabled():
+		button_to_check = JoyButton.JOY_BUTTON_B
+	return Input.is_action_pressed("ui_accept") or _is_joy_button_pressed(button_to_check)
 
 func _is_joy_button_pressed(btn: int) -> bool:
 	if Input.get_connected_joypads().size() > 0:

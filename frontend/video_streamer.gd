@@ -909,6 +909,17 @@ static func set_swap_zx_enabled(enabled: bool):
 static func get_swap_zx_enabled() -> bool:
 	return swap_zx_enabled
 
+static func swap_event_button_AB(event: InputEventJoypadButton) -> InputEventJoypadButton:
+	if swap_zx_enabled and not event.get_meta("swapped", false):
+		if event.button_index == JoyButton.JOY_BUTTON_A:
+			event.button_index = JoyButton.JOY_BUTTON_B
+			event.set_meta("swapped", true)
+		elif event.button_index == JoyButton.JOY_BUTTON_B:
+			event.button_index = JoyButton.JOY_BUTTON_A
+			event.set_meta("swapped", true)
+	return event
+
+
 enum InputMode {MOUSE, TRACKPAD}
 static var input_mode: InputMode = InputMode.MOUSE
 
@@ -1407,7 +1418,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 
 		var is_p2 = false
-		
+
 		if role == ControllerUtils.ROLE_P2:
 			is_p2 = true
 		elif role == ControllerUtils.ROLE_P1:
@@ -1420,7 +1431,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			var idx = real_joypads.find(event.device)
 			if idx == 1:
 				is_p2 = true
-				
+
+		event = PicoVideoStreamer.swap_event_button_AB(event)
+
 		var active_devkit = _prev_has_devkit and not _prev_is_paused_flag
 		
 		if (input_mode == InputMode.TRACKPAD and not is_p2) or (active_devkit and not is_p2):
@@ -1462,8 +1475,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			# Player 1 Mapping (Standard)
 			# If active_devkit is true, A and B are consumed above, so they won't reach here.
 			match event.button_index:
-				JoyButton.JOY_BUTTON_A, JoyButton.JOY_BUTTON_Y: key_id = "X" if swap_zx_enabled else "Z" # Pico-8 O (or X if swapped)
-				JoyButton.JOY_BUTTON_B, JoyButton.JOY_BUTTON_X: key_id = "Z" if swap_zx_enabled else "X" # Pico-8 X (or O if swapped)
+				JoyButton.JOY_BUTTON_A, JoyButton.JOY_BUTTON_Y: key_id = "X"
+				JoyButton.JOY_BUTTON_B, JoyButton.JOY_BUTTON_X: key_id = "Z"
 				JoyButton.JOY_BUTTON_START, JoyButton.JOY_BUTTON_RIGHT_SHOULDER: key_id = "P" # Pause
 				JoyButton.JOY_BUTTON_BACK, JoyButton.JOY_BUTTON_GUIDE:
 					key_id = "IntentExit" if is_intent_session else "Escape" # Menu / Exit

@@ -107,6 +107,7 @@ func _on_close_pressed():
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventJoypadButton and event.pressed:
+		event = PicoVideoStreamer.swap_event_button_AB(event)
 		if event.button_index == JoyButton.JOY_BUTTON_DPAD_UP:
 			_navigate_next(SIDE_TOP)
 			get_viewport().set_input_as_handled()
