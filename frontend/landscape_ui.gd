@@ -72,14 +72,14 @@ func _on_resize():
 
 	var is_landscape = PicoVideoStreamer.is_system_landscape()
 	var mode = PicoVideoStreamer.get_controls_mode()
-	var should_be_visible = true
+	var should_be_visible = is_landscape and not arranger.cached_controller_connected
 	
 	if mode == PicoVideoStreamer.ControlsMode.DISABLED:
 		should_be_visible = false
 	elif mode == PicoVideoStreamer.ControlsMode.FORCE:
 		should_be_visible = true
 	else: # AUTO
-		should_be_visible = not arranger.cached_controller_connected
+		should_be_visible = is_landscape and not arranger.cached_controller_connected
 	
 	if is_landscape:
 		if chip_l:

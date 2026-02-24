@@ -562,7 +562,7 @@ func _process(delta: float) -> void:
 			if _prev_has_devkit:
 				dev_str = " | DEV"
 			
-			debug_fps_label.text = "FPS: %d | MS:%d | VOL:%d | %s%s | M:%d,%d" % [current_frames, raw_master_state, raw_volume, ns_state, dev_str, mx, my]
+			debug_fps_label.text = "FPS: %d | %s%s | M:%d,%d" % [current_frames, ns_state, dev_str, mx, my]
 			fps_timer -= 1.0
 	
 	# Auto-Trackpad Logic for Devkit Carts
@@ -584,6 +584,11 @@ func _process(delta: float) -> void:
 					# Active Devkit Game -> Trackpad Mode (Precision)
 					if input_mode == InputMode.MOUSE:
 						_sync_input_mode_ui(true)
+
+			if not has_devkit and not is_editor:
+				# exit the game -> Mouse Mode (Menu Navigation)
+				if input_mode == InputMode.TRACKPAD:
+					_sync_input_mode_ui(false)
 			
 			# Pop the full keyboard ONLY the FIRST time the editor appears
 			if is_editor and not _prev_is_editor:
@@ -624,7 +629,7 @@ func _process(delta: float) -> void:
 		# Trackpad Mode or Devkit Gamepad Mode
 		# If we are in active devkit mode with a gamepad connected, poll the stick for smooth movement
 		var active_devkit = _prev_has_devkit and not _prev_is_paused_flag
-		if active_devkit:
+		if active_devkit or _prev_is_editor:
 			var joypads = Input.get_connected_joypads()
 			if joypads.size() > 0:
 				var dev = joypads[0] # Assuming P1 is index 0 for now
@@ -1518,14 +1523,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			if idx == 1:
 				is_p2 = true
 		
-		var active_devkit = _prev_has_devkit and not _prev_is_paused_flag
-		
+	
 		# Gamepad Mouse Control (Left Stick)
 		var axis_threshold = 0.5
 		
-		if active_devkit and not is_p2:
+		var active_devkit = _prev_has_devkit and not _prev_is_paused_flag
+
+		if (active_devkit or _prev_is_editor) and not is_p2:
 			if event.axis == JoyAxis.JOY_AXIS_LEFT_X or event.axis == JoyAxis.JOY_AXIS_LEFT_Y:
-				pass
+				return
 				
 		# Map Axes to D-Pad (Standard)
 		var key_left = "S" if is_p2 else "Left"
@@ -1566,12 +1572,6 @@ func _unhandled_input(event: InputEvent) -> void:
 					if not Input.is_joy_button_pressed(event.device, JoyButton.JOY_BUTTON_DPAD_DOWN):
 						vkb_setstate(key_down, false)
 		
-
-	#if not (tcp and tcp.get_status() == StreamPeerTCP.STATUS_CONNECTED):
-		#return;
-	#if event is InputEventMouse:
-		#queued_mouse_event = true
-
 # Callback function for keyboard toggle button
 func _on_keyboard_toggle_pressed():
 	var current_state = KBMan.get_current_keyboard_type()
