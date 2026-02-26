@@ -21,6 +21,11 @@ signal intent_session_started
 # Process suspension state
 var is_process_suspended: bool = false
 
+# URL Handler Thread
+var _url_thread: Thread
+var _url_thread_active: bool = false
+var PIPE_XDG = PicoBootManager.APPDATA_FOLDER + "/package/tmp/xdgopen"
+
 func _ready() -> void:
 	if Engine.is_embedded_in_editor():
 		return
@@ -52,6 +57,11 @@ func _ready() -> void:
 			)
 			print("executing as pid " + str(pico_pid) + "\n" + cmdline)
 	
+	if Applinks:
+		_url_thread = Thread.new()
+		_url_thread_active = true
+		_url_thread.start(_url_pipe_thread_function)
+
 	if OS.is_debug_build() and execution_mode != ExecutionMode.TELNETSSH:
 		OS.create_process(
 			PicoBootManager.BIN_PATH + "/sh",
@@ -399,6 +409,41 @@ func _notification(what: int) -> void:
 			suspend_pico_process()
 		NOTIFICATION_APPLICATION_FOCUS_IN:
 			resume_pico_process()
+
+func _exit_tree() -> void:
+	_url_thread_active = false
+	if _url_thread and _url_thread.is_started():
+		# To unblock the pipe_open in the thread if it's waiting
+		var f = FileAccess.open(PIPE_XDG, FileAccess.WRITE)
+		if f:
+			f.store_string("quit-daemon")
+			f.close()
+		_url_thread.wait_to_finish()
+
+func _url_pipe_thread_function() -> void:
+	print("URL Handler: Thread started")
+	while _url_thread_active:
+		var pipe_id = Applinks.pipe_open(PIPE_XDG, 0) # Mode 0 = READ
+		if pipe_id != -1:
+			# pipe_read blocks until at least 1 byte is available or writer closes
+			var data = Applinks.pipe_read(pipe_id, 1024)
+			if data.size() > 0:
+				var url = data.get_string_from_utf8().strip_edges()
+				if url == "quit-daemon":
+					print("URL Handler: Received quit signal")
+					Applinks.pipe_close(pipe_id)
+					continue # Check _url_thread_active
+				
+				if url.begins_with("http"):
+					print("URL Handler: Opening URL: ", url)
+					OS.shell_open.call_deferred(url)
+				else:
+					print("URL Handler: Received non-URL data: ", url)
+			
+			Applinks.pipe_close(pipe_id)
+		else:
+			# Open failed (not found or already opened?)
+			OS.delay_msec(500)
 
 func suspend_pico_process() -> void:
 	# Only suspend if we have a valid PID (meaning PICO-8 should be running)
