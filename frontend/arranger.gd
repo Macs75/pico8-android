@@ -67,6 +67,9 @@ func _ready() -> void:
 		# Initialize buttons with current state
 		_update_buttons_for_mode(streamer.get_input_mode() == streamer.InputMode.TRACKPAD)
 	
+	if streamer.has_signal("controls_mode_changed"):
+		streamer.controls_mode_changed.connect(func(_mode): dirty = true)
+	
 	if has_node("displayContainer/DisplayFrame"):
 		display_frame = get_node("displayContainer/DisplayFrame")
 	
@@ -350,7 +353,7 @@ func _update_layout():
 		var scale_calc_size = Vector2(128, 128)
 		
 		if is_landscape and not is_controller_connected:
-			scale_calc_size.x += 160
+			scale_calc_size.x += 120
 		
 		var ratio_x = available_size.x / scale_calc_size.x
 		var ratio_y = available_size.y / scale_calc_size.y

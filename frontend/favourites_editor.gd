@@ -17,14 +17,6 @@ func _ready():
 	btn_save.gui_input.connect(_on_explicit_gui_input.bind(btn_save))
 	btn_shortcut.gui_input.connect(_on_explicit_gui_input.bind(btn_shortcut))
 
-func _get_title() -> String:
-	return "💟 Favorites"
-
-func _setup_mode_toggles():
-	btn_save.visible = true
-	btn_shortcut.visible = true
-	btn_reset.visible = false
-
 func _setup_sort_options():
 	option_sort.clear()
 	option_sort.add_item("Manual", 0)

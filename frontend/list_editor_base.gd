@@ -20,6 +20,8 @@ var was_confirm_pressed: bool = false
 var was_cancel_pressed: bool = false
 var popup_was_visible: bool = false
 
+var default_background_image = preload("res://icons/adaptive_top.png")
+
 var _scroll_tween: Tween
 
 # UI Accessors - Subclasses must provide these node paths or expected names in their scenes
@@ -29,7 +31,7 @@ var _scroll_tween: Tween
 @onready var header = $Panel/MarginContainer/VBox/Header
 @onready var label_title = $Panel/MarginContainer/VBox/Header/LabelTitle
 @onready var sort_buttons = $Panel/MarginContainer/VBox/Header/SortButtons
-@onready var label_sort = $Panel/MarginContainer/VBox/Header/SortButtons/LabelSort
+@onready var label_sort = %LabelSort
 @onready var option_sort = %OptionSort
 @onready var btn_asc_desc = %BtnAscDesc
 @onready var list_container = %ListContainer
@@ -37,7 +39,6 @@ var _scroll_tween: Tween
 @onready var background_art = %BackgroundArt
 
 func _ready():
-	_setup_mode_toggles()
 	_setup_sort_options()
 	
 	btn_close.pressed.connect(_on_close)
@@ -91,12 +92,6 @@ func _exit_tree():
 # VIRTUAL METHODS (To be overridden)
 # ==========================================
 
-func _get_title() -> String:
-	return "List Editor"
-
-func _setup_mode_toggles():
-	pass
-
 func _setup_sort_options():
 	pass
 
@@ -143,6 +138,8 @@ func _update_layout():
 	
 	# Apply to Header logic (sizes)
 	label_title.add_theme_font_size_override("font_size", int(dynamic_font_size * 1.1))
+	if label_sort:
+		label_sort.add_theme_font_size_override("font_size", int(dynamic_font_size * 0.9))
 	if option_sort:
 		option_sort.add_theme_font_size_override("font_size", int(dynamic_font_size * 0.9))
 		option_sort.get_popup().add_theme_font_size_override("font_size", int(dynamic_font_size * 0.9))
@@ -177,7 +174,6 @@ func _apply_subclass_footer_sizes(_size: int):
 # ==========================================
 
 func _load_data():
-	label_title.text = _get_title()
 	_all_items = _load_items_from_source()
 	_manual_order_cache = _all_items.duplicate()
 	
@@ -306,9 +302,9 @@ func _set_item_background(item_data) -> void:
 		if img and background_art:
 			background_art.texture = ImageTexture.create_from_image(img)
 		elif background_art:
-			background_art.texture = null
+			background_art.texture = default_background_image
 	elif background_art:
-		background_art.texture = null
+		background_art.texture = default_background_image
 
 func _ensure_node_visible(node: Control, wait_for_layout: bool = true):
 	if wait_for_layout:

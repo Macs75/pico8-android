@@ -9,6 +9,7 @@ var tex_power_normal = preload("res://assets/btn_poweroff_normal.png")
 var tex_power_pressed = preload("res://assets/btn_poweroff_pressed.png")
 
 @onready var arranger = get_node_or_null("../Arranger")
+@onready var controlContainer = get_node_or_null("Control")
 @onready var dpad = get_node_or_null("Control/LeftPad/dpad")
 @onready var x_btn = get_node_or_null("Control/RightPad/X")
 @onready var z_btn = get_node_or_null("Control/RightPad/O")
@@ -17,12 +18,21 @@ var tex_power_pressed = preload("res://assets/btn_poweroff_pressed.png")
 @onready var chip_r = get_node_or_null("kb_pocketchip_right")
 
 func _ready() -> void:
+	_on_resize()
+	get_tree().root.size_changed.connect(_on_resize)
+
 	# LandscapeUI is a child of Main (where PicoVideoStreamer script is attached)
 	var streamer = get_parent()
 	if streamer.has_signal("input_mode_changed"):
 		streamer.input_mode_changed.connect(_update_buttons_for_mode)
 		# Initialize buttons with current state
-		_update_buttons_for_mode(streamer.get_input_mode() == streamer.InputMode.TRACKPAD)
+		_update_buttons_for_mode(PicoVideoStreamer.get_input_mode() == PicoVideoStreamer.InputMode.TRACKPAD)
+	
+	if streamer.has_signal("controls_mode_changed"):
+		streamer.controls_mode_changed.connect(func(_mode): _on_resize())
+
+	if arranger:
+		arranger.layout_updated.connect(_on_resize)
 
 	# Connect to RunCmd for Intent Session updates
 	var runcmd = streamer.get_node_or_null("runcmd")
@@ -72,14 +82,21 @@ func _on_resize():
 
 	var is_landscape = PicoVideoStreamer.is_system_landscape()
 	var mode = PicoVideoStreamer.get_controls_mode()
-	var should_be_visible = is_landscape and not arranger.cached_controller_connected
-	
-	if mode == PicoVideoStreamer.ControlsMode.DISABLED:
-		should_be_visible = false
+	var is_controller_connected = arranger.cached_controller_connected
+	var is_gaming_kb = KBMan.get_current_keyboard_type() == KBMan.KBType.GAMING
+
+	if not is_landscape:
+		controlContainer.visible = false # Always hide portrait anchor in landscape
+	elif not is_gaming_kb:
+		controlContainer.visible = false # Hide gaming buttons if FULL keyboard is active
+	elif mode == PicoVideoStreamer.ControlsMode.DISABLED:
+		controlContainer.visible = false
 	elif mode == PicoVideoStreamer.ControlsMode.FORCE:
-		should_be_visible = true
-	else: # AUTO
-		should_be_visible = is_landscape and not arranger.cached_controller_connected
+		controlContainer.visible = true
+	elif is_controller_connected: # Auto mode implied
+		controlContainer.visible = false
+	else:
+		controlContainer.visible = true
 	
 	if is_landscape:
 		if chip_l:
@@ -105,7 +122,7 @@ func _on_resize():
 				if "original_scale" in chip_r:
 					chip_r.scale = chip_r.original_scale * saved_scale_r
 	
-	visible = should_be_visible
+	visible = is_landscape
 
 func _process(_delta: float) -> void:
 	if arranger and arranger.dirty:

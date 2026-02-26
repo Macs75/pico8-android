@@ -51,14 +51,8 @@ func _apply_subclass_footer_sizes(dynamic_font_size: int):
 		btn_search.custom_minimum_size.x = dynamic_font_size * 2.5
 
 
-func _get_title() -> String:
-	return "Splore Importer"
-
 func _get_sort_options() -> Array:
 	return []
-
-func _setup_mode_toggles():
-	pass
 
 func _on_item_action(item_node):
 	# Central point for toggling selection (handles both Mouse and Joypad A)
@@ -101,7 +95,7 @@ func _on_search_pressed():
 	var type_id = option_type.get_selected_id()
 	var type_str = "like" # ⭐
 	if type_id == 1:
-		type_str = "fav" # 💗
+		type_str = "fav" # 🤍
 	elif type_id == 2:
 		type_str = "by" # 👾
 
@@ -343,7 +337,7 @@ func _on_import_selected_pressed():
 	if FileAccess.file_exists(path):
 		var err = DirAccess.copy_absolute(path, path + ".bak")
 		if err != OK:
-			UIUtils.create_message_dialog(self, "Backup Failed",
+			UIUtils.create_message_dialog(self , "Backup Failed",
 				"❌ Could not create backup of favourites.txt (error %d).\nImport aborted." % err,
 				"OK")
 			return

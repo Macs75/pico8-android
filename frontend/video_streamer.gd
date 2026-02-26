@@ -5,6 +5,7 @@ class_name PicoVideoStreamer
 signal layout_reset(is_landscape: bool)
 signal control_selected(control: CanvasItem)
 signal bezel_layout_updated(bezel_rect: Rect2, scale: Vector2)
+signal controls_mode_changed(mode: int)
 
 @export var loading: AnimatedSprite2D
 @export var display: Sprite2D
@@ -1112,6 +1113,8 @@ enum ControlsMode {
 static var controls_mode: ControlsMode = ControlsMode.AUTO
 static func set_controls_mode(mode: int):
 	controls_mode = mode as ControlsMode
+	if instance:
+		instance.controls_mode_changed.emit(controls_mode)
 	
 static func get_controls_mode() -> int:
 	return controls_mode

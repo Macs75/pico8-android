@@ -38,7 +38,6 @@ layer = 15
 script = ExtResource("1_editor")
 
 [node name="Panel" type="Panel" parent="." unique_id=1747027266]
-layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -87,6 +86,7 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="LabelSort" type="Label" parent="Panel/MarginContainer/VBox/Header/SortButtons" unique_id=1585851666]
+unique_name_in_owner = true
 layout_mode = 2
 text = "   Sort:"
 vertical_alignment = 1
@@ -109,7 +109,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_emoji")
-text = "⬆️"
+text = "⬇️"
 
 [node name="HSeparator" type="HSeparator" parent="Panel/MarginContainer/VBox" unique_id=1083263750]
 layout_mode = 2
@@ -147,24 +147,10 @@ layout_mode = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.3882353, 0, 0, 1)
+theme_override_colors/font_color = Color(0.6790145, 2.8637796e-06, 2.8878452e-07, 1)
 theme_override_colors/font_focus_color = Color(0.85490197, 0, 0, 1)
-theme_override_colors/font_hover_color = Color(0.47156096, 9.866804e-07, 3.128499e-07, 1)
+theme_override_colors/font_hover_color = Color(0.6784314, 0, 0, 1)
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
 theme_override_styles/normal = SubResource("StyleBoxFlat_reset")
 theme_override_styles/hover = SubResource("StyleBoxFlat_reset")
 text = "🔄 Reset"
-
-[node name="BtnSave" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=57242822]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(80, 0)
-layout_mode = 2
-theme_override_fonts/font = SubResource("FontVariation_bqpnx")
-text = "💾 Save"
-
-[node name="BtnShortcut" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=57242823]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(80, 0)
-layout_mode = 2
-theme_override_fonts/font = SubResource("FontVariation_bqpnx")
-text = "🔗 New Shortcut"

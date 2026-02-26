@@ -46,6 +46,14 @@ func _ready() -> void:
 		# Check if already started (late join)
 		if runcmd.is_intent_session:
 			_on_intent_session_started()
+			
+	# Subscribe to keyboard state changes
+	KBMan.subscribe(_on_kb_state_updated)
+	# Initial visibility update
+	_on_kb_state_updated(KBMan.full_keyboard_enabled)
+
+func _on_kb_state_updated(_full_enabled: bool):
+	visible = (get_current_keyboard_type() == type)
 
 func _on_intent_session_started():
 	# Update Gaming Keyboard ESC
@@ -74,9 +82,6 @@ func _on_layout_reset(target_is_landscape: bool):
 		super._on_layout_reset(target_is_landscape)
 
 func _process(_delta: float) -> void:
-	var current_type = get_current_keyboard_type()
-	self.visible = (current_type == type)
-
 	# Intercept clicks during layout customization using an overlay
 	# We use an overlay because Godot input routing depends entirely on node tree order, not z-index.
 	if PicoVideoStreamer.display_drag_enabled and is_repositionable:

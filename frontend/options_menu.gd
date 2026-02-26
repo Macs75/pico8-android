@@ -151,9 +151,6 @@ func _ready() -> void:
 	%BtnOfflineToggle.pressed.connect(_on_section_toggled.bind(%BtnOfflineToggle, %ContainerOffline))
 	%BtnToolsToggle.pressed.connect(_on_section_toggled.bind(%BtnToolsToggle, %ContainerTools))
 	
-	if %ButtonPlayStats:
-		%ButtonPlayStats.pressed.connect(_on_play_stats_pressed)
-		
 	if get_node_or_null("%ButtonImportBBS"):
 		%ButtonImportBBS.pressed.connect(_on_import_bbs_pressed)
 
@@ -1222,16 +1219,7 @@ func load_config():
 	var bezel = PicoBootManager.get_setting("settings", "bezel_enabled", false)
 	
 	# Load Controls Mode with Migration
-	var controls_mode = PicoBootManager.get_setting("settings", "controls_mode", null)
-	if controls_mode == null:
-		# Fallback to legacy
-		var always_show = PicoBootManager.get_setting("settings", "always_show_controls", false)
-		# False (Auto) -> 0, True (Force) -> 1
-		controls_mode = 1 if always_show else 0
-	
-	# Ensure integer type
-	controls_mode = int(controls_mode)
-	
+	var controls_mode = PicoBootManager.get_setting("settings", "controls_mode", 0)
 	# Load Controller Settings
 	var curr_ignored = PicoBootManager.get_setting("settings", "ignored_devices_by_user", [])
 	ControllerUtils.ignored_devices_by_user.clear()
@@ -1255,11 +1243,8 @@ func load_config():
 	
 	if is_0_2_7:
 		# If user is on 0.2.7, load setting. If not set, default to True.
-		var stored_val = PicoBootManager.get_setting("settings", "advanced_features_enabled", null)
-		if stored_val == null:
-			advanced_enabled = true
-		else:
-			advanced_enabled = bool(stored_val)
+		var stored_val = PicoBootManager.get_setting("settings", "advanced_features_enabled", true)
+		advanced_enabled = stored_val
 			
 		if %ToggleAdvancedFeatures:
 			%ToggleAdvancedFeatures.disabled = false

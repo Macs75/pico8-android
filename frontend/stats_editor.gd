@@ -11,23 +11,10 @@ var _cached_metadata: Dictionary = {}
 @onready var btn_reset = %BtnReset
 
 func _ready():
-	# Need to hide these manually since the scene might have them visible
-	%BtnSave.visible = false
-	%BtnShortcut.visible = false
-	
 	super._ready()
 	
 	btn_reset.pressed.connect(_on_reset_pressed)
 	btn_reset.gui_input.connect(_on_explicit_gui_input.bind(btn_reset))
-
-func _get_title() -> String:
-	return "📶 Play Stats"
-
-func _setup_mode_toggles():
-	btn_reset.visible = true
-	# Ensure sorting defaults to descending for stats
-	is_ascending = false
-	btn_asc_desc.text = "⬇️"
 
 func _setup_sort_options():
 	option_sort.clear()
@@ -38,6 +25,7 @@ func _setup_sort_options():
 	
 	# Default to Play Time
 	option_sort.selected = 2
+	is_ascending = false
 
 class StatItem extends RefCounted:
 	var name: String = ""
