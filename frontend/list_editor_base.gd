@@ -32,7 +32,7 @@ var _scroll_tween: Tween
 @onready var label_title = $Panel/MarginContainer/VBox/Header/LabelTitle
 @onready var sort_buttons = $Panel/MarginContainer/VBox/Header/SortButtons
 @onready var label_sort = %LabelSort
-@onready var option_sort = %OptionSort
+@onready var option_sort = %OptionType
 @onready var btn_asc_desc = %BtnAscDesc
 @onready var list_container = %ListContainer
 @onready var btn_close = %BtnClose
@@ -187,8 +187,7 @@ func _load_data():
 		
 	_load_next_page()
 	
-	if _all_items.size() > 0:
-		call_deferred("_grab_initial_focus")
+	call_deferred("_grab_initial_focus")
 
 func _grab_initial_focus():
 	if list_container.get_child_count() > 0:
@@ -388,13 +387,10 @@ func _process(delta):
 		var joy_confirm_button = false
 		var joy_cancel_button = false
 		if Input.get_connected_joypads().size() > 0:
-			var swap_zx = PicoVideoStreamer.get_swap_zx_enabled()
-			if swap_zx:
-				joy_confirm_button = Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_B)
-				joy_cancel_button = Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_A)
-			else:
-				joy_confirm_button = Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_A)
-				joy_cancel_button = Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_B)
+			var confirm_button = PicoVideoStreamer.get_confirm_button()
+			var cancel_button = PicoVideoStreamer.get_cancel_button()
+			joy_confirm_button = Input.is_joy_button_pressed(0, confirm_button)
+			joy_cancel_button = Input.is_joy_button_pressed(0, cancel_button)
 			
 		if not popup_was_visible and joy_confirm_button:
 			was_confirm_pressed = true
@@ -435,9 +431,7 @@ func _process(delta):
 					_on_item_request_move_step(move_dir, focus_item)
 
 func _get_polling_action_held() -> bool:
-	var button_to_check = JoyButton.JOY_BUTTON_A
-	if PicoVideoStreamer.get_swap_zx_enabled():
-		button_to_check = JoyButton.JOY_BUTTON_B
+	var button_to_check = PicoVideoStreamer.get_confirm_button()
 	return Input.is_action_pressed("ui_accept") or _is_joy_button_pressed(button_to_check)
 
 func _is_joy_button_pressed(btn: int) -> bool:
@@ -493,9 +487,41 @@ func _on_explicit_gui_input(event: InputEvent, node: Control):
 		if node is OptionButton:
 			node.show_popup()
 			get_viewport().set_input_as_handled()
+		elif node is LineEdit:
+			_simulate_line_edit_tap(node)
+
 		elif node is Button:
 			node.pressed.emit()
 			get_viewport().set_input_as_handled()
+
+func _simulate_line_edit_tap(node: LineEdit):
+	# The only reliable way to enter "edit mode" on a LineEdit (so typed
+	# characters actually register) is to inject a real MouseButton press
+	# through Godot's global input pipeline. grab_focus() alone is not enough
+	# because it skips the internal "editing" state that LineEdit sets on click.
+	var center = node.get_global_rect().get_center()
+	
+	var press = InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	press.position = center
+	press.global_position = center
+	Input.parse_input_event(press)
+	
+	var release = InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_LEFT
+	release.pressed = false
+	release.position = center
+	release.global_position = center
+	Input.parse_input_event(release)
+	
+	# Move caret to the end of existing text
+	node.caret_column = node.text.length()
+	
+	# Ensure keyboard is visible
+	DisplayServer.virtual_keyboard_show(node.text, node.get_global_rect())
+	
+	get_viewport().set_input_as_handled()
 
 func _is_action_held(event: InputEvent) -> bool:
 	if event is InputEventJoypadButton:

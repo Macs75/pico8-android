@@ -6,6 +6,7 @@ class_name SploreImporter
 @onready var option_type: OptionButton = %OptionType
 @onready var btn_search: Button = %BtnSearch
 @onready var btn_import_selected: Button = %BtnImportSelected
+@onready var btn_clear_selection: Button = %BtnClearSelection
 @onready var splore_request: HTTPRequest = $SploreRequest
 
 var item_scene = preload("res://splore_cart_item.tscn")
@@ -17,15 +18,35 @@ func _ready():
 	# Connect UI Signals
 	btn_search.pressed.connect(_on_search_pressed)
 	btn_import_selected.pressed.connect(_on_import_selected_pressed)
+	btn_clear_selection.pressed.connect(_on_clear_selection_pressed)
 	
-	# Fix text encoding issue from .tscn duplication
-	btn_import_selected.text = "📥 Import Selected"
+	btn_search.gui_input.connect(_on_explicit_gui_input.bind(btn_search))
+	btn_clear_selection.gui_input.connect(_on_explicit_gui_input.bind(btn_clear_selection))
+	btn_import_selected.gui_input.connect(_on_explicit_gui_input.bind(btn_import_selected))
 	
 	# Listen for Enter key on the LineEdit to trigger search
 	input_username.text_submitted.connect(func(_text): _on_search_pressed())
+	input_username.focus_exited.connect(func():
+		_on_username_focus_exited()
+	)
+	input_username.focus_entered.connect(func():
+		# Trigger the click simulation automatically on focus
+		_simulate_line_edit_tap(input_username)
+	)
+
+func _on_username_focus_exited():
+	DisplayServer.virtual_keyboard_hide()
+	if Applinks: Applinks.hide_keyboard()
 
 	# Update placeholder based on search type
 	option_type.item_selected.connect(_on_type_selected)
+	
+	#input_username.gui_input.connect(_on_explicit_gui_input.bind(input_username))
+
+
+func _grab_initial_focus():
+	if input_username:
+		_simulate_line_edit_tap(input_username)
 
 # ----------------- Virtual Methods -----------------
 
@@ -34,6 +55,10 @@ func _apply_subclass_footer_sizes(dynamic_font_size: int):
 	if btn_import_selected:
 		btn_import_selected.add_theme_font_size_override("font_size", dynamic_font_size)
 		btn_import_selected.custom_minimum_size.y = dynamic_font_size * 2.0
+	
+	if btn_clear_selection:
+		btn_clear_selection.add_theme_font_size_override("font_size", dynamic_font_size)
+		btn_clear_selection.custom_minimum_size.y = dynamic_font_size * 2.0
 		
 	# Search Row Scaling
 	if label_user:
@@ -78,6 +103,54 @@ func _set_item_background(item_data) -> void:
 	elif background_art:
 		background_art.texture = null
 
+func _apply_subclass_static_focus():
+	# Horizontal Search navigation
+	input_username.focus_neighbor_right = option_type.get_path()
+	option_type.focus_neighbor_left = input_username.get_path()
+	option_type.focus_neighbor_right = btn_search.get_path()
+	btn_search.focus_neighbor_left = option_type.get_path()
+	
+	# Horizontal Footer navigation
+	btn_close.focus_neighbor_right = btn_clear_selection.get_path()
+	btn_clear_selection.focus_neighbor_left = btn_close.get_path()
+	btn_clear_selection.focus_neighbor_right = btn_import_selected.get_path()
+	btn_import_selected.focus_neighbor_left = btn_clear_selection.get_path()
+	btn_import_selected.focus_neighbor_right = input_username.get_path()
+	
+	# Upward navigation from Footer
+	btn_close.focus_neighbor_top = input_username.get_path()
+	btn_clear_selection.focus_neighbor_top = option_type.get_path()
+	btn_import_selected.focus_neighbor_top = btn_search.get_path()
+
+func _apply_empty_list_boundary_focus():
+	# Downward navigation from Search to Footer when list is empty
+	input_username.focus_neighbor_bottom = btn_close.get_path()
+	option_type.focus_neighbor_bottom = btn_clear_selection.get_path()
+	btn_search.focus_neighbor_bottom = btn_import_selected.get_path()
+
+func _apply_subclass_boundary_focus(last_item: Control):
+	# Link the bottom of the list to the clear/import buttons
+	last_item.focus_neighbor_bottom = btn_clear_selection.get_path()
+	btn_clear_selection.focus_neighbor_top = last_item.get_path()
+	btn_import_selected.focus_neighbor_top = last_item.get_path()
+	btn_close.focus_neighbor_top = last_item.get_path()
+
+func _update_focus_for_index(idx: int):
+	super._update_focus_for_index(idx)
+	var items = list_container.get_children()
+	if idx >= 0 and idx < items.size():
+		var item = items[idx]
+		item.focus_neighbor_left = btn_search.get_path()
+		
+		if idx == 0:
+			# Upward from list to Search
+			item.focus_neighbor_top = option_type.get_path()
+			
+			# Downward from Search to list
+			input_username.focus_neighbor_bottom = item.get_path()
+			option_type.focus_neighbor_bottom = item.get_path()
+			btn_search.focus_neighbor_bottom = item.get_path()
+
 # ----------------- Splore Importer Logic -----------------
 
 # State
@@ -101,7 +174,8 @@ func _on_search_pressed():
 
 	print("Searching Lexaloffle for %s's %s..." % [username, type_str])
 
-	# Close Android keyboard via native plugin
+	# Close Android keyboard via both Godot and native plugin
+	DisplayServer.virtual_keyboard_hide()
 	if Applinks:
 		Applinks.hide_keyboard()
 
@@ -209,6 +283,7 @@ func _maybe_add_network_load_more():
 	else:
 		btn.custom_minimum_size.y = 60
 	btn.pressed.connect(_on_network_load_more_pressed)
+	btn.gui_input.connect(_on_explicit_gui_input.bind(btn))
 	list_container.add_child(btn)
 	_network_load_more_btn = btn
 
@@ -294,11 +369,12 @@ func _on_import_selected_pressed():
 		if child is SploreCartItem and child.is_selected:
 			selected.append(child.item_data)
 
+
 	if selected.is_empty():
 		btn_import_selected.text = "⚠ None selected"
 		await get_tree().create_timer(1.5).timeout
 		if is_instance_valid(btn_import_selected):
-			btn_import_selected.text = "📥 Import Selected"
+			btn_import_selected.text = "📥 Import"
 		return
 
 	# Load existing favourites so we can append without duplicates
@@ -328,7 +404,7 @@ func _on_import_selected_pressed():
 		btn_import_selected.text = "✓ Already in list"
 		await get_tree().create_timer(1.5).timeout
 		if is_instance_valid(btn_import_selected):
-			btn_import_selected.text = "📥 Import Selected"
+			btn_import_selected.text = "📥 Import"
 		return
 
 	# Append new lines to the file
@@ -357,7 +433,7 @@ func _on_import_selected_pressed():
 		btn_import_selected.text = "❌ Error"
 		await get_tree().create_timer(1.5).timeout
 		if is_instance_valid(btn_import_selected):
-			btn_import_selected.text = "📥 Import Selected"
+			btn_import_selected.text = "📥 Import"
 		return
 
 	for line in new_lines:
@@ -371,4 +447,12 @@ func _on_import_selected_pressed():
 	btn_import_selected.text = "✓ Imported %d!" % new_lines.size()
 	await get_tree().create_timer(2.0).timeout
 	if is_instance_valid(btn_import_selected):
-		btn_import_selected.text = "📥 Import Selected"
+		btn_import_selected.text = "📥 Import"
+
+func _on_clear_selection_pressed():
+	for child in list_container.get_children():
+		if child is SploreCartItem and child.is_selected:
+			child._toggle_selected()
+
+func _on_item_request_move_step(direction: int, item_node):
+	pass

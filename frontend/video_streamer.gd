@@ -427,10 +427,8 @@ func _setup_debug_fps():
 func _on_joy_connection_changed(device: int, connected: bool):
 	if connected:
 		print("Controller connected: ", device)
-		# Force hide Android keyboard to prevent input trapping
-		DisplayServer.virtual_keyboard_hide()
-		# Release any UI focus (like invisible text fields)
-		get_viewport().gui_release_focus()
+		# Release any UI focus only if not in a Godot menu
+		release_input_locks()
 		
 		var arranger = get_tree().root.get_node_or_null("Main/Arranger")
 		if arranger:
@@ -443,8 +441,30 @@ func _on_joy_connection_changed(device: int, connected: bool):
 			arranger.update_controller_state()
 
 func release_input_locks():
-	print("Releasing Input Locks (Focus/Keyboard)")
-	get_viewport().gui_release_focus()
+	var focus_owner = get_viewport().gui_get_focus_owner()
+	print("Releasing Input Locks (Current Focus: ", focus_owner.name if focus_owner else "None", ")")
+	
+	# If we are in a Godot-side menu or editor, we should NOT release focus
+	# just because the keyboard closed or a controller was connected.
+	var is_ui_active = false
+	if focus_owner:
+		var p = focus_owner
+		while p:
+			# Check for common menu/editor patterns in our project
+			if p.name.contains("Editor") or p.name.contains("Importer") or p.name == "OptionsMenu":
+				is_ui_active = true
+				break
+			p = p.get_parent()
+	
+	if not is_ui_active:
+		get_viewport().gui_release_focus()
+		print("  - Not in Godot UI, releasing focus.")
+	else:
+		print("  - In Godot UI, preserving focus.")
+	
+	# ALWAYS clean up the Godot/Android keyboard state.
+	# Even when in Godot UI, failing to do this leaves the Android IME in a "ghost focus"
+	# state that causes any subsequent button press to require 2 clicks to register.
 	DisplayServer.virtual_keyboard_hide()
 
 const SYNC_SEQ = [80, 73, 67, 79, 56, 83, 89, 78, 67, 95, 95] # "PICO8SYNC__"
@@ -914,6 +934,12 @@ static func set_swap_zx_enabled(enabled: bool):
 
 static func get_swap_zx_enabled() -> bool:
 	return swap_zx_enabled
+
+static func get_confirm_button() -> int:
+	return JoyButton.JOY_BUTTON_A if not swap_zx_enabled else JoyButton.JOY_BUTTON_B
+
+static func get_cancel_button() -> int:
+	return JoyButton.JOY_BUTTON_B if not swap_zx_enabled else JoyButton.JOY_BUTTON_A
 
 static func swap_event_button_AB(event: InputEventJoypadButton) -> InputEventJoypadButton:
 	if swap_zx_enabled and not event.get_meta("swapped", false):
@@ -1759,7 +1785,7 @@ func _quit_app():
 func _setup_quit_overlay():
 	# 2. Create Dialog using UIUtils
 	quit_overlay = UIUtils.create_confirm_dialog(
-		self,
+		self ,
 		"Quit Confirmation", # Title (UIUtils might ignore or style)
 		"RETURN TO LAUNCHER?", # Text
 		"YES", # Confirm Label

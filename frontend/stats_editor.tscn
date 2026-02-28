@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cihnqbpmojcg0"]
 
 [ext_resource type="Script" uid="uid://bhgfe8mj1nbwm" path="res://stats_editor.gd" id="1_editor"]
+[ext_resource type="Texture2D" uid="uid://c3dqg0oq8wp1" path="res://icons/adaptive_top.png" id="2_56tni"]
 [ext_resource type="FontFile" uid="uid://btr5i3t6k3xdx" path="res://assets/font/NotoEmoji-Regular.ttf" id="2_emoji"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_opaque"]
@@ -55,6 +56,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+texture = ExtResource("2_56tni")
 expand_mode = 3
 stretch_mode = 6
 
@@ -91,7 +93,7 @@ layout_mode = 2
 text = "   Sort:"
 vertical_alignment = 1
 
-[node name="OptionSort" type="OptionButton" parent="Panel/MarginContainer/VBox/Header/SortButtons" unique_id=44846579]
+[node name="OptionType" type="OptionButton" parent="Panel/MarginContainer/VBox/Header/SortButtons" unique_id=44846579]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2

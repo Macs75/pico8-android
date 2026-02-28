@@ -61,7 +61,7 @@ func _process(delta):
 			_long_press_checking = false
 			
 			if not drag_enabled:
-				item_long_pressed.emit(self)
+				item_long_pressed.emit(self )
 				return
 				
 			# Trigger Drag!
@@ -198,7 +198,7 @@ func _create_drag_data():
 	preview_panel.add_child(hbox)
 	
 	# Return [data, preview]
-	return [ {"source_idx": list_index, "source_item": self}, preview_panel]
+	return [ {"source_idx": list_index, "source_item": self }, preview_panel]
 
 func _can_drop_data(at_position: Vector2, data) -> bool:
 	# Check for auto-scroll
@@ -214,7 +214,7 @@ func _can_drop_data(at_position: Vector2, data) -> bool:
 	# Only accept drops from other items in the same list
 	if data is Dictionary and data.has("source_item"):
 		if data.source_item != self:
-			item_reorder_requested.emit(data.source_item, self)
+			item_reorder_requested.emit(data.source_item, self )
 		return true
 	return false
 
@@ -368,11 +368,8 @@ func _is_action_held() -> bool:
 		
 	# Explicitly check Controller Face Button Bottom (A / Cross)
 	# Check all connected joypads? usually 0 is fine, or check generic
-	if PicoVideoStreamer.get_swap_zx_enabled():
-		if Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_B):
-			return true
-	else:
-		if Input.is_joy_button_pressed(0, JoyButton.JOY_BUTTON_A):
-			return true
+	var button_to_check = PicoVideoStreamer.get_confirm_button()
+	if Input.is_joy_button_pressed(0, button_to_check):
+		return true
 		
 	return false

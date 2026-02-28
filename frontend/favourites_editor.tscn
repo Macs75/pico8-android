@@ -77,7 +77,7 @@ layout_mode = 2
 text = "   Sort:"
 vertical_alignment = 1
 
-[node name="OptionSort" type="OptionButton" parent="Panel/MarginContainer/VBox/Header/SortButtons" unique_id=44846579]
+[node name="OptionType" type="OptionButton" parent="Panel/MarginContainer/VBox/Header/SortButtons" unique_id=44846579]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2

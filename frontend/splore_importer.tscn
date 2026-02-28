@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://wx1shnwy7u8i" path="res://splore_importer.gd" id="1_editor"]
 [ext_resource type="FontFile" uid="uid://btr5i3t6k3xdx" path="res://assets/font/NotoEmoji-Regular.ttf" id="2_emoji"]
+[ext_resource type="Texture2D" uid="uid://c3dqg0oq8wp1" path="res://icons/adaptive_top.png" id="2_yj261"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_opaque"]
 bg_color = Color(0.1, 0.1, 0.1, 1)
@@ -39,6 +40,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+texture = ExtResource("2_yj261")
 expand_mode = 3
 stretch_mode = 6
 
@@ -103,7 +105,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(45, 0)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
-text = "🔍"
+text = " 🔍 "
 
 [node name="HSeparator2" type="HSeparator" parent="Panel/MarginContainer/VBox" unique_id=123456789]
 layout_mode = 2
@@ -131,17 +133,20 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
-text = "✖ Close"
+text = " ✖ Close"
 
-[node name="Control" type="Control" parent="Panel/MarginContainer/VBox/Footer" unique_id=1905794488]
-custom_minimum_size = Vector2(20, 0)
+[node name="BtnClearSelection" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=57242823]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+theme_override_fonts/font = SubResource("FontVariation_bqpnx")
+text = " ⬜ Clear"
 
 [node name="BtnImportSelected" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=57242822]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
-text = "� Import Selected"
+text = " 📥 Import"
 
 [node name="SploreRequest" type="HTTPRequest" parent="." unique_id=748392105]
