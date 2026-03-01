@@ -15,7 +15,7 @@ var display_container: Node2D = null
 @export var zoom_control: Control # This is the main LayoutControls VBox
 @export var zoom_inner_container: Control # This is the ZoomControl HBox unit
 
-var cached_kb_active: bool = false
+var cached_kb_height: int = 0
 var cached_controller_connected: bool = false
 var cached_internal_kb_type: int = -1
 
@@ -44,9 +44,15 @@ signal layout_updated()
 #var tex_mouse_r_pressed = preload("res://assets/btn_mouse_right_pressed.png")
 
 func set_keyboard_active(active: bool):
-	if cached_kb_active != active:
-		cached_kb_active = active
-		dirty = true
+	if active:
+		var h = DisplayServer.virtual_keyboard_get_height()
+		if h > 0:
+			cached_kb_height = h
+			dirty = true
+	else:
+		if cached_kb_height > 0:
+			cached_kb_height = 0
+			dirty = true
 
 func update_controller_state():
 	var new_state = ControllerUtils.is_real_controller_connected()
@@ -300,14 +306,13 @@ func _process(_delta: float) -> void:
 	# Poll keyboard height only (Android specific weirdness often requires this)
 	var real_kb_height = DisplayServer.virtual_keyboard_get_height()
 	
-	var kb_active_now = (real_kb_height > 0)
-	if cached_kb_active != kb_active_now:
-		cached_kb_active = kb_active_now
-		if not cached_kb_active:
+	if cached_kb_height != real_kb_height:
+		cached_kb_height = real_kb_height
+		if real_kb_height == 0:
 			# Restore focus to game loop if keyboard closed
 			if PicoVideoStreamer.instance:
 				PicoVideoStreamer.instance.release_input_locks()
-		_update_layout()
+		_update_layout(real_kb_height)
 		
 	var internal_kb_type = KBMan.get_current_keyboard_type()
 	if internal_kb_type != cached_internal_kb_type:
@@ -315,9 +320,10 @@ func _process(_delta: float) -> void:
 		dirty = true
 
 	if dirty:
-		_update_layout()
+		# Important: Also pass the up-to-date kb height during dirty updates
+		_update_layout(real_kb_height)
 
-func _update_layout():
+func _update_layout(force_kb_height: int = -1):
 	dirty = false
 	var screensize = last_screensize
 	# If for some reason we missed a resize
@@ -398,17 +404,24 @@ func _update_layout():
 
 	if auto_show and not visible:
 		visible = true
+		
 	# Calculate kb_height based on overlap
-	if cached_kb_active:
-		var real_kb_h = DisplayServer.virtual_keyboard_get_height()
+	var real_kb_h = force_kb_height
+	if real_kb_h < 0:
+		real_kb_h = DisplayServer.virtual_keyboard_get_height()
+		
+	if real_kb_h > 0:
 		var screen_bottom = 0
+		var actual_drag_y = PicoVideoStreamer.get_display_drag_offset(is_landscape).y
+		var overlap_padding = 32 * maxScale # Generous padding to trigger shift early
 		
 		if is_landscape:
-			screen_bottom = (screensize.y / 2) + (64 * maxScale)
+			screen_bottom = (screensize.y / 2) + (64 * zoomScale) + actual_drag_y + overlap_padding
 		else:
 			var content_height = target_size.y * maxScale
 			var arr_y = (screensize.y - content_height) / 2 if center_y else 0
-			screen_bottom = arr_y + (140 * maxScale) # 140 = 12 (padding) + 128 (screen)
+			# Target size is 128y. Display starts at 12y local. So it's arr_y + 12*maxScale + 128*zoomScale
+			screen_bottom = arr_y + (12 * maxScale) + (128 * zoomScale) + actual_drag_y + overlap_padding
 		
 		if screen_bottom > (screensize.y - real_kb_h):
 			kb_height = 64
@@ -496,30 +509,32 @@ func _update_layout():
 		# --- Display Drag Logic ---
 		var drag_offset = PicoVideoStreamer.get_display_drag_offset(is_landscape)
 		
-		# 1. Calculate Baseline Position (where the display is with ZERO drag)
-		var target_y_base = 0
+		# 1. Calculate Pure Baseline Position (where the display is with ZERO drag and NO keyboard shift)
+		var pure_target_y_base = 0
 		if not is_landscape:
-			target_y_base = 12
-		if kb_height > 0:
-			target_y_base -= 64
+			pure_target_y_base = 12
 			
-		var baseline_global: Vector2
+		var pure_baseline_global: Vector2
 		if is_landscape:
 			# Landscape is centered by default. 
 			# display_container.centered = true, so its local origin (0,0) is center of display.
 			# Its top-left is -(target_size/2).
-			baseline_global = (Vector2(screensize) / 2.0) - (target_size * zoomScale / 2.0).floor()
+			pure_baseline_global = (Vector2(screensize) / 2.0) - (target_size * zoomScale / 2.0).floor()
 		else:
-			# Portrait: Arranger.position + (0, target_y_base) * baselineScale
-			baseline_global = Vector2(self.position) + Vector2(0, target_y_base) * baselineScale
+			# Portrait: Arranger.position + (0, pure_target_y_base) * baselineScale
+			var pure_extra_space_y = screensize.y - (target_size.y * maxScale)
+			if not center_y:
+				pure_extra_space_y = 0
+			var pure_arranger_pos_y = (pure_extra_space_y / 2.0) - (target_pos.y * maxScale)
+			pure_baseline_global = Vector2(self.position.x, pure_arranger_pos_y) + Vector2(0, pure_target_y_base) * baselineScale
 		
-		# 2. Clamping
+		# 2. Clamping - clamp against PURE baseline so drag state is not corrupted by virtual keyboard popping up
 		# Use zoomScale for the actual visible size of the display
 		var display_size_global = Vector2(128, 128) * zoomScale
 		
-		# We want: 0 <= baseline_global + drag_offset <= screensize - display_size_global
-		var min_offset = - baseline_global
-		var max_offset = Vector2(screensize) - display_size_global - baseline_global
+		# We want: 0 <= pure_baseline_global + drag_offset <= screensize - display_size_global
+		var min_offset = - pure_baseline_global
+		var max_offset = Vector2(screensize) - display_size_global - pure_baseline_global
 		
 		# Add a tiny bit of padding if desired, but 0 is strict screen edges
 		var clamped_global_x = clamp(drag_offset.x, min_offset.x, max_offset.x)
@@ -530,7 +545,11 @@ func _update_layout():
 			PicoVideoStreamer.set_display_drag_offset(Vector2(clamped_global_x, clamped_global_y), is_landscape)
 			drag_offset = PicoVideoStreamer.get_display_drag_offset(is_landscape)
 		
-		# 3. Apply to Visuals
+		# 3. Apply Keyboard Visual Shift and Drag to Visuals
+		var target_y_base = pure_target_y_base
+		if kb_height > 0:
+			target_y_base -= 64
+			
 		var effective_drag = drag_offset / maxScale
 		display_container.position = Vector2(effective_drag.x, target_y_base + effective_drag.y)
 	
