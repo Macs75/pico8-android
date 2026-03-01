@@ -64,10 +64,11 @@ func _ready():
 		print(self.name + ": Disabling PICO-8 Input (Instance found)")
 		if PicoVideoStreamer.instance.has_method("set_input_blocked"):
 			PicoVideoStreamer.instance.set_input_blocked(true)
-		PicoVideoStreamer.instance.set_process_unhandled_input(false)
-		PicoVideoStreamer.instance.set_process_input(false)
 		
 	set_process(true)
+
+func on_close():
+	_on_close()
 
 func _exit_tree():
 	var tree = get_tree()

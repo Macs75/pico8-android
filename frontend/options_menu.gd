@@ -31,6 +31,10 @@ var nodes_hidden: Array[CanvasItem] = []
 
 const PICO8_0_2_7_SIZE = 1640888
 
+var was_confirm_pressed: bool = false
+var was_cancel_pressed: bool = false
+var popup_was_visible: bool = false
+
 func _ready() -> void:
 	# Hide immediately to prevent flash
 	if panel:
@@ -250,6 +254,48 @@ func _ready() -> void:
 
 func _update_layout_deferred():
 	call_deferred("_update_layout")
+
+func _process(_delta):
+	if not is_open:
+		return
+
+	var active_popup = null
+	for opt in [%OptionShowControls, %OptionOrientation, %ShaderSelect, %ThemeSelect]:
+		if opt and opt.get_popup().visible:
+			active_popup = opt.get_popup()
+			break
+			
+	var is_popup_visible = active_popup != null
+	if is_popup_visible:
+		var joy_confirm_button = false
+		var joy_cancel_button = false
+		if Input.get_connected_joypads().size() > 0:
+			var confirm_button = PicoVideoStreamer.get_confirm_button()
+			var cancel_button = PicoVideoStreamer.get_cancel_button()
+			joy_confirm_button = Input.is_joy_button_pressed(0, confirm_button)
+			joy_cancel_button = Input.is_joy_button_pressed(0, cancel_button)
+			
+		if not popup_was_visible and joy_confirm_button:
+			was_confirm_pressed = true
+			
+		if joy_confirm_button and not was_confirm_pressed:
+			var ev = InputEventKey.new()
+			ev.keycode = KEY_ENTER
+			ev.pressed = true
+			Input.parse_input_event(ev)
+			
+			var ev_release = InputEventKey.new()
+			ev_release.keycode = KEY_ENTER
+			ev_release.pressed = false
+			Input.parse_input_event(ev_release)
+			
+		if joy_cancel_button and not was_cancel_pressed:
+			active_popup.hide()
+			
+		was_confirm_pressed = joy_confirm_button
+		was_cancel_pressed = joy_cancel_button
+		
+	popup_was_visible = is_popup_visible
 
 func _update_layout():
 	var viewport_size = get_viewport().get_visible_rect().size
@@ -660,6 +706,12 @@ func _style_option_row(label_btn: Button, toggle: Control, wrapper: Control, fon
 	var y_offset = (reserved_height - child_scaled_height) / 2.0
 	toggle.position.y = y_offset
 
+	# Controller Focus Support: Link label button to the choice/toggle
+	label_btn.focus_mode = Control.FOCUS_ALL
+	toggle.focus_mode = Control.FOCUS_ALL
+	label_btn.focus_neighbor_right = toggle.get_path()
+	toggle.focus_neighbor_left = label_btn.get_path()
+
 	# Special handling for ColorPickerButton to remove text/icon if any default
 	if toggle is ColorPickerButton:
 		toggle.text = ""
@@ -786,9 +838,19 @@ func _input(event: InputEvent) -> void:
 
 			if event.button_index == JoyButton.JOY_BUTTON_A:
 				var focus_owner = get_viewport().gui_get_focus_owner()
-				if focus_owner and focus_owner is Button:
-					focus_owner.pressed.emit()
-					get_viewport().set_input_as_handled()
+				if focus_owner:
+					if focus_owner is OptionButton:
+						focus_owner.show_popup()
+						get_viewport().set_input_as_handled()
+						return
+					elif focus_owner is CheckButton:
+						focus_owner.button_pressed = not focus_owner.button_pressed
+						get_viewport().set_input_as_handled()
+						return
+					elif focus_owner is Button:
+						focus_owner.pressed.emit()
+						get_viewport().set_input_as_handled()
+						return
 			elif event.button_index == JoyButton.JOY_BUTTON_B or event.button_index == JoyButton.JOY_BUTTON_LEFT_SHOULDER:
 				close_menu()
 				get_viewport().set_input_as_handled()
@@ -799,10 +861,12 @@ func _input(event: InputEvent) -> void:
 				_navigate_focus(SIDE_BOTTOM)
 				get_viewport().set_input_as_handled()
 			elif event.button_index == JoyButton.JOY_BUTTON_DPAD_LEFT:
-				_adjust_focused_slider(-1)
+				if not _adjust_focused_slider(-1):
+					_navigate_focus(SIDE_LEFT)
 				get_viewport().set_input_as_handled()
 			elif event.button_index == JoyButton.JOY_BUTTON_DPAD_RIGHT:
-				_adjust_focused_slider(1)
+				if not _adjust_focused_slider(1):
+					_navigate_focus(SIDE_RIGHT)
 				get_viewport().set_input_as_handled()
 				
 	elif event is InputEventJoypadMotion:
@@ -854,10 +918,12 @@ func _update_root_path_label():
 			%LabelRootPath.modulate = Color(0.7, 1.0, 0.7)
 			%ButtonClearRoot.visible = true
 
-func _adjust_focused_slider(direction: int):
+func _adjust_focused_slider(direction: int) -> bool:
 	var focus_owner = get_viewport().gui_get_focus_owner()
 	if focus_owner and focus_owner is HSlider:
 		focus_owner.value += focus_owner.step * direction
+		return true
+	return false
 
 func _update_audio_label(is_stream: bool):
 	if %ButtonAudioBackendLabel:
@@ -883,6 +949,21 @@ func _navigate_focus(side: Side):
 		%ButtonFavourites.grab_focus()
 		return
 		
+	# Try manual neighbor first if set in the property
+	var neighbor_path: NodePath
+	match side:
+		SIDE_LEFT: neighbor_path = current_focus.focus_neighbor_left
+		SIDE_TOP: neighbor_path = current_focus.focus_neighbor_top
+		SIDE_RIGHT: neighbor_path = current_focus.focus_neighbor_right
+		SIDE_BOTTOM: neighbor_path = current_focus.focus_neighbor_bottom
+	
+	if not neighbor_path.is_empty():
+		var manual_neighbor = current_focus.get_node_or_null(neighbor_path)
+		if manual_neighbor and manual_neighbor is Control and manual_neighbor.is_visible_in_tree() and manual_neighbor.focus_mode != Control.FOCUS_NONE:
+			manual_neighbor.grab_focus()
+			return
+
+	# Fallback to automatic finding
 	var neighbor = current_focus.find_valid_focus_neighbor(side)
 	if neighbor:
 		neighbor.grab_focus()
@@ -1037,6 +1118,12 @@ func _style_select_row(label_btn: Button, option_btn: OptionButton, wrapper: Con
 	var child_scaled_height = natural_size.y * scale_factor * 0.6
 	var y_offset = (reserved_height - child_scaled_height) / 2.0
 	option_btn.position.y = y_offset
+
+	# Controller Focus Support: Link label button to the choice/dropdown
+	label_btn.focus_mode = Control.FOCUS_ALL
+	option_btn.focus_mode = Control.FOCUS_ALL
+	label_btn.focus_neighbor_right = option_btn.get_path()
+	option_btn.focus_neighbor_left = label_btn.get_path()
 
 func _apply_scaled_margins(container: Control, dyn_scale: float):
 	if not container: return
