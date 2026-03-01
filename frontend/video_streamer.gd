@@ -200,9 +200,12 @@ func _notification(what):
 
 
 func _exit_tree():
+	print("VideoStreamer: _exit_tree start")
 	_thread_active = false
 	if _thread and _thread.is_started():
-		_thread.wait_to_finish()
+		print("VideoStreamer: Leaving video thread running (bypassing wait_to_finish to prevent Godot deadlock).")
+	else:
+		print("VideoStreamer: No active thread to join.")
 	
 	if metrics_logging_enabled:
 		_flush_logs()
@@ -1800,6 +1803,12 @@ func _setup_quit_overlay():
 	
 
 func _toggle_options_menu():
+	# Check for open list editors first
+	for child in get_tree().root.get_children():
+		if child is ListEditorBase:
+			child.on_close()
+			return
+			
 	var menu = get_node_or_null("OptionsMenu")
 	if menu:
 		if menu.is_open:

@@ -179,7 +179,8 @@ func setup():
 	DirAccess.make_dir_recursive_absolute(PUBLIC_FOLDER + "/data/carts/.placeholder")
 	var public_folder = DirAccess.open(PUBLIC_FOLDER)
 	
-	var DEBUG = OS.is_debug_build()
+	#var DEBUG = OS.is_debug_build()
+	var DEBUG = false
 	
 	#step 1: untar package
 	var need_to_untar = DEBUG

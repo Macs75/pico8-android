@@ -62,7 +62,7 @@ func _ready() -> void:
 		_url_thread_active = true
 		_url_thread.start(_url_pipe_thread_function)
 
-	if OS.is_debug_build() and execution_mode != ExecutionMode.TELNETSSH:
+	if OS.is_debug_build() and execution_mode == ExecutionMode.TELNETSSH:
 		OS.create_process(
 			PicoBootManager.BIN_PATH + "/sh",
 			["-c", 'cd ' + PicoBootManager.APPDATA_FOLDER + '/package; ln -s busybox ash; LD_LIBRARY_PATH=. ./busybox telnetd -l ./ash -F -p 2323']
@@ -336,7 +336,7 @@ func _process(_delta: float) -> void:
 			if Time.get_ticks_msec() > process_check_timer:
 				process_check_timer = Time.get_ticks_msec() + 1000
 				if pico_pid and not OS.is_process_running(pico_pid):
-					# print("PICO-8 Process died! (PID: " + str(pico_pid) + ")")
+					print("PICO-8 Process died! (PID: " + str(pico_pid) + ")")
 					get_tree().quit()
 				
 		RestartState.REQUESTED:
@@ -411,14 +411,12 @@ func _notification(what: int) -> void:
 			resume_pico_process()
 
 func _exit_tree() -> void:
+	print("RunCmd: _exit_tree start")
 	_url_thread_active = false
 	if _url_thread and _url_thread.is_started():
-		# To unblock the pipe_open in the thread if it's waiting
-		var f = FileAccess.open(PIPE_XDG, FileAccess.WRITE)
-		if f:
-			f.store_string("quit-daemon")
-			f.close()
-		_url_thread.wait_to_finish()
+		print("RunCmd: Leaving url thread running (bypassing wait_to_finish to prevent Godot deadlock).")
+	else:
+		print("RunCmd: No active url thread.")
 
 func _url_pipe_thread_function() -> void:
 	print("URL Handler: Thread started")
