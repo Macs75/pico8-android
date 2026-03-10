@@ -68,12 +68,22 @@ func hard_reset_connection():
 		_mutex.unlock()
 
 func hold_connection():
-	print("Holding connection attempts...")
+	print("Video Streamer: Holding connection attempts...")
 	if _mutex:
 		_mutex.lock()
 		_reset_requested = true
-		_pipe_reset_complete = false
 		_connection_allowed = false
+		
+		# If the thread hasn't even connected to the pipes yet, 
+		# we don't need to wait for it to "release" anything.
+		# The launch script can safely proceed with mkfifo.
+		if vid_pipe_id == -1 and in_pipe_id == -1:
+			print("  - Pipes already closed, reset complete immediately.")
+			_pipe_reset_complete = true
+		else:
+			print("  - Pipes active (ID: ", vid_pipe_id, ", ", in_pipe_id, "), waiting for thread to process reset...")
+			_pipe_reset_complete = false
+			
 		_mutex.unlock()
 
 func allow_connection():
@@ -246,9 +256,8 @@ func load_external_shader(shader_name: String) -> Shader:
 	return load(builtin_path)
 
 func _thread_function():
-	print("Video Streamer: Pipe Thread Initiated")
 	# Small initial delay to let shell script finish mkfifo
-	OS.delay_msec(100)
+	OS.delay_msec(200)
 		
 	var buffer: PackedByteArray = PackedByteArray()
 	
@@ -269,11 +278,12 @@ func _thread_function():
 			# Force clean reconnection of pipes (fixes Restart with FIFO)
 			if _applinks_plugin:
 				if vid_pipe_id != -1:
-					print("Pipe: Hard Reset - Closing Video Pipe")
+					print("Pipe Thread: Reset - Closing Video Pipe ", vid_pipe_id)
 					_applinks_plugin.pipe_close(vid_pipe_id)
 					vid_pipe_id = -1
 				
-					print("Pipe: Hard Reset - Closing Input Pipe")
+				if in_pipe_id != -1:
+					print("Pipe Thread: Reset - Closing Input Pipe ", in_pipe_id)
 					_applinks_plugin.pipe_close(in_pipe_id)
 					in_pipe_id = -1
 			
@@ -281,6 +291,7 @@ func _thread_function():
 				_mutex.lock()
 				_pipe_reset_complete = true
 				_mutex.unlock()
+			print("Pipe Thread: Reset Complete flag set.")
 		
 		var can_connect = true
 		if _mutex:

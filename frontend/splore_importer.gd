@@ -494,9 +494,10 @@ func _parse_metadata(rows: Array[String]) -> Dictionary:
 	return cart
 
 func _on_copy_to_folder_pressed():
-	var target_copy_path = PicoBootManager.get_setting("settings", "target_copy_path", "")
-	var current_dir = target_copy_path if not target_copy_path.is_empty() else "/sdcard"
-	DisplayServer.file_dialog_show("Select Target Folder", current_dir, "", false, DisplayServer.FILE_DIALOG_MODE_OPEN_DIR, [], _on_target_dir_selected)
+	if not btn_copy_to_folder.disabled:
+		var target_copy_path = PicoBootManager.get_setting("settings", "target_copy_path", "")
+		var current_dir = target_copy_path if not target_copy_path.is_empty() else "/sdcard"
+		DisplayServer.file_dialog_show("Select Target Folder", current_dir, "", false, DisplayServer.FILE_DIALOG_MODE_OPEN_DIR, [], _on_target_dir_selected)
 
 func _on_target_dir_selected(status: bool, selected_paths: PackedStringArray, _filter_index: int):
 	if status and not selected_paths.is_empty():

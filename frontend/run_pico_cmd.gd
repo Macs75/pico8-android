@@ -195,10 +195,20 @@ func _launch_pico8(target_path: String) -> void:
 	# We perform this ON EVERY LAUNCH to prevent stale regular files or broken permissions
 	if PicoVideoStreamer.instance:
 		# 1. PAUSE Godot connection attempts entirely
-		# This prevents the thread from grabbing the file handle mid-creation
 		PicoVideoStreamer.instance.hold_connection()
 		
-		# 2. Sync Wait (Ensure thread has actually stopped/closed)
+		# 2. POKE pipes to unblock any background threads that might be stuck in JNI pipe_open()
+		# We use OS.create_process (asynchronous) to avoid a second deadlock where Godot 
+		# waits for the poke-shell to finish while the poke-shell wait for a pipe reader.
+		print("URL Handler: Sending asynchronous 'poke' signals to unblock pipes...")
+		var poke_cmd = "cd " + pkg_path + "; " + \
+					  "mkdir -p tmp; " + \
+					  "(timeout 0.2s sh -c 'echo poke > tmp/pico8.vid' >/dev/null 2>&1 || true) & " + \
+					  "(timeout 0.2s sh -c 'cat tmp/pico8.in > /dev/null' >/dev/null 2>&1 || true) & " + \
+					  "(timeout 0.2s sh -c 'echo poke > tmp/xdgopen' >/dev/null 2>&1 || true) &"
+		OS.create_process(PicoBootManager.BIN_PATH + "/sh", ["-c", poke_cmd])
+
+		# 3. Sync Wait (Ensure thread has actually stopped/closed)
 		print("Waiting for Video Streamer to release pipes...")
 		var wait_start = Time.get_ticks_msec()
 		while not PicoVideoStreamer.instance.is_pipe_reset_complete():
