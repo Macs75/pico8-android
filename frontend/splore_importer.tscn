@@ -147,6 +147,6 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
-text = " 📥 Import"
+text = " 📥 Add to 💟"
 
 [node name="SploreRequest" type="HTTPRequest" parent="." unique_id=748392105]

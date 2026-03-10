@@ -374,7 +374,7 @@ func _on_import_selected_pressed():
 		btn_import_selected.text = "⚠ None selected"
 		await get_tree().create_timer(1.5).timeout
 		if is_instance_valid(btn_import_selected):
-			btn_import_selected.text = "📥 Import"
+			btn_import_selected.text = " 📥 Add to 💟"
 		return
 
 	# Load existing favourites so we can append without duplicates
@@ -404,7 +404,7 @@ func _on_import_selected_pressed():
 		btn_import_selected.text = "✓ Already in list"
 		await get_tree().create_timer(1.5).timeout
 		if is_instance_valid(btn_import_selected):
-			btn_import_selected.text = "📥 Import"
+			btn_import_selected.text = " 📥 Add to 💟"
 		return
 
 	# Append new lines to the file
@@ -433,7 +433,7 @@ func _on_import_selected_pressed():
 		btn_import_selected.text = "❌ Error"
 		await get_tree().create_timer(1.5).timeout
 		if is_instance_valid(btn_import_selected):
-			btn_import_selected.text = "📥 Import"
+			btn_import_selected.text = " 📥 Add to 💟"
 		return
 
 	for line in new_lines:
@@ -447,7 +447,7 @@ func _on_import_selected_pressed():
 	btn_import_selected.text = "✓ Imported %d!" % new_lines.size()
 	await get_tree().create_timer(2.0).timeout
 	if is_instance_valid(btn_import_selected):
-		btn_import_selected.text = "📥 Import"
+		btn_import_selected.text = " 📥 Add to 💟"
 
 func _on_clear_selection_pressed():
 	for child in list_container.get_children():
