@@ -1346,11 +1346,13 @@ var _virtual_mouse_mask: int = 0:
 # Long press detection variables
 var touch_down_time: int = 0
 var is_touching: bool = false
+var _touch_started_inside_display: bool = false
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		if event.index > 0:
-			if input_mode == InputMode.TRACKPAD:
+			if input_mode == InputMode.TRACKPAD and not _touch_started_inside_display:
 				if event.index == 1: # Second touch evaluates for right/left click
 					if event.pressed:
 						var screen_height = get_viewport().get_visible_rect().size.y
@@ -1369,6 +1371,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 			
 		if event.pressed:
+			var local_pos = displayContainer.to_local(event.position)
+			_touch_started_inside_display = displayContainer.get_rect().has_point(local_pos)
+			
+			if input_mode == InputMode.MOUSE or _touch_started_inside_display:
+				_update_mouse_from_event(event.position)
+				if _touch_started_inside_display:
+					virtual_cursor_pos = current_screen_pos
+
 			touch_start_pos = event.position
 			touch_last_pos = event.position
 			touch_down_time = Time.get_ticks_msec()
@@ -1391,16 +1401,28 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		touch_last_pos = event.position
 			
-		if input_mode == InputMode.TRACKPAD:
+		if input_mode == InputMode.TRACKPAD and not _touch_started_inside_display:
 			var delta = event.relative * trackpad_sensitivity
 			# Scale delta if needed, for now 1:1 pixel movement
 			virtual_cursor_pos += delta
 			virtual_cursor_pos = virtual_cursor_pos.clamp(Vector2(1, 1), Vector2(126, 126))
+		elif input_mode == InputMode.MOUSE or _touch_started_inside_display:
+			# If we are dragging in hybrid mode, ensure _update_mouse_from_event is called
+			# Actually ScreenDrag often mirrors MouseMotion, but just in case:
+			_update_mouse_from_event(event.position)
+			if _touch_started_inside_display:
+				virtual_cursor_pos = current_screen_pos
 						
 	# Also accept Mouse Button for robustness (and Desktop testing)
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		if input_mode == InputMode.MOUSE:
+		if event.pressed:
+			var local_pos = displayContainer.to_local(event.position)
+			_touch_started_inside_display = displayContainer.get_rect().has_point(local_pos)
+		
+		if input_mode == InputMode.MOUSE or _touch_started_inside_display:
 			_update_mouse_from_event(event.position)
+			if _touch_started_inside_display:
+				virtual_cursor_pos = current_screen_pos
 			
 		if event.pressed:
 			touch_start_pos = event.position
@@ -1412,8 +1434,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_check_swipe(event.position)
 	
 	elif event is InputEventMouseMotion:
-		if input_mode == InputMode.MOUSE:
+		if input_mode == InputMode.MOUSE or _touch_started_inside_display:
 			_update_mouse_from_event(event.position)
+			if _touch_started_inside_display:
+				virtual_cursor_pos = current_screen_pos
 		elif input_mode == InputMode.TRACKPAD and is_touching:
 			var delta = event.relative * trackpad_sensitivity
 			virtual_cursor_pos += delta
@@ -1436,7 +1460,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			send_input(event.unicode)
 			
 	elif event is InputEventMouseButton:
-		if input_mode == InputMode.MOUSE:
+		if input_mode == InputMode.MOUSE or _touch_started_inside_display:
 			var mask = 0
 			var g_mask = event.button_mask
 			# Map Godot Mask to SDL Mask
