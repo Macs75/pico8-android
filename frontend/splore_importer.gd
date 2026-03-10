@@ -53,6 +53,10 @@ func _grab_initial_focus():
 	if input_username:
 		_simulate_line_edit_tap(input_username)
 
+func _close_grab_focus():
+	if btn_close:
+		btn_close.grab_focus()
+
 # ----------------- Virtual Methods -----------------
 
 func _apply_subclass_footer_sizes(dynamic_font_size: int):
@@ -119,12 +123,14 @@ func _set_item_background(item_data) -> void:
 
 func _apply_subclass_static_focus():
 	# Horizontal Search navigation
+	input_username.focus_neighbor_left = btn_copy_to_folder.get_path()
 	input_username.focus_neighbor_right = option_type.get_path()
 	option_type.focus_neighbor_left = input_username.get_path()
 	option_type.focus_neighbor_right = btn_search.get_path()
 	btn_search.focus_neighbor_left = option_type.get_path()
 	
 	# Horizontal Footer navigation
+	btn_close.focus_neighbor_left = btn_search.get_path()
 	btn_close.focus_neighbor_right = btn_clear_selection.get_path()
 	btn_clear_selection.focus_neighbor_left = btn_close.get_path()
 	btn_clear_selection.focus_neighbor_right = btn_import_selected.get_path()
@@ -147,11 +153,12 @@ func _apply_empty_list_boundary_focus():
 
 func _apply_subclass_boundary_focus(last_item: Control):
 	# Link the bottom of the list to the clear/import buttons
-	last_item.focus_neighbor_bottom = btn_clear_selection.get_path()
+	last_item.focus_neighbor_bottom = btn_close.get_path()
 	btn_clear_selection.focus_neighbor_top = last_item.get_path()
 	btn_import_selected.focus_neighbor_top = last_item.get_path()
 	btn_copy_to_folder.focus_neighbor_top = last_item.get_path()
 	btn_close.focus_neighbor_top = last_item.get_path()
+	btn_close.focus_neighbor_left = last_item.get_path()
 
 func _update_focus_for_index(idx: int):
 	super._update_focus_for_index(idx)
@@ -512,7 +519,7 @@ func _on_target_dir_selected(status: bool, selected_paths: PackedStringArray, _f
 		if selected.is_empty():
 			UIUtils.create_message_dialog(self , "None Selected",
 			"No carts selected",
-			"OK")
+			"OK", _close_grab_focus)
 			return
 
 		var success_count = 0
@@ -551,7 +558,7 @@ func _on_target_dir_selected(status: bool, selected_paths: PackedStringArray, _f
 
 		UIUtils.create_message_dialog(self , "Copy Results",
 			"Copied: %d\n Failed %d\n" % [success_count, fail_count],
-			"OK")
+			"OK", _close_grab_focus)
 
 func _on_import_selected_pressed():
 	# Collect all selected cart items from the list
@@ -564,7 +571,7 @@ func _on_import_selected_pressed():
 	if selected.is_empty():
 		UIUtils.create_message_dialog(self , "None Selected",
 		"No carts selected",
-		"OK")
+		"OK", _close_grab_focus)
 		return
 
 	# Load existing favourites so we can append without duplicates
@@ -595,7 +602,7 @@ func _on_import_selected_pressed():
 	if new_lines.is_empty():
 		UIUtils.create_message_dialog(self , "No Action",
 		"✓ Already in list",
-		"OK")
+		"OK", _close_grab_focus)
 		return
 
 	# Append new lines to the file
@@ -606,7 +613,7 @@ func _on_import_selected_pressed():
 		if err != OK:
 			UIUtils.create_message_dialog(self , "Backup Failed",
 				"❌ Could not create backup of favourites.txt (error %d).\nImport aborted." % err,
-				"OK")
+				"OK", _close_grab_focus)
 			return
 
 	# Read existing content
@@ -623,7 +630,7 @@ func _on_import_selected_pressed():
 		printerr("Failed to open favourites file for writing: ", FileAccess.get_open_error())
 		UIUtils.create_message_dialog(self , "Failed",
 			"❌ Could not open favourites.txt for writing.",
-			"OK")
+			"OK", _close_grab_focus)
 		return
 
 	for line in new_lines:
@@ -636,7 +643,7 @@ func _on_import_selected_pressed():
 	print("Imported %d carts to favourites" % new_lines.size())
 	UIUtils.create_message_dialog(self , "Imported carts",
 	"✓ Imported %d!\n Already in list: %d" % [new_lines.size(), already_in_list],
-	"OK")
+	"OK", _close_grab_focus)
 
 func _on_clear_selection_pressed():
 	for child in list_container.get_children():
