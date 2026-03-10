@@ -24,6 +24,7 @@ var is_process_suspended: bool = false
 # URL Handler Thread
 var _url_thread: Thread
 var _url_thread_active: bool = false
+var _xdg_url_connection_allowed: bool = false
 var PIPE_XDG = PicoBootManager.APPDATA_FOLDER + "/package/tmp/xdgopen"
 
 func _ready() -> void:
@@ -206,16 +207,27 @@ func _launch_pico8(target_path: String) -> void:
 				print("Pipe Release Timeout! Proceeding anyway...")
 				break
 		print("Pipes released by Godot.")
+	
+	_xdg_url_connection_allowed = false
+	print("URL Handler: Suspended connection attempts.")
 
 	print("Recreating pipes from Godot...")
 	# Unconditional delete and recreate
-	var mkfifo_cmd = "cd " + pkg_path + ";LD_LIBRARY_PATH=. ./busybox mkdir -p tmp; rm -f tmp/pico8.vid tmp/pico8.in; LD_LIBRARY_PATH=. ./busybox mkfifo tmp/pico8.vid tmp/pico8.in; chmod 666 tmp/pico8.vid tmp/pico8.in"
-	OS.execute(PicoBootManager.BIN_PATH + "/sh", ["-c", mkfifo_cmd])
+	# We "poke" xdgopen by redirecting nothing to it; this unblocks any Godot thread 
+	# stuck in PipeReader.open() so it can loop and see the _xdg_url_connection_allowed = false flag.
+	var mkfifo_cmd = "cd " + pkg_path + ";LD_LIBRARY_PATH=. ./busybox mkdir -p tmp; (./busybox timeout 0.1s ./busybox sh -c \"echo poke > tmp/xdgopen\" || true); rm -f tmp/pico8.vid tmp/pico8.in tmp/xdgopen; LD_LIBRARY_PATH=. ./busybox mkfifo tmp/pico8.vid tmp/pico8.in tmp/xdgopen; chmod 666 tmp/pico8.vid tmp/pico8.in tmp/xdgopen"
+	#print("Recreating pipes with command: ", mkfifo_cmd)
+	var pipe_res = []
+	var pipe_err = OS.execute(PicoBootManager.BIN_PATH + "/sh", ["-c", mkfifo_cmd], pipe_res)
+	print("Pipe recreation finished with exit code %d. Output: %s" % [pipe_err, pipe_res])
 	
 	# 4. Resume Godot connection attempts
 	if PicoVideoStreamer.instance:
 		print("Resuming Godot connection attempts...")
 		PicoVideoStreamer.instance.allow_connection()
+	
+	_xdg_url_connection_allowed = true
+	print("URL Handler: Resumed connection attempts.")
 
 	var cmdline = env_setup + extra_bind_export + root_bind_export + bbs_bind_export + 'cd ' + pkg_path + '; LD_LIBRARY_PATH=. ./busybox ash start_pico_proot.sh' + run_arg + ' >' + PicoBootManager.PUBLIC_FOLDER + '/logs/pico_out.txt 2>' + PicoBootManager.PUBLIC_FOLDER + "/logs/pico_err.txt"
 	
@@ -421,8 +433,14 @@ func _exit_tree() -> void:
 func _url_pipe_thread_function() -> void:
 	print("URL Handler: Thread started")
 	while _url_thread_active:
+		if not _xdg_url_connection_allowed:
+			OS.delay_msec(200)
+			continue
+			
+		# print("URL Handler: Waiting for writer on ", PIPE_XDG, "...")
 		var pipe_id = Applinks.pipe_open(PIPE_XDG, 0) # Mode 0 = READ
 		if pipe_id != -1:
+			print("URL Handler: Writer connected!")
 			# pipe_read blocks until at least 1 byte is available or writer closes
 			var data = Applinks.pipe_read(pipe_id, 1024)
 			if data.size() > 0:
@@ -441,6 +459,7 @@ func _url_pipe_thread_function() -> void:
 			Applinks.pipe_close(pipe_id)
 		else:
 			# Open failed (not found or already opened?)
+			print("URL Handler: Failed to open ", PIPE_XDG, " - Retrying in 500ms")
 			OS.delay_msec(500)
 
 func suspend_pico_process() -> void:
