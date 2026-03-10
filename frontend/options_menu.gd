@@ -894,9 +894,6 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 
 func _on_select_root_pressed():
-	if OS.get_name() == "Android":
-		pass
-	
 	var current_dir = custom_root_path if not custom_root_path.is_empty() else "/sdcard"
 	DisplayServer.file_dialog_show("Select Root Folder", current_dir, "", false, DisplayServer.FILE_DIALOG_MODE_OPEN_DIR, [], _on_root_dir_selected)
 
@@ -1429,7 +1426,6 @@ func load_config():
 			%ButtonAudioBackendLabel.disabled = true
 
 	# Apply Settings to VideoStreamer and UI
-	custom_root_path = custom_root_path # Redundant but clear
 	_update_root_path_label()
 	
 	if %ToggleAudioBackend:

@@ -4,6 +4,22 @@
 [ext_resource type="Texture2D" uid="uid://c3dqg0oq8wp1" path="res://icons/adaptive_top.png" id="2_2u5jd"]
 [ext_resource type="FontFile" uid="uid://btr5i3t6k3xdx" path="res://assets/font/NotoEmoji-Regular.ttf" id="2_emoji"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
+bg_color = Color(0.15, 0.15, 0.15, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.45, 0.45, 0.45, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+content_margin_left = 10
+content_margin_right = 10
+content_margin_top = 10
+content_margin_bottom = 10
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_opaque"]
 bg_color = Color(0.1, 0.1, 0.1, 1)
 
@@ -11,11 +27,11 @@ bg_color = Color(0.1, 0.1, 0.1, 1)
 
 [sub_resource type="FontVariation" id="FontVariation_emoji_offset"]
 base_font = ExtResource("2_emoji")
-baseline_offset = -0.16
 
 [sub_resource type="FontVariation" id="FontVariation_bqpnx"]
 fallbacks = Array[Font]([SubResource("FontVariation_emoji_offset")])
 base_font = SubResource("FontVariation_default")
+baseline_offset = 0.18
 spacing_space = -4
 
 [node name="FavouritesEditor" type="CanvasLayer" unique_id=1922155292]
@@ -123,6 +139,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 text = "✖ Close"
 
 [node name="BtnSave" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=57242822]
@@ -130,6 +147,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 text = "💾 Save"
 
 [node name="BtnShortcut" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=57242823]
@@ -137,4 +155,5 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 text = "🔗 New Shortcut"

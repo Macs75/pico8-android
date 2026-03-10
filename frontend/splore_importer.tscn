@@ -7,15 +7,32 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_opaque"]
 bg_color = Color(0.1, 0.1, 0.1, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
+bg_color = Color(0.15, 0.15, 0.15, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.45, 0.45, 0.45, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+content_margin_left = 10
+content_margin_right = 10
+content_margin_top = 10
+content_margin_bottom = 10
+
 [sub_resource type="FontVariation" id="FontVariation_default"]
 
 [sub_resource type="FontVariation" id="FontVariation_emoji_offset"]
 base_font = ExtResource("2_emoji")
-baseline_offset = -0.16
+
 
 [sub_resource type="FontVariation" id="FontVariation_bqpnx"]
 fallbacks = Array[Font]([SubResource("FontVariation_emoji_offset")])
 base_font = SubResource("FontVariation_default")
+baseline_offset = 0.18
 spacing_space = -4
 
 [node name="SploreImporter" type="CanvasLayer" unique_id=1922155292]
@@ -127,26 +144,38 @@ layout_mode = 2
 [node name="Footer" type="HBoxContainer" parent="Panel/MarginContainer/VBox" unique_id=2134186056]
 layout_mode = 2
 alignment = 1
+theme_override_constants/separation = 6
 
 [node name="BtnClose" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=314931133]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
-text = " ✖ Close"
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "✖ Close"
 
 [node name="BtnClearSelection" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=57242823]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
-text = " ⬜ Clear"
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "⬜ Clear"
 
 [node name="BtnImportSelected" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=57242822]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 theme_override_fonts/font = SubResource("FontVariation_bqpnx")
-text = " 📥 Add to 💟"
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "Add to 💟"
+
+[node name="BtnCopyToFolder" type="Button" parent="Panel/MarginContainer/VBox/Footer" unique_id=57242824]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme_override_fonts/font = SubResource("FontVariation_bqpnx")
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "Copy to 📁"
 
 [node name="SploreRequest" type="HTTPRequest" parent="." unique_id=748392105]

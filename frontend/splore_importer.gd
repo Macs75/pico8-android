@@ -6,6 +6,7 @@ class_name SploreImporter
 @onready var option_type: OptionButton = %OptionType
 @onready var btn_search: Button = %BtnSearch
 @onready var btn_import_selected: Button = %BtnImportSelected
+@onready var btn_copy_to_folder: Button = %BtnCopyToFolder
 @onready var btn_clear_selection: Button = %BtnClearSelection
 @onready var splore_request: HTTPRequest = $SploreRequest
 
@@ -18,11 +19,13 @@ func _ready():
 	# Connect UI Signals
 	btn_search.pressed.connect(_on_search_pressed)
 	btn_import_selected.pressed.connect(_on_import_selected_pressed)
+	btn_copy_to_folder.pressed.connect(_on_copy_to_folder_pressed)
 	btn_clear_selection.pressed.connect(_on_clear_selection_pressed)
 	
 	btn_search.gui_input.connect(_on_explicit_gui_input.bind(btn_search))
 	btn_clear_selection.gui_input.connect(_on_explicit_gui_input.bind(btn_clear_selection))
 	btn_import_selected.gui_input.connect(_on_explicit_gui_input.bind(btn_import_selected))
+	btn_copy_to_folder.gui_input.connect(_on_explicit_gui_input.bind(btn_copy_to_folder))
 	
 	# Listen for Enter key on the LineEdit to trigger search
 	input_username.text_submitted.connect(func(_text): _on_search_pressed())
@@ -33,6 +36,8 @@ func _ready():
 		# Trigger the click simulation automatically on focus
 		_simulate_line_edit_tap(input_username)
 	)
+
+	_load_items()
 
 func _on_username_focus_exited():
 	DisplayServer.virtual_keyboard_hide()
@@ -52,13 +57,21 @@ func _grab_initial_focus():
 
 func _apply_subclass_footer_sizes(dynamic_font_size: int):
 	# Footer Scaling
+	if btn_close:
+		btn_close.add_theme_font_size_override("font_size", dynamic_font_size)
+		btn_close.custom_minimum_size.y = dynamic_font_size * 1.5
+			
 	if btn_import_selected:
 		btn_import_selected.add_theme_font_size_override("font_size", dynamic_font_size)
-		btn_import_selected.custom_minimum_size.y = dynamic_font_size * 2.0
+		btn_import_selected.custom_minimum_size.y = dynamic_font_size * 1.5
 	
+	if btn_copy_to_folder:
+		btn_copy_to_folder.add_theme_font_size_override("font_size", dynamic_font_size)
+		btn_copy_to_folder.custom_minimum_size.y = dynamic_font_size * 1.5
+
 	if btn_clear_selection:
 		btn_clear_selection.add_theme_font_size_override("font_size", dynamic_font_size)
-		btn_clear_selection.custom_minimum_size.y = dynamic_font_size * 2.0
+		btn_clear_selection.custom_minimum_size.y = dynamic_font_size * 1.5
 		
 	# Search Row Scaling
 	if label_user:
@@ -85,7 +98,8 @@ func _on_item_action(item_node):
 		item_node._toggle_selected()
 
 func _load_items(_force_reload: bool = false):
-	pass
+	if _current_username.is_empty():
+		_load_local_bbs_carts()
 
 func _load_items_from_source() -> Array:
 	return _all_items
@@ -115,24 +129,28 @@ func _apply_subclass_static_focus():
 	btn_clear_selection.focus_neighbor_left = btn_close.get_path()
 	btn_clear_selection.focus_neighbor_right = btn_import_selected.get_path()
 	btn_import_selected.focus_neighbor_left = btn_clear_selection.get_path()
-	btn_import_selected.focus_neighbor_right = input_username.get_path()
+	btn_import_selected.focus_neighbor_right = btn_copy_to_folder.get_path()
+	btn_copy_to_folder.focus_neighbor_left = btn_import_selected.get_path()
+	btn_copy_to_folder.focus_neighbor_right = input_username.get_path()
 	
 	# Upward navigation from Footer
 	btn_close.focus_neighbor_top = input_username.get_path()
-	btn_clear_selection.focus_neighbor_top = option_type.get_path()
+	btn_clear_selection.focus_neighbor_top = btn_search.get_path()
 	btn_import_selected.focus_neighbor_top = btn_search.get_path()
+	btn_copy_to_folder.focus_neighbor_top = btn_search.get_path()
 
 func _apply_empty_list_boundary_focus():
 	# Downward navigation from Search to Footer when list is empty
 	input_username.focus_neighbor_bottom = btn_close.get_path()
-	option_type.focus_neighbor_bottom = btn_clear_selection.get_path()
-	btn_search.focus_neighbor_bottom = btn_import_selected.get_path()
+	option_type.focus_neighbor_bottom = btn_close.get_path()
+	btn_search.focus_neighbor_bottom = btn_close.get_path()
 
 func _apply_subclass_boundary_focus(last_item: Control):
 	# Link the bottom of the list to the clear/import buttons
 	last_item.focus_neighbor_bottom = btn_clear_selection.get_path()
 	btn_clear_selection.focus_neighbor_top = last_item.get_path()
 	btn_import_selected.focus_neighbor_top = last_item.get_path()
+	btn_copy_to_folder.focus_neighbor_top = last_item.get_path()
 	btn_close.focus_neighbor_top = last_item.get_path()
 
 func _update_focus_for_index(idx: int):
@@ -185,7 +203,9 @@ func _on_search_pressed():
 	_current_offset = 0
 
 	_all_items = []
-	
+	# Once an online search is performed the local list is gone for this dialog session.
+	if btn_copy_to_folder:
+		btn_copy_to_folder.disabled = true
 	_fetch_page(username, type_str, 0)
 
 func _on_type_selected(index: int):
@@ -295,6 +315,110 @@ func _on_network_load_more_pressed():
 	_fetch_page(_current_username, _current_type, _current_offset)
 
 
+func _load_local_bbs_carts():
+	print("Loading local BBS carts via busybox...")
+	btn_search.disabled = true
+	btn_search.text = "⏳"
+
+	_all_items = []
+	list_container.get_children().map(func(c): c.queue_free())
+	current_items.clear()
+
+	# Start background thread to avoid blocking UI during OS.execute
+	WorkerThreadPool.add_task(_worker_load_local_carts.bind())
+
+func _worker_load_local_carts():
+	var bbs_path = MetadataCache.get_pico8_data_path()
+	
+	# Fallback if no busybox (e.g., Windows test environment)
+	if OS.get_name() == "Windows":
+		call_deferred("_finalize_local_carts_load", [])
+		return
+		
+	# Command: ls -1t /path/to/bbs/*/*.nfo | head -n 100
+	# We use the system sh to expand the wildcards correctly.
+	var cmd = "ls -1t " + bbs_path + "*/*.nfo | head -n 100"
+	print("Executing simple query: ", cmd)
+	
+	var output = []
+	var exit_code = OS.execute("/system/bin/sh", ["-c", cmd], output)
+	
+	print("Query finished with exit code %d." % exit_code)
+	
+	if exit_code != 0 or output.is_empty() or output[0].is_empty():
+		print("Simple query returned no results.")
+		call_deferred("_finalize_local_carts_load", [])
+		return
+		
+	var files = Array(output[0].split("\n"))
+	# Filter out empty strings
+	files = files.filter(func(f): return not f.strip_edges().is_empty())
+	
+	# Safety sort in case system ls -t behaves unexpectedly across multiple globs
+	#files.sort_custom(func(a, b):
+	#	return FileAccess.get_modified_time(a) > FileAccess.get_modified_time(b)
+	#)
+	
+	var unique_basenames = {}
+	var selected_paths = []
+	
+	for file in files:
+		file = file.strip_edges()
+		if file.is_empty(): continue
+		
+		# Deduplication logic
+		var filename = file.get_file()
+		var basename = filename.trim_suffix(".nfo")
+		if basename.begins_with("temp-"):
+			basename = basename.trim_prefix("temp-")
+			
+		if not unique_basenames.has(basename):
+			unique_basenames[basename] = true
+			selected_paths.append(file)
+			
+			if selected_paths.size() >= 50:
+				break
+				
+	# Back to main thread to populate UI
+	call_deferred("_finalize_local_carts_load", selected_paths)
+
+func _finalize_local_carts_load(nfo_paths: Array):
+	var carts = []
+	for path in nfo_paths:
+		var nfo_data = MetadataCache._parse_nfo(path)
+		if nfo_data.is_empty(): continue
+		
+		var cart = {
+			"post_id": nfo_data.get("lid", ""),
+			"title": nfo_data.get("title", "Unknown"),
+			"author": nfo_data.get("author", "Unknown"),
+			"basename": nfo_data.get("mid", ""), # Usually mid
+			"target_path": path # Save path just in case
+		}
+		
+		# Look for thumbnail: same folder, [lid].p8.png
+		if not cart["post_id"].is_empty():
+			var dir_path = path.get_base_dir()
+			var png_path
+			if cart["basename"].is_valid_int() and not cart["post_id"].is_valid_int():
+				png_path = dir_path.path_join(cart["basename"] + ".p8.png")
+			else:
+				png_path = dir_path.path_join(cart["post_id"] + ".p8.png")
+			if FileAccess.file_exists(png_path):
+				var img = Image.new()
+				if img.load(png_path) == OK:
+					cart["thumbnail"] = ImageTexture.create_from_image(img)
+					
+		carts.append(cart)
+		
+	_all_items = carts
+	_current_offset = carts.size()
+	
+	btn_search.disabled = false
+	btn_search.text = "🔍"
+	_load_data()
+
+
 # ---- Steganography Decoder ----
 # The Splore PNG is a 1024x(N*136) image:
 #   - 8 columns of 128px-wide cart thumbnails
@@ -362,6 +486,73 @@ func _parse_metadata(rows: Array[String]) -> Dictionary:
 	cart["basename"] = rows[4] if rows.size() > 4 else ""
 	return cart
 
+func _on_copy_to_folder_pressed():
+	var target_copy_path = PicoBootManager.get_setting("settings", "target_copy_path", "")
+	var current_dir = target_copy_path if not target_copy_path.is_empty() else "/sdcard"
+	DisplayServer.file_dialog_show("Select Target Folder", current_dir, "", false, DisplayServer.FILE_DIALOG_MODE_OPEN_DIR, [], _on_target_dir_selected)
+
+func _on_target_dir_selected(status: bool, selected_paths: PackedStringArray, _filter_index: int):
+	if status and not selected_paths.is_empty():
+		var raw_path = selected_paths[0]
+		# Sanitize path using BootManager logic
+		var target_copy_path = PicoBootManager.sanitize_uri(raw_path)
+		
+		# Extra cleanup for redundancy
+		if target_copy_path.begins_with("file://"):
+			target_copy_path = target_copy_path.replace("file://", "")
+
+		PicoBootManager.set_setting("settings", "target_copy_path", target_copy_path)
+
+		# copy carts to target_copy_path
+		var selected: Array = []
+		for child in list_container.get_children():
+			if child is SploreCartItem and child.is_selected:
+				selected.append(child.item_data)
+		
+		if selected.is_empty():
+			UIUtils.create_message_dialog(self , "None Selected",
+			"No carts selected",
+			"OK")
+			return
+
+		var success_count = 0
+		var fail_count = 0
+
+		for cart in selected:
+			var source_path = ""
+			var dest_filename = ""
+
+			# --- Path resolution for LOCAL carts ---
+			# Local carts store the .nfo path in "target_path"
+			if cart.has("target_path"):
+				var nfo_path: String = cart["target_path"]
+				var dir_path = nfo_path.get_base_dir()
+				var post_id = cart.get("post_id", "")
+				var basename = cart.get("basename", "")
+
+				# Mirror the PNG path logic from _finalize_local_carts_load
+				var png_path = ""
+				if basename.is_valid_int() and not post_id.is_valid_int():
+					png_path = dir_path.path_join(basename + ".p8.png")
+				else:
+					png_path = dir_path.path_join(post_id + ".p8.png")
+
+				if FileAccess.file_exists(png_path):
+					source_path = png_path
+					dest_filename = png_path.get_file()
+
+			var dest_path = target_copy_path.path_join(dest_filename)
+			var err = DirAccess.copy_absolute(source_path, dest_path)
+			if err == OK:
+				success_count += 1
+			else:
+				printerr("SploreImporter: copy failed %s -> %s (err %d)" % [source_path, dest_path, err])
+				fail_count += 1
+
+		UIUtils.create_message_dialog(self , "Copy Results",
+			"Copied: %d\n Failed %d\n" % [success_count, fail_count],
+			"OK")
+
 func _on_import_selected_pressed():
 	# Collect all selected cart items from the list
 	var selected: Array = []
@@ -371,10 +562,9 @@ func _on_import_selected_pressed():
 
 
 	if selected.is_empty():
-		btn_import_selected.text = "⚠ None selected"
-		await get_tree().create_timer(1.5).timeout
-		if is_instance_valid(btn_import_selected):
-			btn_import_selected.text = " 📥 Add to 💟"
+		UIUtils.create_message_dialog(self , "None Selected",
+		"No carts selected",
+		"OK")
 		return
 
 	# Load existing favourites so we can append without duplicates
@@ -385,9 +575,11 @@ func _on_import_selected_pressed():
 
 	# Build new lines for selected carts not already in favourites
 	var new_lines: Array[String] = []
+	var already_in_list: int = 0
 	for cart in selected:
 		var post_id = cart.get("post_id", "")
 		if post_id.is_empty() or existing_ids.has(post_id):
+			already_in_list += 1
 			continue # Skip duplicates
 		# Format: |cart_id|key|pid|author|filename|name
 		# cart_id = post_id, key = basename, pid = "", author, filename (versioned), name = title
@@ -401,10 +593,9 @@ func _on_import_selected_pressed():
 		new_lines.append(line)
 
 	if new_lines.is_empty():
-		btn_import_selected.text = "✓ Already in list"
-		await get_tree().create_timer(1.5).timeout
-		if is_instance_valid(btn_import_selected):
-			btn_import_selected.text = " 📥 Add to 💟"
+		UIUtils.create_message_dialog(self , "No Action",
+		"✓ Already in list",
+		"OK")
 		return
 
 	# Append new lines to the file
@@ -430,10 +621,9 @@ func _on_import_selected_pressed():
 	var file = FileAccess.open(path, FileAccess.WRITE)
 	if not file:
 		printerr("Failed to open favourites file for writing: ", FileAccess.get_open_error())
-		btn_import_selected.text = "❌ Error"
-		await get_tree().create_timer(1.5).timeout
-		if is_instance_valid(btn_import_selected):
-			btn_import_selected.text = " 📥 Add to 💟"
+		UIUtils.create_message_dialog(self , "Failed",
+			"❌ Could not open favourites.txt for writing.",
+			"OK")
 		return
 
 	for line in new_lines:
@@ -444,10 +634,9 @@ func _on_import_selected_pressed():
 
 	_is_dirty = true # Triggers restart_pico8() on close, like the Favourites editor
 	print("Imported %d carts to favourites" % new_lines.size())
-	btn_import_selected.text = "✓ Imported %d!" % new_lines.size()
-	await get_tree().create_timer(2.0).timeout
-	if is_instance_valid(btn_import_selected):
-		btn_import_selected.text = " 📥 Add to 💟"
+	UIUtils.create_message_dialog(self , "Imported carts",
+	"✓ Imported %d!\n Already in list: %d" % [new_lines.size(), already_in_list],
+	"OK")
 
 func _on_clear_selection_pressed():
 	for child in list_container.get_children():
