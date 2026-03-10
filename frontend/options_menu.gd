@@ -780,10 +780,12 @@ func close_menu():
 	var tween = create_tween()
 	tween.tween_property(panel, "position:x", -panel.size.x, ANIM_DURATION).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	
-	# Release focus
-	var focus_owner = get_viewport().gui_get_focus_owner()
-	if focus_owner:
-		focus_owner.release_focus()
+	# Release focus, but not if the controller dialog is taking over
+	# (release_focus() causes Godot to auto-assign to BtnControlsToggle otherwise)
+	if not is_instance_valid(connected_controllers_dialog_instance):
+		var focus_owner = get_viewport().gui_get_focus_owner()
+		if focus_owner:
+			focus_owner.release_focus()
 
 	# Re-enable game input
 	if PicoVideoStreamer.instance:
@@ -835,6 +837,10 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventJoypadButton:
 		if event.pressed:
 			event = PicoVideoStreamer.swap_event_button_AB(event)
+			
+			# If the controllers dialog is open, let it handle all navigation
+			if is_instance_valid(connected_controllers_dialog_instance):
+				return
 
 			if event.button_index == JoyButton.JOY_BUTTON_A:
 				var focus_owner = get_viewport().gui_get_focus_owner()

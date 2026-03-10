@@ -3,13 +3,7 @@ extends Control
 @onready var container = %VBoxContainer
 @onready var close_btn = %ButtonClose
 
-@onready var test_popup = %TestPopup
-@onready var button_test_label = %ResultLabel
-@onready var axis_test_label = %ResultLabel2
-@onready var key_test_label = %ResultLabel3
-@onready var close_test_btn = %CloseTestBtn
-var test_device_id: int = -1
-var last_event_time: int = 0
+var base_scale_factor: float = 1.0
 
 func _ready() -> void:
 	# Enforce opaque background
@@ -28,20 +22,38 @@ func _ready() -> void:
 
 	close_btn.pressed.connect(queue_free)
 	
-	# Connect Test Popup Close Button
-	if close_test_btn:
-		close_test_btn.pressed.connect(func():
-			test_popup.visible = false
-			test_device_id = -1
-			if PicoVideoStreamer.instance:
-				PicoVideoStreamer.instance.set_input_blocked(false)
-		)
-	
 	get_tree().root.size_changed.connect(_fit_to_screen)
 	_populate_list()
 	
 	# Initial fit
 	call_deferred("_fit_to_screen")
+	
+	# Block PICO-8 input while dialog is active
+	if PicoVideoStreamer.instance:
+		PicoVideoStreamer.instance.set_input_blocked(true)
+	
+	# Grab focus after layout settles
+	call_deferred("_grab_initial_focus")
+
+func _grab_initial_focus():
+	await get_tree().process_frame
+	_grab_focus_on_first_element()
+
+func _grab_focus_on_first_element() -> void:
+	# Release any externally-held focus (e.g. ButtonConnectedControllers from the tap that opened us)
+	var current_focus = get_viewport().gui_get_focus_owner()
+	if current_focus and not is_ancestor_of(current_focus) and current_focus != self:
+		current_focus.release_focus()
+	
+	# Skip invisible children — get_child(0) is always the hidden %RowTemplate
+	var target: Control = null
+	for child in container.get_children():
+		if child.visible and child.has_node("RoleOption"):
+			target = child.get_node("RoleOption")
+			break
+	if not target:
+		target = close_btn
+	target.grab_focus()
 
 func _exit_tree():
 	if PicoVideoStreamer.instance:
@@ -187,81 +199,97 @@ func _export_mapping(device_id: int):
 		print("Failed to open mapping file for writing: ", path)
 
 
+var controller_test_dialog_scene = preload("res://controller_test_dialog.tscn")
+
 func _show_test_popup(device_id: int):
-	test_device_id = device_id
-	test_popup.visible = true
-	button_test_label.text = "Waiting..."
-	axis_test_label.text = ""
-	key_test_label.text = ""
-	last_event_time = 0
+	var test_dialog = controller_test_dialog_scene.instantiate()
+	get_tree().root.add_child(test_dialog)
+	test_dialog.setup(device_id)
+
+var popup_was_visible: bool = false
+var was_confirm_pressed: bool = false
+var was_cancel_pressed: bool = false
+
+func _process(_delta):
+	# Handle confirm/cancel when an OptionButton popup is open
+	if not visible:
+		return
+		
+	var focus_owner = get_viewport().gui_get_focus_owner()
+	if not (focus_owner is OptionButton and focus_owner.get_popup().visible):
+		popup_was_visible = false
+		was_confirm_pressed = false
+		was_cancel_pressed = false
+		return
 	
-	# Adjust font sizes for small screens
-	var screen_size = get_viewport().get_visible_rect().size
-	var font_size = clamp(int(min(screen_size.x, screen_size.y) * 0.05), 12, 24)
+	var joypads = Input.get_connected_joypads()
+	if joypads.is_empty():
+		popup_was_visible = false
+		return
 	
-	button_test_label.add_theme_font_size_override("font_size", font_size)
-	axis_test_label.add_theme_font_size_override("font_size", font_size)
-	key_test_label.add_theme_font_size_override("font_size", font_size)
+	var confirm_btn = PicoVideoStreamer.get_confirm_button()
+	var cancel_btn = PicoVideoStreamer.get_cancel_button()
+	var joy_confirm = Input.is_joy_button_pressed(0, confirm_btn)
+	var joy_cancel = Input.is_joy_button_pressed(0, cancel_btn)
 	
-	# Also resize static headers
-	var header = test_popup.get_node_or_null("VBoxContainer/Header")
-	if header: header.add_theme_font_size_override("font_size", font_size)
+	if not popup_was_visible and joy_confirm:
+		was_confirm_pressed = true
 	
-	var subheader = test_popup.get_node_or_null("VBoxContainer/SubHeader")
-	if subheader: subheader.add_theme_font_size_override("font_size", int(font_size * 0.8))
+	if joy_confirm and not was_confirm_pressed:
+		var ev = InputEventKey.new()
+		ev.keycode = KEY_ENTER
+		ev.pressed = true
+		Input.parse_input_event(ev)
+		var ev_r = InputEventKey.new()
+		ev_r.keycode = KEY_ENTER
+		ev_r.pressed = false
+		Input.parse_input_event(ev_r)
+		
+	if joy_cancel and not was_cancel_pressed:
+		focus_owner.get_popup().hide()
 	
-	# Force re-scale to fit new content size
-	call_deferred("_fit_to_screen")
-	
-	if PicoVideoStreamer.instance:
-		PicoVideoStreamer.instance.set_input_blocked(true)
-	# Helper label is static in scene now
+	was_confirm_pressed = joy_confirm
+	was_cancel_pressed = joy_cancel
+	popup_was_visible = true
 
 func _input(event):
-	if test_popup and is_instance_valid(test_popup) and test_popup.visible:
-		if event is InputEventScreenTouch or event is InputEventScreenDrag or event is InputEventMouse:
+	# Confirm/Cancel button handling on focused elements
+	if visible and event is InputEventJoypadButton and event.pressed:
+		event = PicoVideoStreamer.swap_event_button_AB(event)
+		
+		var confirm_btn = PicoVideoStreamer.get_confirm_button()
+		var cancel_btn = PicoVideoStreamer.get_cancel_button()
+		var focus_owner = get_viewport().gui_get_focus_owner()
+		
+		if event.button_index == confirm_btn:
+			if focus_owner and is_ancestor_of(focus_owner):
+				if focus_owner is OptionButton:
+					focus_owner.show_popup()
+					get_viewport().set_input_as_handled()
+					return
+				elif focus_owner is Button:
+					focus_owner.pressed.emit()
+					get_viewport().set_input_as_handled()
+					return
+		elif event.button_index == cancel_btn:
+			queue_free()
+			get_viewport().set_input_as_handled()
 			return
-			
-		# Allow InputEventKey from ANY device to pass through for debugging (to catch virtual keyboard inputs)
-		# For limits/buttons, we still restrict to the selected device to avoid noise
-		var is_key_event = event is InputEventKey
-		if event.device == test_device_id or is_key_event:
-			if last_event_time == 0:
-				button_test_label.text = ""
-			# Calculate and print delta
-			var now = Time.get_ticks_msec()
-			var delta = now - last_event_time
-						
-			# Helper to safely name ID
-			var _get_dev_name = func(id):
-				if id in Input.get_connected_joypads():
-					var n = Input.get_joy_name(id)
-					if n.length() > 15: return n.left(15) + ".."
-					return n
-				return "Non-Joypad"
-
-			if event is InputEventJoypadButton and event.pressed:
-				last_event_time = now
-				button_test_label.text = "JoyBtn %d->b%d [ID: %d - %s]" % [event.button_index, event.button_index, event.device, _get_dev_name.call(event.device)]
-				if delta > 100:
-					axis_test_label.text = ""
-					key_test_label.text = ""
-			if event is InputEventJoypadMotion:
-				if abs(event.axis_value) > 0.5:
-					last_event_time = now
-					axis_test_label.text = "JoyAxis %d->a%d [ID: %d - %s]" % [event.axis, event.axis, event.device, _get_dev_name.call(event.device)]
-					if delta > 100:
-						button_test_label.text = ""
-						key_test_label.text = ""
-			if event is InputEventKey:
-				last_event_time = now
-				key_test_label.text = "Key %d->%s [ID:%d - %s]" % [event.keycode, OS.get_keycode_string(event.keycode), event.device, _get_dev_name.call(event.device)]
-				if delta > 100:
-					button_test_label.text = ""
-					axis_test_label.text = ""
+	
+	# D-pad fallback: if no element inside has focus, grab it
+	if visible and event is InputEventJoypadButton and event.pressed:
+		var btn = event.button_index
+		if btn == JoyButton.JOY_BUTTON_DPAD_UP or btn == JoyButton.JOY_BUTTON_DPAD_DOWN or \
+		   btn == JoyButton.JOY_BUTTON_DPAD_LEFT or btn == JoyButton.JOY_BUTTON_DPAD_RIGHT:
+			var focus_owner = get_viewport().gui_get_focus_owner()
+			if not focus_owner or not is_ancestor_of(focus_owner):
+				_grab_focus_on_first_element()
+				get_viewport().set_input_as_handled()
+				return
 		
 				
 func set_scale_factor(factor: float):
+	base_scale_factor = factor
 	scale = Vector2(factor, factor)
 	call_deferred("_fit_to_screen")
 

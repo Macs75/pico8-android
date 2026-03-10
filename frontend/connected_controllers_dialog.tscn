@@ -2,9 +2,6 @@
 
 [ext_resource type="Script" uid="uid://b6ltymnche76l" path="res://connected_controllers_dialog.gd" id="1_dialog"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_test"]
-bg_color = Color(0, 0, 0, 0.9)
-
 [node name="ConnectedControllersDialog" type="PanelContainer" unique_id=1327420180]
 anchors_preset = 8
 anchor_left = 0.5
@@ -78,63 +75,3 @@ text = "Export"
 unique_name_in_owner = true
 layout_mode = 2
 text = "Close"
-
-[node name="TestPopup" type="PanelContainer" parent="." unique_id=607872349]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_test")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="TestPopup" unique_id=327322518]
-layout_mode = 2
-theme_override_constants/separation = 20
-alignment = 1
-
-[node name="Header" type="Label" parent="TestPopup/VBoxContainer" unique_id=1767858043]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "TEST INPUT MODE"
-horizontal_alignment = 1
-
-[node name="SubHeader" type="Label" parent="TestPopup/VBoxContainer" unique_id=329345367]
-layout_mode = 2
-text = "Press any button on the selected controller..."
-horizontal_alignment = 1
-
-[node name="ResultLabel" type="Label" parent="TestPopup/VBoxContainer" unique_id=2069921233]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0, 1, 0, 1)
-theme_override_font_sizes/font_size = 24
-text = "Waiting..."
-horizontal_alignment = 1
-
-[node name="ResultLabel2" type="Label" parent="TestPopup/VBoxContainer" unique_id=663971452]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0, 1, 0, 1)
-theme_override_font_sizes/font_size = 24
-horizontal_alignment = 1
-
-[node name="ResultLabel3" type="Label" parent="TestPopup/VBoxContainer" unique_id=1827974929]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0, 1, 0, 1)
-theme_override_font_sizes/font_size = 24
-horizontal_alignment = 1
-
-[node name="HelperLabel" type="Label" parent="TestPopup/VBoxContainer" unique_id=1105069994]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
-text = "Use the code above (e.g. b5) in your mapping file."
-horizontal_alignment = 1
-
-[node name="HBoxContainer" type="HBoxContainer" parent="TestPopup/VBoxContainer" unique_id=1429580165]
-layout_mode = 2
-alignment = 1
-
-[node name="CloseTestBtn" type="Button" parent="TestPopup/VBoxContainer/HBoxContainer" unique_id=1505070981]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(200, 50)
-layout_mode = 2
-text = "Close Test"

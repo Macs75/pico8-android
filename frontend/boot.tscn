@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://clwlaw414wfp8"]
+[gd_scene format=3 uid="uid://clwlaw414wfp8"]
 
 [ext_resource type="Script" uid="uid://b54xvq68jxh01" path="res://boot.gd" id="1_hjvc4"]
 [ext_resource type="FontFile" uid="uid://c2jlc3nt8y38q" path="res://assets/font/atlas-0.png" id="2_n76rq"]
@@ -62,12 +62,12 @@ font_size = 5
 font = ExtResource("2_n76rq")
 font_size = 10
 
-[node name="Boot" type="Node2D"]
+[node name="Boot" type="Node2D" unique_id=1849338285]
 script = ExtResource("1_hjvc4")
 
-[node name="SelectPicoZipNode" type="Node2D" parent="."]
+[node name="SelectPicoZipNode" type="Node2D" parent="." unique_id=1421171502]
 
-[node name="SelectPicoZip" type="Control" parent="SelectPicoZipNode" node_paths=PackedStringArray("active_area")]
+[node name="SelectPicoZip" type="Control" parent="SelectPicoZipNode" unique_id=1375879709 node_paths=PackedStringArray("active_area")]
 unique_name_in_owner = true
 visible = false
 layout_mode = 3
@@ -82,7 +82,7 @@ active_area = NodePath("StackContainer")
 center_y = true
 auto_show = false
 
-[node name="StackContainer" type="VBoxContainer" parent="SelectPicoZipNode/SelectPicoZip"]
+[node name="StackContainer" type="VBoxContainer" parent="SelectPicoZipNode/SelectPicoZip" unique_id=113340042]
 layout_mode = 0
 offset_left = -74.0
 offset_top = -32.0
@@ -90,10 +90,10 @@ offset_right = 76.0
 offset_bottom = 32.0
 alignment = 1
 
-[node name="CenterContainer" type="CenterContainer" parent="SelectPicoZipNode/SelectPicoZip/StackContainer"]
+[node name="CenterContainer" type="CenterContainer" parent="SelectPicoZipNode/SelectPicoZip/StackContainer" unique_id=250633575]
 layout_mode = 2
 
-[node name="OpenPickerButton" type="Button" parent="SelectPicoZipNode/SelectPicoZip/StackContainer/CenterContainer"]
+[node name="OpenPickerButton" type="Button" parent="SelectPicoZipNode/SelectPicoZip/StackContainer/CenterContainer" unique_id=1008797569]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_default_cursor_shape = 2
@@ -114,19 +114,19 @@ theme_override_styles/focus = ExtResource("5_m6jb1")
 text = "sELECT pico-8 RASPBERRY pI .ZIP
 (PICO-8_X.X.XX_RASPI.ZIP)"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="SelectPicoZipNode/SelectPicoZip/StackContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="SelectPicoZipNode/SelectPicoZip/StackContainer" unique_id=954793227]
 custom_minimum_size = Vector2(128, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 theme = SubResource("Theme_8ye5a")
 
-[node name="Label" type="Label" parent="SelectPicoZipNode/SelectPicoZip/StackContainer/ScrollContainer"]
+[node name="Label" type="Label" parent="SelectPicoZipNode/SelectPicoZip/StackContainer/ScrollContainer" unique_id=1770473379]
 unique_name_in_owner = true
 layout_mode = 2
 text = "..."
 label_settings = SubResource("LabelSettings_m6jb1")
 
-[node name="UnpackProgressContainer" type="Control" parent="." node_paths=PackedStringArray("active_area")]
+[node name="UnpackProgressContainer" type="Control" parent="." unique_id=524213025 node_paths=PackedStringArray("active_area")]
 unique_name_in_owner = true
 visible = false
 layout_mode = 3
@@ -136,7 +136,7 @@ active_area = NodePath("UnpackProgress")
 center_y = true
 auto_show = false
 
-[node name="UnpackProgress" type="Label" parent="UnpackProgressContainer"]
+[node name="UnpackProgress" type="Label" parent="UnpackProgressContainer" unique_id=1458798283]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(150, 20)
 layout_mode = 0
@@ -154,7 +154,7 @@ label_settings = SubResource("LabelSettings_m6jb1")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="AllFileAccessContainer" type="Control" parent="." node_paths=PackedStringArray("active_area")]
+[node name="AllFileAccessContainer" type="Control" parent="." unique_id=1183730455 node_paths=PackedStringArray("active_area")]
 unique_name_in_owner = true
 visible = false
 layout_mode = 3
@@ -164,7 +164,7 @@ active_area = NodePath("VBoxContainer")
 center_y = true
 auto_show = false
 
-[node name="VBoxContainer" type="VBoxContainer" parent="AllFileAccessContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="AllFileAccessContainer" unique_id=2045548999]
 clip_contents = true
 layout_mode = 0
 anchor_left = 0.5
@@ -178,14 +178,14 @@ offset_bottom = 22.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="WarningHeader" type="Label" parent="AllFileAccessContainer/VBoxContainer"]
+[node name="WarningHeader" type="Label" parent="AllFileAccessContainer/VBoxContainer" unique_id=2121991411]
 custom_minimum_size = Vector2(150, 20)
 layout_mode = 2
 text = "all files access"
 label_settings = SubResource("LabelSettings_xf3if")
 horizontal_alignment = 1
 
-[node name="Warning" type="Label" parent="AllFileAccessContainer/VBoxContainer"]
+[node name="Warning" type="Label" parent="AllFileAccessContainer/VBoxContainer" unique_id=1644912651]
 custom_minimum_size = Vector2(150, 20)
 layout_mode = 2
 text = "tO CONSISTIENTLY ACCESS dOCUMENTS/PICO8,
@@ -201,7 +201,7 @@ ANDROID SETTINGS IF YOU HAVE ISSUES.
 label_settings = SubResource("LabelSettings_m6jb1")
 horizontal_alignment = 1
 
-[node name="GrantButton" type="Button" parent="AllFileAccessContainer/VBoxContainer"]
+[node name="GrantButton" type="Button" parent="AllFileAccessContainer/VBoxContainer" unique_id=858600788]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
@@ -223,10 +223,10 @@ theme_override_styles/disabled_mirrored = ExtResource("4_segco")
 theme_override_styles/focus = ExtResource("5_m6jb1")
 text = "grant (OPENS SETTINGS)"
 
-[node name="Container" type="Container" parent="AllFileAccessContainer/VBoxContainer"]
+[node name="Container" type="Container" parent="AllFileAccessContainer/VBoxContainer" unique_id=1900898520]
 layout_mode = 2
 
-[node name="DenyButton" type="Button" parent="AllFileAccessContainer/VBoxContainer"]
+[node name="DenyButton" type="Button" parent="AllFileAccessContainer/VBoxContainer" unique_id=1527521326]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
@@ -248,5 +248,5 @@ theme_override_styles/disabled_mirrored = ExtResource("4_segco")
 theme_override_styles/focus = ExtResource("5_m6jb1")
 text = "deny (WON'T ASK AGAIN)"
 
-[node name="Container2" type="Container" parent="AllFileAccessContainer/VBoxContainer"]
+[node name="Container2" type="Container" parent="AllFileAccessContainer/VBoxContainer" unique_id=1756118790]
 layout_mode = 2
