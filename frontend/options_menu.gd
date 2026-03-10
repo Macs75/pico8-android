@@ -793,6 +793,11 @@ func close_menu():
 		PicoVideoStreamer.instance.set_process_input(true)
 
 func _input(event: InputEvent) -> void:
+	# if event is InputEventKey and event.pressed and event.keycode == KEY_U:
+	# 	var ud = preload("res://update_dialog.tscn").instantiate()
+	# 	get_tree().root.add_child(ud)
+	# 	ud.setup("9.9.9-test", "http://example.com")
+	# 	return
 	if not is_open:
 		# Passive edge swipe detection (allows pass-through of touch to underlying buttons)
 		if get_tree().root.has_node("FavouritesEditor"):

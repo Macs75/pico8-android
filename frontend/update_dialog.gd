@@ -3,6 +3,8 @@ extends CanvasLayer
 var release_url: String = ""
 var version_tag: String = ""
 
+var target_scale: Vector2 = Vector2.ONE
+
 signal closed
 
 func setup(tag: String, url: String):
@@ -17,19 +19,37 @@ func _ready() -> void:
 	%CloseButton.pressed.connect(_on_close_pressed)
 	%LinkButton.pressed.connect(_on_link_pressed)
 	
-	# Initial Layout
-	_update_layout()
-	get_tree().root.size_changed.connect(_update_layout)
-	
 	# Connect Toggle
 	%IgnoreButton.toggled.connect(_on_ignore_toggled)
 	_on_ignore_toggled(false) # Set initial text
 	
-	# Animate in
+	# Hide panel initially while layout settles
+	$Panel.modulate.a = 0.0
+	
+	# Let layout settle then animate in
+	_update_layout_and_animate()
+	
+	get_tree().root.size_changed.connect(func():
+		_update_layout()
+		await get_tree().process_frame
+		await get_tree().process_frame
+		_fit_to_screen()
+	)
+
+func _update_layout_and_animate():
+	_update_layout()
+	
+	# Wait for Godot to apply font sizes and recalculate PanelContainer bounds
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	_fit_to_screen()
+	
 	$Panel.pivot_offset = $Panel.size / 2
-	$Panel.scale = Vector2(0.8, 0.8)
+	$Panel.scale = target_scale * 0.8
 	var tween = create_tween()
-	tween.tween_property($Panel, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property($Panel, "scale", target_scale, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property($Panel, "modulate:a", 1.0, 0.2)
 
 func _on_ignore_toggled(toggled: bool):
 	if toggled:
@@ -79,6 +99,25 @@ func _update_layout():
 		close_style.content_margin_top = v_margin
 		close_style.content_margin_bottom = v_margin
 
+func _fit_to_screen():
+	if not is_instance_valid($Panel): return
+	
+	var screen_size = get_viewport().get_visible_rect().size
+	var unscaled_size = $Panel.size
+	
+	var max_w = screen_size.x - 40
+	var max_h = screen_size.y - 40
+	
+	var final_scale = 1.0
+	if unscaled_size.x > max_w or unscaled_size.y > max_h:
+		var ratio_w = max_w / unscaled_size.x
+		var ratio_h = max_h / unscaled_size.y
+		final_scale = min(1.0, min(ratio_w, ratio_h))
+		
+	target_scale = Vector2(final_scale, final_scale)
+	$Panel.scale = target_scale
+	$Panel.pivot_offset = $Panel.size / 2
+
 func _apply_font_style(node: Control, size: int):
 	node.add_theme_font_size_override("font_size", size)
 
@@ -98,7 +137,7 @@ func _on_close_pressed():
 	
 	# Animate out
 	var tween = create_tween()
-	tween.tween_property($Panel, "scale", Vector2(0.8, 0.8), 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tween.tween_property($Panel, "scale", target_scale * 0.8, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	tween.tween_property($Panel, "modulate:a", 0.0, 0.15)
 	await tween.finished
 	
