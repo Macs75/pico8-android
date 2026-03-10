@@ -12,6 +12,7 @@ func _ready() -> void:
 	close_test_btn.pressed.connect(queue_free)
 	get_tree().root.size_changed.connect(_fit_to_screen)
 	call_deferred("_fit_to_screen")
+	close_test_btn.grab_focus();
 
 func setup(device_id: int) -> void:
 	test_device_id = device_id

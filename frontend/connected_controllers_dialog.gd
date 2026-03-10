@@ -4,6 +4,7 @@ extends Control
 @onready var close_btn = %ButtonClose
 
 var base_scale_factor: float = 1.0
+var test_dialog = null
 
 func _ready() -> void:
 	# Enforce opaque background
@@ -202,7 +203,7 @@ func _export_mapping(device_id: int):
 var controller_test_dialog_scene = preload("res://controller_test_dialog.tscn")
 
 func _show_test_popup(device_id: int):
-	var test_dialog = controller_test_dialog_scene.instantiate()
+	test_dialog = controller_test_dialog_scene.instantiate()
 	get_tree().root.add_child(test_dialog)
 	test_dialog.setup(device_id)
 
@@ -277,7 +278,7 @@ func _input(event):
 			return
 	
 	# D-pad fallback: if no element inside has focus, grab it
-	if visible and event is InputEventJoypadButton and event.pressed:
+	if visible and event is InputEventJoypadButton and event.pressed and test_dialog and not test_dialog.is_visible():
 		var btn = event.button_index
 		if btn == JoyButton.JOY_BUTTON_DPAD_UP or btn == JoyButton.JOY_BUTTON_DPAD_DOWN or \
 		   btn == JoyButton.JOY_BUTTON_DPAD_LEFT or btn == JoyButton.JOY_BUTTON_DPAD_RIGHT:
