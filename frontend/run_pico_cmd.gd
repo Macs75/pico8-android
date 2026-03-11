@@ -197,15 +197,15 @@ func _launch_pico8(target_path: String) -> void:
 		# 1. PAUSE Godot connection attempts entirely
 		PicoVideoStreamer.instance.hold_connection()
 		
-		# 2. POKE pipes to unblock any background threads that might be stuck in JNI pipe_open()
-		# We use OS.create_process (asynchronous) to avoid a second deadlock where Godot 
-		# waits for the poke-shell to finish while the poke-shell wait for a pipe reader.
+		# 2. POKE pipes to unblock any background threads that might be stuck in JNI pipe_open().
+		# IMPORTANT: We guard with 'test -p' to ONLY write to existing FIFOs.
+		# Without the guard, '>' would create a *regular file* if the FIFO doesn't exist yet,
+		# which would then cause the subsequent 'mkfifo' command to fail.
 		print("URL Handler: Sending asynchronous 'poke' signals to unblock pipes...")
 		var poke_cmd = "cd " + pkg_path + "; " + \
-					  "mkdir -p tmp; " + \
-					  "(timeout 0.2s sh -c 'echo poke > tmp/pico8.vid' >/dev/null 2>&1 || true) & " + \
-					  "(timeout 0.2s sh -c 'cat tmp/pico8.in > /dev/null' >/dev/null 2>&1 || true) & " + \
-					  "(timeout 0.2s sh -c 'echo poke > tmp/xdgopen' >/dev/null 2>&1 || true) &"
+					  "(test -p tmp/pico8.vid && timeout 0.2s sh -c 'echo poke > tmp/pico8.vid' || true) & " + \
+					  "(test -p tmp/pico8.in && timeout 0.2s sh -c 'cat tmp/pico8.in > /dev/null' || true) & " + \
+					  "(test -p tmp/xdgopen && timeout 0.2s sh -c 'echo poke > tmp/xdgopen' || true) &"
 		OS.create_process(PicoBootManager.BIN_PATH + "/sh", ["-c", poke_cmd])
 
 		# 3. Sync Wait (Ensure thread has actually stopped/closed)
@@ -222,11 +222,13 @@ func _launch_pico8(target_path: String) -> void:
 	print("URL Handler: Suspended connection attempts.")
 
 	print("Recreating pipes from Godot...")
-	# Unconditional delete and recreate
-	# We "poke" xdgopen by redirecting nothing to it; this unblocks any Godot thread 
-	# stuck in PipeReader.open() so it can loop and see the _xdg_url_connection_allowed = false flag.
-	var mkfifo_cmd = "cd " + pkg_path + ";LD_LIBRARY_PATH=. ./busybox mkdir -p tmp; (./busybox timeout 0.1s ./busybox sh -c \"echo poke > tmp/xdgopen\" || true); rm -f tmp/pico8.vid tmp/pico8.in tmp/xdgopen; LD_LIBRARY_PATH=. ./busybox mkfifo tmp/pico8.vid tmp/pico8.in tmp/xdgopen; chmod 666 tmp/pico8.vid tmp/pico8.in tmp/xdgopen"
-	#print("Recreating pipes with command: ", mkfifo_cmd)
+	# Use system mkfifo (/system/bin/mkfifo -> toybox). The bundled busybox mkfifo
+	# returns exit code 1 on this device, causing all pipes to fail to be created.
+	var mkfifo_cmd = "cd " + pkg_path + "; " + \
+					 "mkdir -p tmp; " + \
+					 "rm -f tmp/pico8.vid tmp/pico8.in tmp/xdgopen; " + \
+					 "mkfifo tmp/pico8.vid tmp/pico8.in tmp/xdgopen; " + \
+					 "chmod 666 tmp/pico8.vid tmp/pico8.in tmp/xdgopen"
 	var pipe_res = []
 	var pipe_err = OS.execute(PicoBootManager.BIN_PATH + "/sh", ["-c", mkfifo_cmd], pipe_res)
 	print("Pipe recreation finished with exit code %d. Output: %s" % [pipe_err, pipe_res])
