@@ -162,7 +162,7 @@ func _ready() -> void:
 	else:
 		request_storage_permission()
 
-const BOOTSTRAP_PACKAGE_VERSION = "19"
+const BOOTSTRAP_PACKAGE_VERSION = "20"
 
 func setup():
 	set_ui_state(false, false, true) # permission_ui=false, select_zip_ui=false, progress_ui=true
@@ -202,17 +202,19 @@ func setup():
 		# Remove old package folder to prevent stale files (like tmp/pulse) from interfering
 		var package_folder = APPDATA_FOLDER + "/package"
 		print("Removing old package folder: ", package_folder)
-		OS.execute(BIN_PATH + "/rm", ["-rf", package_folder])
+		OS.execute(BIN_PATH + "/sh", ["-c", "rm -rf " + package_folder])
 		
 		%UnpackProgress.text += "extracting bootstrap package..."
 		if get_tree():
 			await get_tree().process_frame
-		print( # for now just gonna assume this works
-			"tar copy: ",
-			error_string(public_folder.copy("res://package.dat", tar_path_godot))
-		)
 		
-		OS.execute(
+		var copy_err = public_folder.copy("res://package.dat", tar_path_godot)
+		print("tar copy: ", error_string(copy_err))
+		if copy_err != OK:
+			%UnpackProgress.text += "FAILED (disk full or permission error)\n"
+			return
+		
+		var tar_exit = OS.execute(
 			BIN_PATH + "/sh",
 			["-c", " ".join([
 				BIN_PATH + "/tar",
@@ -222,14 +224,19 @@ func setup():
 				"2>" + PUBLIC_FOLDER + "/logs/tar_err.txt"
 			])]
 		)
+		
+		if tar_exit != 0:
+			%UnpackProgress.text += "FAILED (exit code %d). Check logs/tar_err.txt\n" % tar_exit
+			return
 
 		%UnpackProgress.text += "done\n"
 		if get_tree():
 			await get_tree().process_frame
 	
 	var need_to_unzip = DEBUG
+	var binary_path = "user://package/rootfs/home/pico/pico-8/pico8_64"
 	if not DEBUG:
-		if not FileAccess.file_exists("user://package/rootfs/home/pico/pico-8/pico8_64"):
+		if not FileAccess.file_exists(binary_path):
 			need_to_unzip = true
 	print("need to unzip: ", need_to_unzip)
 	if need_to_unzip:
@@ -237,21 +244,36 @@ func setup():
 		if get_tree():
 			await get_tree().process_frame
 		
-		print(
-			"pico zip copy: ",
-			error_string(public_folder.copy(pico_zip_path, pico_path_godot))
-		)
-		OS.execute(
+		var zip_copy_err = public_folder.copy(pico_zip_path, pico_path_godot)
+		print("pico zip copy: ", error_string(zip_copy_err))
+		if zip_copy_err != OK:
+			%UnpackProgress.text += "FAILED (copy failed: %s)\n" % error_string(zip_copy_err)
+			return
+
+		var zip_exit = OS.execute(
 			BIN_PATH + "/sh",
 			["-c", " ".join([
 				"cd", APPDATA_FOLDER + "/package;",
+				BIN_PATH + "/chmod", "755", "unzip-pico.sh", "busybox;",
 				BIN_PATH + "/sh",
-				"unzip-pico.sh",
+				"./unzip-pico.sh",
 				">" + PUBLIC_FOLDER + "/logs/zip_out.txt",
 				"2>" + PUBLIC_FOLDER + "/logs/zip_err.txt"
 			])]
 		)
 		
+		if zip_exit != 0:
+			%UnpackProgress.text += "FAILED (exit code %d). Check logs/zip_err.txt\n" % zip_exit
+			# Cleanup to avoid partial extraction being treated as success next time
+			if FileAccess.file_exists(binary_path):
+				DirAccess.remove_absolute(binary_path)
+			return
+
+		# Verify if the unzip actually produced the binary
+		if not FileAccess.file_exists(binary_path):
+			%UnpackProgress.text += "FAILED (pico8_64 not found after unzip)\n"
+			return
+
 		%UnpackProgress.text += "done\n"
 		if get_tree():
 			await get_tree().process_frame

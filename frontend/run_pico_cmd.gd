@@ -41,8 +41,7 @@ func _ready() -> void:
 	var script_path = pkg_path + "/start_pico_proot.sh"
 	
 	print("Applying permissions to: " + pkg_path)
-	OS.execute(PicoBootManager.BIN_PATH + "/chmod", ["755", busybox_path])
-	OS.execute(PicoBootManager.BIN_PATH + "/chmod", ["755", script_path])
+	OS.execute(PicoBootManager.BIN_PATH + "/sh", ["-c", "chmod 755 " + busybox_path + " " + script_path])
 	
 	match execution_mode:
 		ExecutionMode.PICO8:
