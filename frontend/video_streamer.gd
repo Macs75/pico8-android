@@ -34,6 +34,11 @@ const PIDOT_EVENT_MOUSEEV = 1;
 const PIDOT_EVENT_KEYEV = 2;
 const PIDOT_EVENT_CHAREV = 3;
 
+var _r1_held: bool = false
+var _r1_used_as_modifier: bool = false
+var _dpad_mouse_mode_active: bool = false
+var _dpad_mouse_held_time: float = 0.0
+
 var stream_texture: ImageTexture
 
 var last_message_time: int = 0
@@ -675,6 +680,21 @@ func _process(delta: float) -> void:
 				if abs(lx) < 0.1: lx = 0
 				if abs(ly) < 0.1: ly = 0
 				
+				if lx == 0 and ly == 0:
+					if _dpad_mouse_mode_active:
+						if Input.is_joy_button_pressed(dev, JoyButton.JOY_BUTTON_DPAD_LEFT): lx = -1.0
+						elif Input.is_joy_button_pressed(dev, JoyButton.JOY_BUTTON_DPAD_RIGHT): lx = 1.0
+						if Input.is_joy_button_pressed(dev, JoyButton.JOY_BUTTON_DPAD_UP): ly = -1.0
+						elif Input.is_joy_button_pressed(dev, JoyButton.JOY_BUTTON_DPAD_DOWN): ly = 1.0
+						
+						if lx != 0 or ly != 0:
+							_dpad_mouse_held_time += delta
+							var speed_multi = 0.5 if _dpad_mouse_held_time < 0.2 else 1.0
+							lx *= speed_multi
+							ly *= speed_multi
+						else:
+							_dpad_mouse_held_time = 0.0
+				
 				if lx != 0 or ly != 0:
 					# Needs to be framerate independent for consistency
 					var speed = 200.0 * trackpad_sensitivity * delta
@@ -962,6 +982,12 @@ static func swap_event_button_AB(event: InputEventJoypadButton) -> InputEventJoy
 			event.set_meta("swapped", true)
 		elif event.button_index == JoyButton.JOY_BUTTON_B:
 			event.button_index = JoyButton.JOY_BUTTON_A
+			event.set_meta("swapped", true)
+		elif event.button_index == JoyButton.JOY_BUTTON_X:
+			event.button_index = JoyButton.JOY_BUTTON_Y
+			event.set_meta("swapped", true)
+		elif event.button_index == JoyButton.JOY_BUTTON_Y:
+			event.button_index = JoyButton.JOY_BUTTON_X
 			event.set_meta("swapped", true)
 	return event
 
@@ -1510,16 +1536,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		
 		if (input_mode == InputMode.TRACKPAD and not is_p2) or (active_devkit and not is_p2):
 			# Controller Mouse Click Mapping (P1 Only)
-			# Map PICO-8 O (A/Y) -> Left Click (User Request)
-			if event.button_index == JoyButton.JOY_BUTTON_A or event.button_index == JoyButton.JOY_BUTTON_Y:
+			# Map Gamepad X -> Left Click
+			if event.button_index == JoyButton.JOY_BUTTON_X:
 				if event.pressed:
 					_virtual_mouse_mask |= 1
 				else:
 					_virtual_mouse_mask &= ~1
 				return # Consume
 				
-			# Map PICO-8 X (B/X) -> Right Click (User Request)
-			if event.button_index == JoyButton.JOY_BUTTON_B or event.button_index == JoyButton.JOY_BUTTON_X:
+			# Map Gamepad Y -> Right Click
+			if event.button_index == JoyButton.JOY_BUTTON_Y:
 				if event.pressed:
 					_virtual_mouse_mask |= 4
 				else:
@@ -1545,17 +1571,41 @@ func _unhandled_input(event: InputEvent) -> void:
 						_toggle_options_menu()
 		else:
 			# Player 1 Mapping (Standard)
-			# If active_devkit is true, A and B are consumed above, so they won't reach here.
+			# If active_devkit is true, Gamepad X and Y are consumed above for Mouse Clicks.
+			# Gamepad A and B will still safely reach here for standard PICO-8 O/X actions!
 			match event.button_index:
 				JoyButton.JOY_BUTTON_A, JoyButton.JOY_BUTTON_Y: key_id = "X"
 				JoyButton.JOY_BUTTON_B, JoyButton.JOY_BUTTON_X: key_id = "Z"
-				JoyButton.JOY_BUTTON_START, JoyButton.JOY_BUTTON_RIGHT_SHOULDER: key_id = "P" # Pause
+				JoyButton.JOY_BUTTON_START: key_id = "P" # Pause
+				JoyButton.JOY_BUTTON_RIGHT_SHOULDER:
+					if active_devkit or _prev_is_editor:
+						if event.pressed:
+							_r1_held = true
+							_r1_used_as_modifier = false
+						else:
+							_r1_held = false
+							if not _r1_used_as_modifier:
+								_send_quick_pause()
+					else:
+						key_id = "P" # Standard Pause when not in devkit
 				JoyButton.JOY_BUTTON_BACK, JoyButton.JOY_BUTTON_GUIDE:
 					key_id = "IntentExit" if is_intent_session else "Escape" # Menu / Exit
-				JoyButton.JOY_BUTTON_DPAD_UP: key_id = "Up"
-				JoyButton.JOY_BUTTON_DPAD_DOWN: key_id = "Down"
-				JoyButton.JOY_BUTTON_DPAD_LEFT: key_id = "Left"
-				JoyButton.JOY_BUTTON_DPAD_RIGHT: key_id = "Right"
+				JoyButton.JOY_BUTTON_DPAD_UP, JoyButton.JOY_BUTTON_DPAD_DOWN, JoyButton.JOY_BUTTON_DPAD_LEFT, JoyButton.JOY_BUTTON_DPAD_RIGHT:
+					if active_devkit or _prev_is_editor:
+						if _r1_held:
+							if event.pressed:
+								_r1_used_as_modifier = true
+								_dpad_mouse_mode_active = not _dpad_mouse_mode_active
+							return # Consume so it doesn't trigger PICO-8 arrows
+							
+						if _dpad_mouse_mode_active:
+							return # Standard D-Pad mapping consumed by toggle mode
+							
+					# Otherwise map normally
+					if event.button_index == JoyButton.JOY_BUTTON_DPAD_UP: key_id = "Up"
+					elif event.button_index == JoyButton.JOY_BUTTON_DPAD_DOWN: key_id = "Down"
+					elif event.button_index == JoyButton.JOY_BUTTON_DPAD_LEFT: key_id = "Left"
+					elif event.button_index == JoyButton.JOY_BUTTON_DPAD_RIGHT: key_id = "Right"
 				JoyButton.JOY_BUTTON_LEFT_SHOULDER:
 					if event.pressed:
 						_toggle_options_menu()
@@ -1817,6 +1867,11 @@ func _send_trackpad_click():
 		_mutex.unlock()
 		last_mouse_state = up_state
 	
+func _send_quick_pause():
+	vkb_setstate("P", true)
+	await get_tree().create_timer(0.05).timeout
+	vkb_setstate("P", false)
+
 func _quit_app():
 	get_tree().quit()
 
