@@ -806,8 +806,20 @@ func _input(event: InputEvent) -> void:
 		if event is InputEventScreenTouch:
 			if event.pressed:
 				if edge_handler and edge_handler.get_global_rect().has_point(event.position):
-					edge_drag_start = event.position
-					is_edge_dragging = true
+					var is_on_dpad = false
+					var main = get_node_or_null("/root/Main")
+					if main:
+						var dpad1 = main.get_node_or_null("Arranger/kbanchor/kb_gaming/dpad")
+						if dpad1 and dpad1.is_visible_in_tree() and dpad1.get_global_rect().has_point(event.position):
+							is_on_dpad = true
+							
+						var dpad2 = main.get_node_or_null("LandscapeUI/Control/LeftPad/dpad")
+						if dpad2 and dpad2.is_visible_in_tree() and dpad2.get_global_rect().has_point(event.position):
+							is_on_dpad = true
+							
+					if not is_on_dpad:
+						edge_drag_start = event.position
+						is_edge_dragging = true
 			else:
 				is_edge_dragging = false
 		elif event is InputEventScreenDrag:
