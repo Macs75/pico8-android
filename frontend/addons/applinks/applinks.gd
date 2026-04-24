@@ -137,6 +137,11 @@ func create_shortcut(label: String, cart_path: String) -> void:
 	if applinks:
 		applinks.create_shortcut(label, cart_path)
 
+func has_physical_keyboard() -> bool:
+	if applinks:
+		return applinks.hasPhysicalKeyboard()
+	return false
+
 func hide_keyboard() -> void:
 	if applinks:
 		applinks.hide_keyboard()

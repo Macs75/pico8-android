@@ -41,7 +41,7 @@ func _ready():
 
 func _on_username_focus_exited():
 	DisplayServer.virtual_keyboard_hide()
-	if Applinks: Applinks.hide_keyboard()
+	Applinks.hide_keyboard()
 
 	# Update placeholder based on search type
 	option_type.item_selected.connect(_on_type_selected)
@@ -201,8 +201,7 @@ func _on_search_pressed():
 
 	# Close Android keyboard via both Godot and native plugin
 	DisplayServer.virtual_keyboard_hide()
-	if Applinks:
-		Applinks.hide_keyboard()
+	Applinks.hide_keyboard()
 
 	# Save state for pagination
 	_current_username = username

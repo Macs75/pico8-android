@@ -39,6 +39,15 @@ var _r1_used_as_modifier: bool = false
 var _dpad_mouse_mode_active: bool = false
 var _dpad_mouse_held_time: float = 0.0
 
+# Select+Start combo for keyboard toggle
+var _select_pressed: bool = false
+var _start_pressed: bool = false
+var _combo_phantom_mode: bool = false # After combo, expect stale UPs instead of DOWNs
+var _phantom_select_up: bool = false
+var _phantom_start_up: bool = false
+var _phantom_first_up_time: int = 0 # msec timestamp of first phantom UP
+const PHANTOM_WINDOW_MS: int = 150 # both UPs must arrive within this window
+
 var stream_texture: ImageTexture
 
 var last_message_time: int = 0
@@ -460,6 +469,10 @@ func _on_joy_connection_changed(device: int, connected: bool):
 			arranger.update_controller_state()
 
 func release_input_locks():
+	_select_pressed = false
+	_start_pressed = false
+	_phantom_select_up = false
+	_phantom_start_up = false
 	var focus_owner = get_viewport().gui_get_focus_owner()
 	print("Releasing Input Locks (Current Focus: ", focus_owner.name if focus_owner else "None", ")")
 	
@@ -485,6 +498,7 @@ func release_input_locks():
 	# Even when in Godot UI, failing to do this leaves the Android IME in a "ghost focus"
 	# state that causes any subsequent button press to require 2 clicks to register.
 	DisplayServer.virtual_keyboard_hide()
+	Applinks.hide_keyboard()
 
 const SYNC_SEQ = [80, 73, 67, 79, 56, 83, 89, 78, 67, 95, 95] # "PICO8SYNC__"
 #const SYNC_SEQ = [80, 73, 67, 79, 56, 83, 89] # "PICO8SY"
@@ -631,7 +645,7 @@ func _process(delta: float) -> void:
 					_sync_input_mode_ui(false)
 			
 			# Pop the full keyboard ONLY the FIRST time the editor appears
-			if is_editor and not _prev_is_editor:
+			if is_editor and not _prev_is_editor and not Applinks.has_physical_keyboard():
 				var is_full_kb = (KBMan.get_current_keyboard_type() == KBMan.KBType.FULL)
 				if not is_full_kb:
 					_on_keyboard_toggle_pressed()
@@ -1428,6 +1442,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				# If tap is above the keyboard area
 				if event.position.y < (screen_height - kb_height):
 					DisplayServer.virtual_keyboard_hide()
+					Applinks.hide_keyboard()
 			
 		else:
 			is_touching = false
@@ -1532,8 +1547,63 @@ func _unhandled_input(event: InputEvent) -> void:
 
 		event = PicoVideoStreamer.swap_event_button_AB(event)
 
+		# Select+Start combo detection for keyboard toggle (P1 only)
+		if not is_p2 and (event.button_index == JoyButton.JOY_BUTTON_BACK or event.button_index == JoyButton.JOY_BUTTON_START):
+			if event.pressed:
+				# Real DOWN clears phantom mode
+				_combo_phantom_mode = false
+				_phantom_select_up = false
+				_phantom_start_up = false
+
+				if event.button_index == JoyButton.JOY_BUTTON_BACK:
+					_select_pressed = true
+				else:
+					_start_pressed = true
+
+				if _select_pressed and _start_pressed:
+					if event.button_index == JoyButton.JOY_BUTTON_BACK:
+						vkb_setstate("P", false)
+					else:
+						var esc_key = "IntentExit" if is_intent_session else "Escape"
+						vkb_setstate(esc_key, false)
+					_select_pressed = false
+					_start_pressed = false
+					_combo_phantom_mode = true
+					_trigger_keyboard()
+					return
+			else:
+				# UP event
+				if _combo_phantom_mode:
+					# Android delivers stale UPs instead of DOWNs after keyboard close.
+					# Track them — if both arrive within a short window, treat as a combo.
+					var now = Time.get_ticks_msec()
+					if not _phantom_select_up and not _phantom_start_up:
+						# First phantom UP — start the window
+						_phantom_first_up_time = now
+					elif (now - _phantom_first_up_time) > PHANTOM_WINDOW_MS:
+						# Window expired — this is a new solo press, reset
+						_phantom_select_up = false
+						_phantom_start_up = false
+						_phantom_first_up_time = now
+
+					if event.button_index == JoyButton.JOY_BUTTON_BACK:
+						_phantom_select_up = true
+					else:
+						_phantom_start_up = true
+
+					if _phantom_select_up and _phantom_start_up:
+						_phantom_select_up = false
+						_phantom_start_up = false
+						_trigger_keyboard()
+					return
+
+				if event.button_index == JoyButton.JOY_BUTTON_BACK:
+					_select_pressed = false
+				else:
+					_start_pressed = false
+
 		var active_devkit = _prev_has_devkit and not _prev_is_paused_flag
-		
+
 		if (input_mode == InputMode.TRACKPAD and not is_p2) or (active_devkit and not is_p2):
 			# Controller Mouse Click Mapping (P1 Only)
 			# Map Gamepad X -> Left Click
@@ -1726,6 +1796,7 @@ func _check_swipe(end_pos: Vector2):
 func _trigger_keyboard():
 	# Show Android Keyboard
 	DisplayServer.virtual_keyboard_show('')
+
 	
 # Update Checker
 func _check_for_updates():

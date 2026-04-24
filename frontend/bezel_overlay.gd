@@ -236,12 +236,12 @@ func update_layout(game_display_rect: Rect2):
 	var scale_y = game_display_rect.size.y / hole_rect.size.y
 	
 	var final_scale = Vector2(scale_x, scale_y)
-	print("BezelOverlay: Final scale: gamecanvas", game_display_rect.size, " hole", hole_rect.size, " final_scale", final_scale)
+	#print("BezelOverlay: Final scale: gamecanvas", game_display_rect.size, " hole", hole_rect.size, " final_scale", final_scale)
 	
 	# Calculate new target size (rounded to int pixels)
 	var original_size = Vector2(_current_entry.original_image.get_width(), _current_entry.original_image.get_height())
 	var target_size = (original_size * final_scale).round()
-	print("BezelOverlay: Target size: original", original_size, " bezel target_size", target_size)
+	#print("BezelOverlay: Target size: original", original_size, " bezel target_size", target_size)
 	
 	# Position the bezel
 	var hole_offset_scaled = hole_rect.position * final_scale
