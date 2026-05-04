@@ -146,6 +146,29 @@ func get_pico_zip() -> Variant:
 	return null
 
 var android_picker
+var retry_button: Button = null
+
+func _show_setup_error(msg: String) -> void:
+	push_error("pico8-android setup failed: " + msg)
+	%UnpackProgress.text += msg + "\n"
+	# Show a retry button so the user can try again
+	if retry_button == null:
+		retry_button = Button.new()
+		retry_button.text = "RETRY"
+		retry_button.pressed.connect(_on_retry_pressed)
+		%UnpackProgressContainer.add_child(retry_button)
+		# Position below the progress label
+		retry_button.position = Vector2(
+			%UnpackProgress.position.x + %UnpackProgress.size.x / 2 - 20,
+			%UnpackProgress.position.y + %UnpackProgress.size.y + 4
+		)
+	retry_button.visible = true
+
+func _on_retry_pressed() -> void:
+	if retry_button:
+		retry_button.visible = false
+	%UnpackProgress.text = ""
+	setup()
 
 func _ready() -> void:
 	# Wait for the window to be fully initialized to avoid race conditions with focus events
@@ -211,7 +234,7 @@ func setup():
 		var copy_err = public_folder.copy("res://package.dat", tar_path_godot)
 		print("tar copy: ", error_string(copy_err))
 		if copy_err != OK:
-			%UnpackProgress.text += "FAILED (disk full or permission error)\n"
+			_show_setup_error("FAILED extracting bootstrap: %s (disk full or permission error)" % error_string(copy_err))
 			return
 		
 		var tar_exit = OS.execute(
@@ -226,7 +249,7 @@ func setup():
 		)
 		
 		if tar_exit != 0:
-			%UnpackProgress.text += "FAILED (exit code %d). Check logs/tar_err.txt\n" % tar_exit
+			_show_setup_error("FAILED tar extraction (exit code %d). Check logs/tar_err.txt" % tar_exit)
 			return
 
 		%UnpackProgress.text += "done\n"
@@ -247,7 +270,7 @@ func setup():
 		var zip_copy_err = public_folder.copy(pico_zip_path, pico_path_godot)
 		print("pico zip copy: ", error_string(zip_copy_err))
 		if zip_copy_err != OK:
-			%UnpackProgress.text += "FAILED (copy failed: %s)\n" % error_string(zip_copy_err)
+			_show_setup_error("FAILED pico-8 zip copy: %s" % error_string(zip_copy_err))
 			return
 
 		var zip_exit = OS.execute(
@@ -263,15 +286,15 @@ func setup():
 		)
 		
 		if zip_exit != 0:
-			%UnpackProgress.text += "FAILED (exit code %d). Check logs/zip_err.txt\n" % zip_exit
 			# Cleanup to avoid partial extraction being treated as success next time
 			if FileAccess.file_exists(binary_path):
 				DirAccess.remove_absolute(binary_path)
+			_show_setup_error("FAILED zip extraction (exit code %d). Check logs/zip_err.txt" % zip_exit)
 			return
 
 		# Verify if the unzip actually produced the binary
 		if not FileAccess.file_exists(binary_path):
-			%UnpackProgress.text += "FAILED (pico8_64 not found after unzip)\n"
+			_show_setup_error("FAILED (pico8_64 not found after unzip)")
 			return
 
 		%UnpackProgress.text += "done\n"

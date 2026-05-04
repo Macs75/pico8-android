@@ -359,7 +359,9 @@ func _process(_delta: float) -> void:
 			if Time.get_ticks_msec() > process_check_timer:
 				process_check_timer = Time.get_ticks_msec() + 1000
 				if pico_pid and not OS.is_process_running(pico_pid):
-					print("PICO-8 Process died! (PID: " + str(pico_pid) + ")")
+					var msg = "PICO-8 process died unexpectedly (PID: %d). Check logs/pico_err.txt" % pico_pid
+					push_error(msg)
+					print(msg)
 					get_tree().quit()
 				
 		RestartState.REQUESTED:
