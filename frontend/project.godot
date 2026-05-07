@@ -23,7 +23,7 @@ config/description="
 
 
 by @unmatchedbracket"
-config/version="1.6.3"
+config/version="1.6.4"
 run/main_scene="uid://clwlaw414wfp8"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "Mobile")
@@ -34,7 +34,7 @@ config/icon="uid://cishtcd4y3no7"
 
 [autoload]
 
-Applinks="*res://addons/applinks/applinks.gd"
+Applinks="*uid://ch7ek4c57vn1q"
 
 [display]
 

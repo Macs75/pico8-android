@@ -162,7 +162,7 @@ func _ready() -> void:
 	else:
 		request_storage_permission()
 
-const BOOTSTRAP_PACKAGE_VERSION = "20"
+const BOOTSTRAP_PACKAGE_VERSION = "21"
 
 func setup():
 	set_ui_state(false, false, true) # permission_ui=false, select_zip_ui=false, progress_ui=true
